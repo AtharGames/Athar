@@ -124,6 +124,11 @@
             <span class="switch" aria-hidden="true"></span>
             <span class="switch-text"><b>ترتيب عشوائي</b><small>خلط الأسئلة بدل ترتيب الديوان</small></span>
           </label>
+          <label class="switch-row">
+            <input type="checkbox" id="hideOptsToggle">
+            <span class="switch" aria-hidden="true"></span>
+            <span class="switch-text"><b>إخفاء الخيارات</b><small>سؤال مباشر بلا خيارات، وتُظهرها متى شئت</small></span>
+          </label>
           <div class="count-row" id="countRow" role="group" aria-label="عدد الأسئلة">
             <button class="chip" data-count="0" aria-pressed="true">الكل</button>
             <button class="chip" data-count="10" aria-pressed="false">١٠</button>
@@ -165,6 +170,11 @@
           <span class="switch" aria-hidden="true"></span>
           <span class="switch-text"><b>إظهار الإجابات</b></span>
         </label>
+        <label class="switch-row compact">
+          <input type="checkbox" id="optsToggle" checked>
+          <span class="switch" aria-hidden="true"></span>
+          <span class="switch-text"><b>إظهار الخيارات</b></span>
+        </label>
         <button class="btn small" id="reshuffleBtn" hidden>أعد الخلط</button>
       </div>
 
@@ -185,7 +195,15 @@
 
       <div id="quizCard"></div>
 
+      <!-- تقييم يدوي عند إخفاء الخيارات -->
+      <div class="grade-row" id="gradeRow" hidden>
+        <span>هل كانت الإجابة صحيحة؟</span>
+        <button class="btn small ok" data-grade="right">صحيحة</button>
+        <button class="btn small bad" data-grade="wrong">خاطئة</button>
+      </div>
+
       <div class="quiz-actions">
+        <button class="btn" id="showOptsBtn" hidden>أظهر الخيارات</button>
         <button class="btn" id="revealBtn">أظهر الإجابة</button>
         <button class="btn primary" id="nextBtn" disabled>التالي</button>
       </div>

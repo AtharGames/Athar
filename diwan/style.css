@@ -349,7 +349,25 @@ main{flex:1;}
 .q-card.show .opt.correct .cite{display:inline-flex;}
 .q-card.show .opt.wrong{background:var(--bad-bg); border-color:var(--bad-line);}
 .q-card.show .opt.wrong .ltr{background:var(--bad); border-color:var(--bad); color:#fff;}
-.q-foot{display:flex; justify-content:flex-end; margin-top:8px;}
+.q-foot{display:flex; justify-content:flex-end; gap:4px; margin-top:8px;}
+.q-foot:empty{display:none;}
+/* إخفاء الخيارات: يبقى السؤال وحده، وتظهر الإجابة الصحيحة فقط عند إظهارها */
+body.hide-opts .q-card:not(.opts-open) .opt{display:none;}
+body.hide-opts .q-card:not(.opts-open).show .opt.correct{display:flex;}
+body.hide-opts .q-card:not(.opts-open):not(.show) .opts{margin-top:0;}
+body:not(.hide-opts) [data-showopts]{display:none;}
+.answers-on [data-reveal]{display:none;}
+body:not(.hide-opts) .answers-on .q-foot{display:none;}
+.grade-row{
+  display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;
+  padding:10px 12px; border-radius:14px; border:1px dashed var(--line); background:var(--surface);
+  font-weight:700; font-size:.95rem;
+}
+.grade-row .btn.ok{border-color:var(--ok-line); color:var(--ok);}
+.grade-row .btn.bad{border-color:var(--bad-line); color:var(--bad);}
+.grade-row .btn[aria-pressed="true"].ok{background:var(--ok-bg);}
+.grade-row .btn[aria-pressed="true"].bad{background:var(--bad-bg);}
+.quiz-actions.three{grid-template-columns:1fr 1fr 1.3fr;}
 .q-foot .link-btn{font-size:.86rem;}
 .q-source{font-size:.76rem; color:var(--text-2); margin-top:8px; display:none;}
 .q-card.show .q-source{display:block;}
@@ -427,6 +445,9 @@ mark{background:var(--hl); color:#1D2A24; border-radius:4px; padding:0 2px;}
   .opt{flex-wrap:wrap;}
   .opt .cite{margin-inline-start:40px;}
   .quiz-actions{grid-template-columns:1fr 1fr;}
+  .quiz-actions.three{grid-template-columns:1fr 1fr;}
+  .quiz-actions.three #nextBtn{grid-column:1 / -1;}
+  .quiz-actions .btn{padding:10px 8px;}
   .view-title span{display:none;}
 }
 @media (prefers-reduced-motion:reduce){

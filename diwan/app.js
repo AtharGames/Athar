@@ -59,10 +59,12 @@
     levels: new Set(Array.isArray(saved.levels) ? saved.levels.filter((l) => l >= 0 && l <= 2) : [0, 1, 2]),
     random: !!saved.random,
     count: [0, 10, 20, 30, 50].includes(saved.count) ? saved.count : 0,
+    // إخفاء الخيارات: يظهر السؤال وحده
+    hideOpts: !!saved.hideOpts,
   };
   function persist() {
     store.set('diwan-filters', {
-      diwans: [...state.diwans], off: state.off, levels: [...state.levels], random: state.random, count: state.count,
+      diwans: [...state.diwans], off: state.off, levels: [...state.levels], random: state.random, count: state.count, hideOpts: state.hideOpts,
     });
   }
   const secOn = (d, s) => !(state.off[d] || []).includes(s);
@@ -202,6 +204,19 @@
     state.count = +b.dataset.count; sound('tongue', 0, 0.2); persist(); renderHome();
   });
 
+  // إخفاء الخيارات: مفتاح في الاختيارات وآخر في البنك، وكلاهما يضبط الحالة نفسها
+  const hideOptsToggle = $('#hideOptsToggle');
+  const optsToggle = $('#optsToggle');
+  function applyHideOpts() {
+    document.body.classList.toggle('hide-opts', state.hideOpts);
+    hideOptsToggle.checked = state.hideOpts;
+    optsToggle.checked = !state.hideOpts;
+    $$('.q-card.opts-open').forEach((c) => c.classList.remove('opts-open'));
+    $$('[data-showopts]').forEach((b) => { b.textContent = 'أظهر الخيارات'; });
+  }
+  hideOptsToggle.addEventListener('change', () => { state.hideOpts = hideOptsToggle.checked; sound('tongue', 0, 0.2); persist(); applyHideOpts(); });
+  optsToggle.addEventListener('change', () => { state.hideOpts = !optsToggle.checked; sound('tongue', 0, 0.2); persist(); applyHideOpts(); });
+
   function renderHome() {
     $$('.diwan-btn', diwanGrid).forEach((b) => b.setAttribute('aria-pressed', String(state.diwans.has(+b.dataset.diwan))));
     renderSections();
@@ -254,7 +269,7 @@
           ${k === q[ANS] ? `<span class="cite">${CHECK}${esc(q[CITE])}</span>` : ''}
         </${optTag}>`).join('')}
       </div>
-      ${big ? `<p class="q-source">المصدر: ${esc(dw.source)}</p>` : '<div class="q-foot"><button class="link-btn" data-reveal>أظهر الإجابة</button></div>'}
+      ${big ? `<p class="q-source">المصدر: ${esc(dw.source)}</p>` : '<div class="q-foot"><button class="link-btn" data-showopts>أظهر الخيارات</button><button class="link-btn" data-reveal>أظهر الإجابة</button></div>'}
     </article>`;
   }
 
@@ -299,8 +314,7 @@
     syncRevealButtons();
   }
   function syncRevealButtons() {
-    const all = answersToggle.checked;
-    $$('.q-foot', bankList).forEach((f) => { f.hidden = all; });
+    bankList.classList.toggle('answers-on', answersToggle.checked);
   }
   function summary() {
     const names = [...state.diwans].sort((a, b) => a - b).map((d) => DIWANS[d].title);
@@ -318,6 +332,13 @@
     syncRevealButtons(); sound('tongue', 0, 0.2);
   });
   bankList.addEventListener('click', (e) => {
+    const ob = e.target.closest('[data-showopts]');
+    if (ob) {
+      const open = ob.closest('.q-card').classList.toggle('opts-open');
+      ob.textContent = open ? 'أخفِ الخيارات' : 'أظهر الخيارات';
+      sound('drop', open ? 520 : 380, 0, 0.18);
+      return;
+    }
     const b = e.target.closest('[data-reveal]'); if (!b) return;
     const card = b.closest('.q-card');
     const on = card.classList.toggle('show');
@@ -333,6 +354,8 @@
   const quizCard = $('#quizCard');
   const nextBtn = $('#nextBtn');
   const revealBtn = $('#revealBtn');
+  const showOptsBtn = $('#showOptsBtn');
+  const gradeRow = $('#gradeRow');
   const quiz = { list: [], i: 0, results: [] }; // النتيجة لكل سؤال: right | wrong | skip
 
   function startQuiz(list) {
@@ -349,6 +372,11 @@
     nextBtn.disabled = true;
     nextBtn.textContent = quiz.i === total - 1 ? 'النتيجة' : 'التالي';
     revealBtn.disabled = false;
+    // عند إخفاء الخيارات: زر لإظهارها، وتقييم يدوي بعد إظهار الإجابة
+    showOptsBtn.hidden = !state.hideOpts; showOptsBtn.disabled = false;
+    $('.quiz-actions').classList.toggle('three', state.hideOpts);
+    gradeRow.hidden = true;
+    $$('[data-grade]', gradeRow).forEach((b) => b.setAttribute('aria-pressed', 'false'));
   }
   function updateScore() {
     const right = quiz.results.filter((r) => r === 'right').length;
@@ -363,11 +391,15 @@
     if (result === 'right') sound('chirp'); else if (result === 'wrong') sound('sigh'); else sound('drop', 440, 0, 0.2);
     updateScore();
     $('#progressBar').style.width = `${((quiz.i + 1) / quiz.list.length) * 100}%`;
-    nextBtn.disabled = false; revealBtn.disabled = true;
+    nextBtn.disabled = false; revealBtn.disabled = true; showOptsBtn.disabled = true;
+    // أُظهرت الإجابة والخيارات مخفية: المقدّم يحكم بنفسه
+    if (result === 'skip' && state.hideOpts && !card.classList.contains('opts-open')) gradeRow.hidden = false;
     nextBtn.focus({ preventScroll: true });
   }
   function pick(k) {
     if (current !== 'quiz' || quiz.results[quiz.i]) return;
+    // لا اختيار والخيارات مخفية
+    if (state.hideOpts && !$('.q-card', quizCard).classList.contains('opts-open')) return;
     const q = QUESTIONS[quiz.list[quiz.i]];
     settle(k === q[ANS] ? 'right' : 'wrong', k);
   }
@@ -379,6 +411,17 @@
   quizCard.addEventListener('click', (e) => { const o = e.target.closest('.opt'); if (o) pick(+o.dataset.opt); });
   nextBtn.addEventListener('click', next);
   revealBtn.addEventListener('click', () => settle('skip'));
+  showOptsBtn.addEventListener('click', () => {
+    const card = $('.q-card', quizCard); if (!card || quiz.results[quiz.i]) return;
+    card.classList.add('opts-open'); showOptsBtn.disabled = true; sound('drop', 520, 0, 0.18);
+  });
+  gradeRow.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-grade]'); if (!b || current !== 'quiz') return;
+    quiz.results[quiz.i] = b.dataset.grade;
+    $$('[data-grade]', gradeRow).forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    sound(b.dataset.grade === 'right' ? 'chirp' : 'sigh');
+    updateScore();
+  });
   document.addEventListener('keydown', (e) => {
     if (current !== 'quiz' || !$('#confirmModal').hidden) return;
     const map = { 1: 0, 2: 1, 3: 2, '١': 0, '٢': 1, '٣': 2 };
@@ -437,5 +480,6 @@
 
   /* ---------- البدء ---------- */
   if (history.state && history.state.screen) history.replaceState(null, '');
+  applyHideOpts();
   renderHome();
 })();
