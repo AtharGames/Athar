@@ -93,6 +93,15 @@
         </div>
 
         <div class="field">
+          <span>الأسئلة</span>
+          <div class="chips c3" id="qsrcChips" role="group" aria-label="مصدر الأسئلة">
+            <button class="chip" data-v="bank">بنك اللعبة<small>أسئلة بخيارات على الشاشة</small></button>
+            <button class="chip" data-v="host">أسئلة المشرف<small>يسأل ويحكم صح أو خطأ</small></button>
+            <button class="chip" data-v="none">بدون أسئلة<small>تداول مباشر لكل فريق</small></button>
+          </div>
+        </div>
+
+        <div class="field" data-needs-q>
           <span>طريقة اللعب</span>
           <div class="chips c2" id="modeChips" role="group" aria-label="طريقة اللعب">
             <button class="chip" data-v="seq">المتتالي<small>سؤال لكل فريق بالدور</small></button>
@@ -100,7 +109,7 @@
           </div>
         </div>
 
-        <div class="field">
+        <div class="field" data-needs-q>
           <span>مدة الإجابة عن السؤال</span>
           <div class="chips c5" id="answerChips" role="group" aria-label="مدة الإجابة"></div>
         </div>
@@ -126,6 +135,7 @@
         <ul>
           <li>في السوق <strong>١٠ مدن</strong>، ولكل مدينة سهم يبدأ بنفس السعر.</li>
           <li>الفريق الذي يجيب <strong>إجابة صحيحة</strong> يأخذ مكافأة مالية ثم يفتح له السوق للبيع والشراء. الإجابة الخاطئة أو انتهاء الوقت تضيّع فرصته في الجولة.</li>
+          <li><strong>الأسئلة اختيارية:</strong> من بنك اللعبة، أو يسألها المشرف من عنده ويحكم على الإجابة، أو بدون أسئلة فيدخل كل فريق السوق مباشرة في دوره.</li>
           <li>لكل فريق في دوره <strong>عمليتا شراء وعمليتا بيع</strong> كحد أقصى.</li>
           <li>بعد دور كامل لكل الفرق تُعرض <strong>شاشة السوق</strong> وتتغيّر الأسعار: جزء منها حظ، وجزء منطقي: <strong>السهم الذي ينزل يرتفع في الجولة التي بعدها</strong>، والسهم الذي يكثر عليه الشراء يميل للصعود.</li>
           <li><strong>المفاجآت:</strong> خلل في النظام يمنع التداول، هبوط مفاجئ، صعود مفاجئ، منحة مالية، منحة أسهم.</li>

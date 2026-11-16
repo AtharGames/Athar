@@ -56,10 +56,11 @@
   // ---------- الإعدادات ----------
   const cfg = Object.assign({
     count: 3, names: [], cash: 10000, price: 100,
-    tAnswer: 30, tTrade: 60, mode: 'seq', rounds: 0, luck: true
+    tAnswer: 30, tTrade: 60, mode: 'seq', rounds: 0, luck: true, qsrc: 'bank'
   }, (() => { try { return JSON.parse(store.get(CFG_KEY)) || {}; } catch { return {}; } })());
   cfg.count = clamp(parseInt(cfg.count, 10) || 3, 2, 6);
   if (!Array.isArray(cfg.names)) cfg.names = [];
+  if (!['bank', 'host', 'none'].includes(cfg.qsrc)) cfg.qsrc = 'bank';
   const saveCfg = () => store.set(CFG_KEY, JSON.stringify(cfg));
 
   // ---------- حالة اللعب ----------
@@ -157,6 +158,10 @@
     chipGroup($('#roundChips'), ROUND_OPTIONS, (v) => (v ? num(v) : 'مفتوح'), () => cfg.rounds, (v) => { cfg.rounds = v; });
     staticChips($('#modeChips'), () => cfg.mode, (v) => { cfg.mode = v; });
     staticChips($('#luckChips'), () => (cfg.luck ? '1' : '0'), (v) => { cfg.luck = v === '1'; });
+    // مصدر الأسئلة: بنك اللعبة، أو أسئلة المشرف، أو بدون أسئلة (تداول مباشر)
+    const syncQsrc = () => $$('[data-needs-q]').forEach((f) => { f.hidden = cfg.qsrc === 'none'; });
+    staticChips($('#qsrcChips'), () => cfg.qsrc, (v) => { cfg.qsrc = v; syncQsrc(); });
+    syncQsrc();
 
     el.cashInput.value = cfg.cash; el.priceInput.value = cfg.price;
     const bindNum = (input, key, min, max) => input.addEventListener('change', () => {
@@ -189,7 +194,7 @@
     cfg.price = clamp(parseInt(el.priceInput.value, 10) || 100, 50, 1000);
     saveCfg();
     G = {
-      cfg: { cash: cfg.cash, price: cfg.price, tAnswer: cfg.tAnswer, tTrade: cfg.tTrade, mode: cfg.mode, rounds: cfg.rounds, luck: cfg.luck },
+      cfg: { cash: cfg.cash, price: cfg.price, tAnswer: cfg.tAnswer, tTrade: cfg.tTrade, mode: cfg.mode, rounds: cfg.rounds, luck: cfg.luck, qsrc: cfg.qsrc },
       teams: Array.from({ length: cfg.count }, (_, i) => ({
         name: (cfg.names[i] || '').trim() || TEAM_NAMES[i],
         color: TEAM_COLORS[i], cash: cfg.cash, shares: CITIES.map(() => 0), prev: cfg.cash
@@ -217,7 +222,8 @@
   }
 
   const wealth = (t) => t.cash + t.shares.reduce((s, q, i) => s + q * G.cos[i].price, 0);
-  const isFast = () => G.cfg.mode === 'fast';
+  const qsrc = () => G.cfg.qsrc || 'bank';   // المسابقات المحفوظة قديمًا كانت من البنك
+  const isFast = () => G.cfg.mode === 'fast' && qsrc() !== 'none';
 
   // =========================================================
   // المؤقّت
@@ -317,7 +323,16 @@
     renderPill();
     setLayout('split');
     const t = G.teams[G.turn];
-    if (isFast()) {
+    if (qsrc() === 'none') {
+      renderTeams(G.turn);
+      el.stage.innerHTML = `
+        <div class="panel center" style="--c:${t.color}">
+          <p class="kicker">الدور الآن على</p>
+          <h2 class="big team-title">${esc(t.name)}</h2>
+          <p class="muted">تداول مباشر بلا أسئلة: لكل فريق عمليتا شراء وعمليتا بيع.</p>
+          <button class="btn btn-primary btn-big" data-act="direct">افتح السوق للفريق</button>
+        </div>`;
+    } else if (isFast()) {
       renderTeams();
       el.stage.innerHTML = `
         <div class="panel center">
@@ -348,7 +363,9 @@
   }
 
   function showQuestion(sound = true) {
-    cur = Object.assign(drawQuestion(), {
+    // أسئلة المشرف: لا نص ولا خيارات، والمشرف يحكم على الإجابة
+    const base = qsrc() === 'host' ? { host: true, q: '', opts: [], correct: -1 } : drawQuestion();
+    cur = Object.assign(base, {
       team: isFast() ? -1 : G.turn, locked: [], wrong: [], done: false, result: null
     });
     G.phase = 'question';
@@ -384,6 +401,24 @@
     const tools = cur.done ? '' : `
       <div class="q-tools"><button class="btn btn-ghost btn-sm" data-act="skip">بدّل السؤال</button></div>`;
 
+    if (cur.host) {
+      // المشرف يلقي السؤال من عنده ثم يسجّل النتيجة
+      const judge = cur.done ? '' : `
+        <div class="judge">
+          <button class="btn btn-buy" data-act="judge" data-i="1" ${canAnswer ? '' : 'disabled'}>إجابة صحيحة</button>
+          <button class="btn btn-sell" data-act="judge" data-i="0" ${canAnswer ? '' : 'disabled'}>إجابة خاطئة</button>
+        </div>`;
+      el.stage.innerHTML = `
+        <div class="panel question" style="--c:${t ? t.color : 'var(--accent)'}">
+          <p class="kicker">${t ? `سؤال ${esc(t.name)}` : 'سؤال للأسرع'}</p>
+          <h2 class="q-text">المشرف يلقي السؤال الآن</h2>
+          ${buzz}
+          ${judge}
+          ${cur.done ? resultHTML() : ''}
+        </div>`;
+      return;
+    }
+
     el.stage.innerHTML = `
       <div class="panel question" style="--c:${t ? t.color : 'var(--accent)'}">
         <p class="kicker">${t ? `سؤال ${esc(t.name)}` : 'سؤال للأسرع'}</p>
@@ -404,8 +439,18 @@
   function answer(i) {
     if (!cur || cur.done || cur.team < 0 || cur.wrong.includes(i)) return;
     if (i === cur.correct) return finishQuestion('correct');
-    // إجابة خاطئة
     cur.wrong.push(i);
+    wrongAnswer();
+  }
+
+  // حكم المشرف في وضع «أسئلة المشرف»
+  function judge(ok) {
+    if (!cur || !cur.host || cur.done || cur.team < 0) return;
+    if (ok) finishQuestion('correct'); else wrongAnswer();
+  }
+
+  // إجابة خاطئة: في المتتالي تنتهي الفرصة، وفي الأسرع يخرج الفريق من السؤال
+  function wrongAnswer() {
     if (!isFast()) return finishQuestion('wrong');
     cur.locked.push(cur.team);
     S.sigh();
@@ -437,6 +482,24 @@
     renderQuestion();
     renderBoard();
     if (kind === 'correct') renderTeams(cur.team, cur.team);
+  }
+
+  // وضع «بدون أسئلة»: يدخل الفريق السوق مباشرة، وقد تسبقه مفاجأة
+  function directTurn() {
+    cur = { team: G.turn, done: true, result: null };
+    const t = G.teams[G.turn];
+    const s = G.cfg.luck && Math.random() < SURPRISE_CHANCE ? rollSurprise(G.turn) : null;
+    if (!s) return openTrade();
+    const glitch = s.type === 'glitch';
+    S.gust();
+    renderTeams(G.turn, G.turn);
+    renderBoard();
+    el.stage.innerHTML = `
+      <div class="panel question" style="--c:${t.color}">
+        <p class="kicker">مفاجأة قبل دخول ${esc(t.name)} السوق</p>
+        <div class="surprise ${s.tone}"><strong>${esc(s.title)}</strong><span>${esc(s.text)}</span></div>
+        <button class="btn btn-primary btn-big" data-act="${glitch ? 'next' : 'trade'}">${glitch ? 'التالي' : 'افتح السوق للفريق'}</button>
+      </div>`;
   }
 
   // المفاجآت الخمس كما في المسابقة الأصلية
@@ -833,6 +896,8 @@
       case 'skip': stopTimer(); showQuestion(false); S.tongue(0, 0.2); break;
       case 'buzz': buzz(i); break;
       case 'answer': answer(i); break;
+      case 'judge': judge(i === 1); break;
+      case 'direct': directTurn(); break;
       case 'trade': openTrade(); break;
       case 'next': S.tongue(0, 0.2); advance(); break;
       case 'buy': openSheet('buy', i); break;
