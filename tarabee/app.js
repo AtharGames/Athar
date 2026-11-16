@@ -200,8 +200,14 @@
       wind,
       // لحظة الإعلان: هبّة ريح قوية
       release() { const c = ac(); if (c) air(c.currentTime, { dur: 0.85, vol: 0.35, f0: 2600, f1: 380, q: 0.8, atk: 0.02 }); },
-      // فرحة الفوز: زقزقة عصافير
+      // فرحة الفوز: زقزقة عصافير (بديل احتياطي)
       celebrate() { chirp(0.4, 2800); chirp(0.9, 3400); chirp(1.4, 3000); chirp(2.0, 3600); chirp(2.6, 2900); },
+      // إعلان الفائز: انبثاق + هتاف جمهور + تصفيق من الملف المشترك
+      winner() {
+        if (!on) return;
+        if (window.AtharSound) window.AtharSound.winner(true);
+        else { this.release(); this.celebrate(); }
+      },
       // محاولة غير مسموحة: «تسك» خفيفة
       nope() { tongue(0, 0.28); tongue(0.09, 0.2); },
       sigh
@@ -630,11 +636,11 @@
       el.revealActions.hidden = false;
       el.reveal.scrollTop = 0;
 
-      Sound.release();
       if (max > 0) {
-        Sound.celebrate();
+        Sound.winner();
         confetti(winners.map((k) => game.teams[k].color));
       } else {
+        Sound.release();
         Sound.sigh(0.4);
       }
       $('#againBtn').focus({ preventScroll: true });

@@ -381,12 +381,12 @@
     });
 
     show('screen-victory');
-    S.gust();
     if (top > 0) {
-      S.chirp(0.5, 2800); S.chirp(1.0, 3400); S.chirp(1.5, 3000); S.chirp(2.1, 3600); S.chirp(2.7, 2900);
+      // انبثاق + هتاف جمهور + تصفيق
+      S.winner();
       confetti(winners.map((t) => t.color));
     } else {
-      S.sigh(0.5);
+      S.gust(); S.sigh(0.5);
     }
   }
 

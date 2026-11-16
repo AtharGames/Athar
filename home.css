@@ -92,6 +92,8 @@ a.game-card:hover .art-ladder i:nth-child(6){animation-delay:.25s;}
 .soon .play{background:var(--surface-2); color:var(--text-2);}
 
 .foot{text-align:center; padding:20px; color:var(--text-2); font-size:.85rem; border-top:1px solid var(--line);}
+.foot .credits{font-size:.72rem; opacity:.8; margin-top:4px;}
+.foot a{color:inherit;}
 
 @media (max-width:600px){
   .brand .logo{height:44px;}

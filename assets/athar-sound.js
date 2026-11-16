@@ -1,8 +1,9 @@
 /* =========================================================
    أصوات أثَر المشتركة
-   مؤثرات من الطبيعة ومن الفم فقط، بلا موسيقى ولا آلات.
-   تُولَّد داخل المتصفح عبر Web Audio API بلا ملفات صوتية.
-   الاستخدام: AtharSound.drop(480) ، AtharSound.toggle() ...
+   مؤثرات صوتية بلا موسيقى ولا آلات.
+   أغلبها يُولَّد داخل المتصفح عبر Web Audio API، وإعلان الفائز مقطع مسجّل.
+   الاستخدام: AtharSound.drop(480) ، AtharSound.winner() ، AtharSound.toggle() ...
+   مقطع إعلان الفائز في assets/sounds/winner-cheer.mp3 (انظر README للتراخيص).
    ========================================================= */
 window.AtharSound = (() => {
   'use strict';
@@ -10,8 +11,30 @@ window.AtharSound = (() => {
   let ctx = null, master = null, noiseBuf = null, on = true;
   try { on = localStorage.getItem(KEY) !== '0'; } catch { /* تجاهل */ }
 
-  function ac() {
-    if (!on) return null;
+  // مقطع إعلان الفائز: انبثاق + هتاف جمهور + تصفيق (مسار نسبي لهذا الملف)
+  const SCRIPT_URL = (document.currentScript && document.currentScript.src) || location.href;
+  const WIN_URL = new URL('sounds/winner-cheer.mp3', SCRIPT_URL).href;
+  let winBytes = null, winBuf = null, winDecoding = null;
+  try {
+    fetch(WIN_URL)
+      .then((r) => (r.ok ? r.arrayBuffer() : null))
+      .then((b) => { winBytes = b; if (ctx) decodeWin(); })
+      .catch(() => { /* بلا ملف: نستخدم البديل المولّد */ });
+  } catch { /* تجاهل */ }
+
+  function decodeWin() {
+    if (winBuf || winDecoding || !winBytes || !ctx) return winDecoding;
+    // نسخة من البايتات لأن بعض المتصفحات تستهلك الأصل
+    winDecoding = new Promise((res) => {
+      try {
+        ctx.decodeAudioData(winBytes.slice(0), (b) => { winBuf = b; res(b); }, () => res(null));
+      } catch { res(null); }
+    });
+    return winDecoding;
+  }
+
+  function ac(force = false) {
+    if (!on && !force) return null;
     try {
       if (!ctx) {
         const C = window.AudioContext || window.webkitAudioContext;
@@ -20,6 +43,7 @@ window.AtharSound = (() => {
         // ضاغط عام يمنع التشويش عند تداخل الأصوات
         master = ctx.createDynamicsCompressor();
         master.connect(ctx.destination);
+        decodeWin();
       }
       if (ctx.state === 'suspended') ctx.resume().catch(() => {});
       return ctx;
@@ -78,8 +102,8 @@ window.AtharSound = (() => {
   }
 
   // زقزقة عصفور
-  function chirp(delay = 0, base = 3000) {
-    const c = ac(); if (!c) return;
+  function chirp(delay = 0, base = 3000, force = false) {
+    const c = ac(force); if (!c) return;
     for (let k = 0; k < 3; k++) {
       const t = c.currentTime + delay + k * 0.09;
       const o = c.createOscillator(), g = c.createGain();
@@ -107,9 +131,29 @@ window.AtharSound = (() => {
   }
 
   // هبّة ريح قوية
-  function gust(delay = 0) {
-    const c = ac(); if (!c) return;
+  function gust(delay = 0, force = false) {
+    const c = ac(force); if (!c) return;
     air(c.currentTime + delay, { dur: 0.85, vol: 0.35, f0: 2600, f1: 380, q: 0.8, atk: 0.02 });
+  }
+
+  // البديل عند تعذّر تحميل المقطع: هبّة ريح ثم عصافير
+  function winnerFallback() {
+    gust(0, true);
+    [[0.5, 2800], [1.0, 3400], [1.5, 3000], [2.1, 3600], [2.7, 2900]].forEach(([d, f]) => chirp(d, f, true));
+  }
+
+  // إعلان الفائز. force: تشغيل حتى لو كان كتم أثَر مفعّلًا (حين تتحكم اللعبة بكتمها الخاص)
+  function winner(force = false) {
+    const c = ac(force); if (!c) return;
+    const play = (buf) => {
+      if (!buf) { winnerFallback(); return; }
+      const src = c.createBufferSource(), g = c.createGain();
+      src.buffer = buf; g.gain.value = 0.95;
+      src.connect(g).connect(master); src.start();
+    };
+    if (winBuf) play(winBuf);
+    else if (winBytes) decodeWin().then(play);
+    else winnerFallback();
   }
 
   return {
@@ -120,6 +164,6 @@ window.AtharSound = (() => {
       if (on) tongue(0, 0.22);
       return on;
     },
-    tongue, drop, chirp, sigh, whoosh, gust
+    tongue, drop, chirp, sigh, whoosh, gust, winner
   };
 })();
