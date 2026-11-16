@@ -85,7 +85,8 @@
           <li><strong>الثعبان:</strong> لو وقفتوا على راسه نزّلكم لذيله.</li>
           <li>بعد الرمية اضغطوا <strong>«تجاوز الدور»</strong> عشان ينتقل الدور للفريق اللي بعده.</li>
           <li><strong>النقل اليدوي:</strong> ينقل الفريق صاحب الدور لأي مربع تكتبونه.</li>
-          <li>أول فريق يوصل المربع ١٠٠ هو الفائز.</li>
+          <li>أول فريق يوصل المربع ١٠٠ هو الفائز، وبعدها تختارون: نعلن الفائز أو تكمّلون على باقي المراكز.</li>
+          <li><strong>إنهاء اللعبة:</strong> تقدرون توقفون بأي وقت، والفائز هو الأبعد على اللوحة.</li>
         </ul>
       </details>
 
@@ -181,6 +182,8 @@
           </form>
         </div>
 
+        <button class="btn btn-end" id="endBtn">ننهي اللعبة ونعلن الفائز</button>
+
         <div class="side-actions">
           <button class="btn btn-ghost" id="restartBtn">نعيدها من الأول</button>
           <button class="btn btn-ghost" id="exitBtn">طلّعني</button>
@@ -228,7 +231,7 @@
     <p id="confirmText"></p>
     <div class="modal-actions">
       <button class="btn btn-primary" id="confirmYes"></button>
-      <button class="btn" id="confirmNo">لا، هوّنت</button>
+      <button class="btn" id="confirmNo"></button>
     </div>
   </div>
 </div>

@@ -291,6 +291,7 @@ input[type="text"]::placeholder{color:var(--text-2); opacity:.6; font-weight:500
   background:var(--solid); color:var(--text); font-weight:700;
 }
 .manual input::placeholder{color:var(--text-2); opacity:.6; font-weight:500;}
+.btn-end{width:100%; background:var(--solid); border-color:var(--accent); color:var(--text);}
 .side-actions{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
 .side-actions .btn{border-color:var(--line);}
 

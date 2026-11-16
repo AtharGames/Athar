@@ -157,20 +157,24 @@
     if (cb) cb();
   }
 
-  let confirmCb = null;
-  function ask({ title, text, yes }, onYes) {
+  // سؤال بزرّين. strict: لا يُغلق بالضغط خارج النافذة أو بزر Esc
+  let confirmCb = null, confirmNoCb = null, confirmStrict = false;
+  function ask({ title, text, yes, no = 'لا، هوّنت', strict = false }, onYes, onNo) {
     el.confirmTitle.textContent = title;
     el.confirmText.textContent = text;
     el.confirmYes.textContent = yes;
-    confirmCb = onYes;
+    el.confirmNo.textContent = no;
+    confirmCb = onYes; confirmNoCb = onNo || null; confirmStrict = strict;
     el.confirm.hidden = false;
-    el.confirmNo.focus();
+    (strict ? el.confirmYes : el.confirmNo).focus();
   }
-  function closeAsk(ok) {
+  function closeAsk(ok, soft = false) {
     if (el.confirm.hidden) return;
+    if (soft && confirmStrict) return;
     el.confirm.hidden = true;
-    const cb = confirmCb; confirmCb = null;
-    if (ok && cb) cb(); else S.tongue(0, 0.2);
+    const cb = ok ? confirmCb : confirmNoCb;
+    confirmCb = confirmNoCb = null;
+    if (cb) cb(); else S.tongue(0, 0.2);
   }
 
   // =========================================================
@@ -444,6 +448,19 @@
     ladders = lay.ladders; snakes = lay.snakes;
   }
 
+  // الفرق التي ما زالت تلعب، وعدد من وصل النهاية
+  const playing = () => teams.filter((t) => !t.rank);
+  const arrived = () => teams.filter((t) => t.rank).length;
+  const ORDINAL = ['', 'الأول', 'الثاني', 'الثالث', 'الرابع'];
+
+  // تحويل الدور للفريق التالي الذي لم يصل بعد
+  function advance() {
+    for (let k = 0; k < teams.length; k++) {
+      cur = (cur + 1) % teams.length;
+      if (!teams[cur].rank) return;
+    }
+  }
+
   function newTurnText() {
     const name = teams[cur].name;
     turnTitle = say(T.turn, name);
@@ -453,7 +470,7 @@
   function startGame() {
     teams = Array.from({ length: cfg.count }, (_, i) => ({
       name: (cfg.names[i] || '').trim() || TEAM_THEMES[i].name,
-      color: TEAM_THEMES[i].c, pos: 1
+      color: TEAM_THEMES[i].c, pos: 1, rank: 0
     }));
     cur = 0;
     enterGame();
@@ -495,7 +512,7 @@
       r.innerHTML = '<span class="stand-no"></span><span class="stand-name"></span><span class="stand-pos"></span><i class="stand-bar"></i>';
       $('.stand-no', r).textContent = num(i + 1);
       $('.stand-name', r).textContent = tm.name;
-      $('.stand-pos', r).textContent = `مربع ${num(tm.pos)}`;
+      $('.stand-pos', r).textContent = tm.rank ? `وصلوا · المركز ${ORDINAL[tm.rank]}` : `مربع ${num(tm.pos)}`;
       el.standings.append(r);
     });
   }
@@ -503,7 +520,7 @@
   function save() {
     store.set(SAVE_KEY, JSON.stringify({
       v: 1, layout: cfg.layout, cur,
-      teams: teams.map((t) => ({ name: t.name, pos: t.pos }))
+      teams: teams.map((t) => ({ name: t.name, pos: t.pos, rank: t.rank }))
     }));
   }
 
@@ -515,13 +532,17 @@
       teams = d.teams.map((t, i) => ({
         name: String(t.name || TEAM_THEMES[i].name).slice(0, 20),
         color: TEAM_THEMES[i].c,
-        pos: Math.min(LAST, Math.max(1, parseInt(t.pos, 10) || 1))
+        pos: Math.min(LAST, Math.max(1, parseInt(t.pos, 10) || 1)),
+        rank: Math.max(0, parseInt(t.rank, 10) || 0)
       }));
-      if (teams.some((t) => t.pos === LAST)) return false;
+      // من وصل النهاية بلا ترتيب محفوظ يأخذ ترتيبه الآن
+      teams.forEach((t) => { if (t.pos === LAST && !t.rank) t.rank = arrived() + 1; });
+      if (playing().length < 2) return false;
       cfg.count = teams.length;
       teams.forEach((t, i) => { cfg.names[i] = t.name; });
       cfg.layout = d.layout;
       cur = Math.min(teams.length - 1, Math.max(0, parseInt(d.cur, 10) || 0));
+      if (teams[cur].rank) advance();
       return true;
     } catch { return false; }
   }
@@ -558,7 +579,7 @@
   // تطبيق أثر المربع: فوز، سلم، أو ثعبان
   async function resolve(team) {
     const from = team.pos;
-    if (from === LAST) { finish(team); return; }
+    if (from === LAST) { arrive(team); return; }
 
     if (ladders[from] || snakes[from]) {
       const up = Boolean(ladders[from]);
@@ -568,7 +589,7 @@
       placePawns(SLIDE_MS);
       await sleep(reducedMotion() ? 0 : SLIDE_MS + 80);
       save();
-      if (team.pos === LAST) { finish(team); return; }
+      if (team.pos === LAST) { arrive(team); return; }
       busy = false; render();
       info(up
         ? { title: say(T.ladder, team.name), text: `لقيتوا سلّم! طلعتوا من المربع ${num(from)} إلى المربع ${num(team.pos)}.`, icon: 'ok', tone: 'ok' }
@@ -579,9 +600,37 @@
     busy = false; render();
   }
 
+  // فريق وصل المربع ١٠٠: نسأل عن الإكمال أو نعلن الفائز
+  async function arrive(team) {
+    team.rank = arrived() + 1;
+    save();
+    render();
+    await sleep(reducedMotion() ? 0 : 500);
+    const left = playing().length;
+    if (left <= 1) { finish(); return; }       // بقي فريق واحد: انتهى الترتيب
+
+    const go = () => {
+      advance(); newTurnText();
+      el.diceResult.textContent = '';
+      busy = false;
+      S.drop(380);
+      placePawns(200); render(); save();
+    };
+    S.chirp(); S.chirp(0.35, 3400);
+    if (team.rank === 1) {
+      ask({
+        title: `كفو يا ${team.name}! وصلتوا أول`,
+        text: 'تبون تكمّلون وتشوفون مين الثاني والثالث؟',
+        yes: 'إيه، كمّلوا', no: 'لا، علّن الفائز', strict: true
+      }, go, finish);
+    } else {
+      info({ title: `كفو يا ${team.name}!`, text: `وصلتوا النهاية وأخذتوا المركز ${ORDINAL[team.rank]}.`, icon: 'ok', tone: 'ok' }, go);
+    }
+  }
+
   function nextTurn() {
     if (busy) return;
-    cur = (cur + 1) % teams.length;
+    advance();
     newTurnText();
     el.diceResult.textContent = '';
     S.drop(380);
@@ -617,35 +666,55 @@
   // =========================================================
   let confettiRaf = 0;
 
-  async function finish(winner) {
+  // إعلان النتيجة: من وصل أولًا، وإلا فالأبعد على اللوحة
+  function finish() {
     store.del(SAVE_KEY);
-    await sleep(reducedMotion() ? 0 : 600);
     busy = false;
-    const sorted = [...teams].sort((a, b) => b.pos - a.pos);
+    const sorted = [...teams].sort((a, b) => (a.rank || 99) - (b.rank || 99) || b.pos - a.pos);
+    const first = sorted[0];
+    const winners = first.rank ? [first] : sorted.filter((t) => t.pos === first.pos);
+    const nobody = !first.rank && first.pos === 1;
 
-    el.trophy.style.setProperty('--win', winner.color);
-    el.winnerName.style.setProperty('--win', winner.color);
-    el.victoryKicker.textContent = pick(T.winKicker);
-    el.winnerName.textContent = winner.name;
-    el.winnerText.textContent = `كفو والله يا ${winner.name}! وصلتوا المربع ١٠٠ وتستاهلون.`;
+    el.trophy.style.setProperty('--win', nobody ? '' : first.color);
+    el.winnerName.style.setProperty('--win', nobody ? '' : first.color);
+    if (nobody) {
+      el.victoryKicker.textContent = 'أفا!';
+      el.winnerName.textContent = 'ما أحد فاز';
+      el.winnerText.textContent = 'ما أحد تحرّك من المربع ١… شكلكم جايين تتفرجون. نعيدها؟';
+    } else if (winners.length > 1) {
+      el.victoryKicker.textContent = 'راس براس!';
+      el.winnerName.textContent = winners.map((t) => t.name).join(' و');
+      el.winnerText.textContent = `كل فريق عند المربع ${num(first.pos)}… ما أحد غلب أحد!`;
+    } else if (first.rank) {
+      el.victoryKicker.textContent = pick(T.winKicker);
+      el.winnerName.textContent = first.name;
+      el.winnerText.textContent = `كفو والله يا ${first.name}! وصلتوا المربع ١٠٠ أول وتستاهلون.`;
+    } else {
+      el.victoryKicker.textContent = pick(T.winKicker);
+      el.winnerName.textContent = first.name;
+      el.winnerText.textContent = `كفو والله يا ${first.name}! وقفنا وأنتم قدّام الكل عند المربع ${num(first.pos)}.`;
+    }
 
     el.finalBoard.innerHTML = '';
     sorted.forEach((t, i) => {
       const r = document.createElement('div');
-      r.className = 'final-row' + (t === winner ? ' win' : '');
+      r.className = 'final-row' + (!nobody && winners.includes(t) ? ' win' : '');
       r.style.setProperty('--c', t.color);
       r.style.animationDelay = `${0.15 * i + 0.4}s`;
       r.innerHTML = '<span class="final-rank"></span><span class="final-name"></span><span class="final-pts"></span>';
-      $('.final-rank', r).textContent = num(i + 1);
+      // المتعادلون يأخذون نفس الترتيب
+      const place = t.rank || sorted.findIndex((o) => !o.rank && o.pos === t.pos) + 1;
+      $('.final-rank', r).textContent = num(place);
       $('.final-name', r).textContent = t.name;
-      $('.final-pts', r).textContent = `مربع ${num(t.pos)}`;
+      $('.final-pts', r).textContent = t.rank ? 'وصلوا النهاية' : `مربع ${num(t.pos)}`;
       el.finalBoard.append(r);
     });
 
     show('screen-victory');
+    if (nobody) { S.gust(); S.sigh(0.5); return; }
     // انبثاق + هتاف جمهور + تصفيق
     S.winner();
-    confetti([winner.color]);
+    confetti(winners.map((t) => t.color));
   }
 
   function confetti(colors) {
@@ -707,6 +776,11 @@
     S.tongue(0, 0.2);
     ask({ title: 'تبي تهدم كل شي وتبدأ من جديد؟', text: 'كل الفرق بترجع للمربع ١.', yes: 'إيه، من جديد' }, startGame);
   });
+  $('#endBtn').addEventListener('click', () => {
+    if (busy) return;
+    S.tongue(0, 0.2);
+    ask({ title: 'خلاص، نوقف هنا؟', text: 'بنعدّ ونعلن الفائز قدّام الكل.', yes: 'إيه، علّن الفائز', no: 'لا، كمّلوا' }, finish);
+  });
   $('#exitBtn').addEventListener('click', () => {
     if (busy) return;
     S.tongue(0, 0.2);
@@ -719,8 +793,8 @@
   el.modal.addEventListener('click', (e) => { if (e.target === el.modal) closeInfo(); });
   el.confirmYes.addEventListener('click', () => closeAsk(true));
   el.confirmNo.addEventListener('click', () => closeAsk(false));
-  el.confirm.addEventListener('click', (e) => { if (e.target === el.confirm) closeAsk(false); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeAsk(false); closeInfo(); } });
+  el.confirm.addEventListener('click', (e) => { if (e.target === el.confirm) closeAsk(false, true); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeAsk(false, true); closeInfo(); } });
 
   // ---------- تهيئة أولى ----------
   buildDice();
