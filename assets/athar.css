@@ -1,0 +1,108 @@
+/* =========================================================
+   هوية أثَر المشتركة: الخط، الثيمات، الشعار، مبدّل الثيمات
+   تستخدمها كل الألعاب، فأي تعديل هنا ينعكس عليها جميعاً
+   ========================================================= */
+
+/* ---------- الخط المعتمد: Thmanyah Sans ----------
+   ضع ملفات الخط في assets/fonts/ بنفس الأسماء أدناه.
+   إن لم تتوفر يعمل الخط الاحتياطي IBM Plex Sans Arabic تلقائياً. */
+@font-face{
+  font-family:"Thmanyah Sans";
+  src:local("thmanyah sans Medium"), local("thmanyahsans-Medium"),
+      url("fonts/thmanyahsans-Medium.woff2") format("woff2");
+  font-weight:500; font-style:normal; font-display:swap;
+}
+@font-face{
+  font-family:"Thmanyah Sans";
+  src:local("thmanyah sans Bold"), local("thmanyahsans-Bold"),
+      url("fonts/thmanyahsans-Bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+}
+
+/* ---------- الثيمات ---------- */
+:root,
+[data-theme="light"]{
+  --bg:#FFFFFF;
+  --bg-paint:
+    radial-gradient(900px 520px at 90% -8%, rgba(92,194,245,.24), transparent 62%),
+    radial-gradient(800px 480px at -5% 108%, rgba(30,111,224,.13), transparent 60%),
+    #FFFFFF;
+  --text:#0A2463;
+  --text-2:#1547A8;
+  --accent:#1E6FE0;
+  --accent-hover:#1547A8;
+  --on-accent:#FFFFFF;
+  --hl:#5CC2F5;
+  --hl-2:#3B98EA;
+  --surface:#F3F8FF;
+  --surface-2:#E4EFFD;
+  --solid:#FFFFFF;
+  --line:rgba(10,36,99,.13);
+  --cell:#DFEBFB;
+  --cell-label:rgba(10,36,99,.38);
+  --shadow:0 10px 30px rgba(10,36,99,.10);
+  --scrim:rgba(10,36,99,.55);
+}
+[data-theme="navy"]{
+  --bg:#0A2463;
+  --bg-paint:
+    radial-gradient(900px 520px at 90% -8%, rgba(92,194,245,.20), transparent 62%),
+    radial-gradient(800px 480px at -5% 108%, rgba(30,111,224,.30), transparent 60%),
+    #0A2463;
+  --text:#FFFFFF;
+  --text-2:#DCEEFE;
+  --accent:#8FD0FA;
+  --accent-hover:#BFE3FC;
+  --on-accent:#0A2463;
+  --hl:#5CC2F5;
+  --hl-2:#BFE3FC;
+  --surface:rgba(255,255,255,.07);
+  --surface-2:rgba(255,255,255,.13);
+  --solid:#0F2F7A;
+  --line:rgba(220,238,254,.18);
+  --cell:rgba(255,255,255,.11);
+  --cell-label:rgba(220,238,254,.42);
+  --shadow:0 10px 30px rgba(0,0,0,.28);
+  --scrim:rgba(3,12,38,.72);
+}
+[data-theme="blue"]{
+  --bg:#1E6FE0;
+  --bg-paint:linear-gradient(160deg,#1E6FE0 0%,#1E6FE0 35%,#3B98EA 100%);
+  --text:#FFFFFF;
+  --text-2:#EAF5FF;
+  --accent:#FFFFFF;
+  --accent-hover:#BFE3FC;
+  --on-accent:#1E6FE0;
+  --hl:#BFE3FC;
+  --hl-2:#BFE3FC;
+  --surface:rgba(255,255,255,.14);
+  --surface-2:rgba(255,255,255,.24);
+  --solid:#1E6FE0;
+  --line:rgba(255,255,255,.30);
+  --cell:rgba(255,255,255,.22);
+  --cell-label:rgba(255,255,255,.62);
+  --shadow:0 10px 30px rgba(8,40,110,.28);
+  --scrim:rgba(8,40,110,.66);
+}
+
+/* تبديل الشعار حسب الثيم */
+.logo-rev{display:none;}
+[data-theme="navy"] .logo-main,[data-theme="blue"] .logo-main{display:none;}
+[data-theme="navy"] .logo-rev,[data-theme="blue"] .logo-rev{display:block;}
+
+/* مبدّل الثيمات */
+.theme-switch{
+  display:flex; gap:6px; padding:5px;
+  background:var(--surface); border:1px solid var(--line); border-radius:999px;
+}
+.theme-dot{
+  width:30px; height:30px; border-radius:50%;
+  border:2px solid var(--line);
+  transition:transform .2s cubic-bezier(.3,1.6,.5,1), box-shadow .2s ease;
+}
+.theme-dot[data-set-theme="light"]{background:linear-gradient(135deg,#FFFFFF 50%,#5CC2F5 50%);}
+.theme-dot[data-set-theme="navy"]{background:linear-gradient(135deg,#0A2463 50%,#8FD0FA 50%);}
+.theme-dot[data-set-theme="blue"]{background:linear-gradient(135deg,#1E6FE0,#3B98EA);}
+.theme-dot:hover{transform:scale(1.1);}
+.theme-dot[aria-pressed="true"]{transform:scale(1.12); box-shadow:0 0 0 3px var(--bg), 0 0 0 5px var(--accent);}
+

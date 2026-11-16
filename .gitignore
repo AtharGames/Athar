@@ -1,0 +1,4 @@
+# ملفات خط ثمانية مرخّصة ولا تُرفع للمستودع
+assets/fonts/*.woff2
+assets/fonts/*.otf
+.DS_Store

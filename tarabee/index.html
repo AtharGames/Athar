@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ترابيع | أثَر</title>
+<meta name="description" content="ترابيع: لعبة مربعات جماعية من لجنة أثَر. جاوب صح واحتل المربعات.">
+<!-- تطبيق الثيم المحفوظ قبل الرسم لتفادي الوميض -->
+<script>
+(function(){
+  var t=null;
+  try{ t=localStorage.getItem('athar-theme'); }catch(e){}
+  if(['light','navy','blue'].indexOf(t)<0){
+    t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'navy':'light';
+  }
+  document.documentElement.setAttribute('data-theme',t);
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/athar.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ الشريط العلوي ============ -->
+<header class="topbar">
+  <a class="brand" href="#" id="brandLink" aria-label="ترابيع من أثَر، الرجوع للبداية">
+    <img class="logo logo-main" src="../assets/athar-mark.png" alt="" width="52" height="60">
+    <img class="logo logo-rev" src="../assets/athar-mark-reversed.png" alt="" width="52" height="60">
+    <span class="brand-name">ترابيع</span>
+  </a>
+
+  <div class="top-tools">
+    <button class="btn btn-small" id="newGameBtn" hidden>لعبة جديدة</button>
+
+    <button class="icon-btn" id="soundBtn" aria-pressed="true" aria-label="الصوت">
+      <svg class="ico-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg class="ico-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+
+    <!-- مبدّل الثيمات -->
+    <div class="theme-switch" role="group" aria-label="ألوان الواجهة">
+      <button class="theme-dot" data-set-theme="light" aria-label="الثيم الفاتح" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="navy" aria-label="الثيم الكحلي" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="blue" aria-label="ثيم أزرق أثَر" aria-pressed="false"></button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ ١) الصفحة التعريفية ============ -->
+  <section class="screen active" id="screen-intro">
+    <div class="intro">
+      <img class="hero-logo logo-main" src="../assets/athar-logo.png" alt="شعار لجنة أثَر" width="556" height="720">
+      <img class="hero-logo logo-rev" src="../assets/athar-logo-reversed.png" alt="شعار لجنة أثَر" width="556" height="720">
+
+      <p class="kicker">لجنة أثَر تقدّم</p>
+      <h1>ترابيع</h1>
+      <p class="lead">جاوب صح… واحتل المربعات! واللي يجمع أكثر هو اللي يضحك بالأخير.</p>
+
+      <ol class="steps">
+        <li>
+          <span class="step-num">١</span>
+          <div><h3>سؤال وجواب</h3><p>المقدّم يسأل، والفريق اللي يجاوب صح له الدور.</p></div>
+        </li>
+        <li>
+          <span class="step-num">٢</span>
+          <div><h3>اختر مربعك</h3><p>تاخذ المربع ومعه أربعة من جيرانه… خمسة دفعة وحدة.</p></div>
+        </li>
+        <li>
+          <span class="step-num">٣</span>
+          <div><h3>اسرق ولا تستحي</h3><p>مربعات الخصم مو محمية. اضغط عليها وخذها عيني عينك.</p></div>
+        </li>
+        <li>
+          <span class="step-num">٤</span>
+          <div><h3>الأكثر يفوز</h3><p>لا امتلت اللوحة أو قال المقدّم «خلاص»، نعدّ المربعات ونعلن البطل.</p></div>
+        </li>
+      </ol>
+
+      <button class="btn btn-primary btn-big" id="toSetupBtn">جاهزين يا إخوان؟</button>
+      <a class="home-link" href="../">← كل ألعاب أثَر</a>
+    </div>
+  </section>
+
+  <!-- ============ ٢) الإعدادات ============ -->
+  <section class="screen" id="screen-setup">
+    <div class="setup">
+      <h2>نجهّز الملعب</h2>
+      <p class="sub">سمّوا الفرق، اختاروا حجم اللوحة، وتوكلوا على الله.</p>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>الفرق</h3>
+          <span class="muted">اضغط اللون عشان تغيّره</span>
+        </div>
+        <div id="teamsList" class="teams-list"></div>
+        <button class="btn btn-dashed" id="addTeamBtn">+ ضيف فريق</button>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>حجم اللوحة</h3><span class="muted" id="sizeNote"></span></div>
+        <div class="presets" id="presets">
+          <button class="chip" data-size="6">٦×٦ <small>على السريع</small></button>
+          <button class="chip" data-size="8">٨×٨ <small>الأصلية</small></button>
+          <button class="chip" data-size="10">١٠×١٠ <small>لأهل النفَس الطويل</small></button>
+        </div>
+        <div class="steppers">
+          <div class="stepper">
+            <span>الصفوف</span>
+            <button class="step-btn" data-step="rows" data-d="-1" aria-label="نقّص الصفوف">−</button>
+            <output id="rowsOut">٨</output>
+            <button class="step-btn" data-step="rows" data-d="1" aria-label="زوّد الصفوف">+</button>
+          </div>
+          <div class="stepper">
+            <span>الأعمدة</span>
+            <button class="step-btn" data-step="cols" data-d="-1" aria-label="نقّص الأعمدة">−</button>
+            <output id="colsOut">٨</output>
+            <button class="step-btn" data-step="cols" data-d="1" aria-label="زوّد الأعمدة">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card random-card">
+        <div class="random-text">
+          <label class="switch-row" for="randomToggle">
+            <span class="switch-title">هل تريد المربعات عشوائيًا؟</span>
+            <span class="switch">
+              <input type="checkbox" id="randomToggle">
+              <span class="track"><span class="thumb"></span></span>
+            </span>
+          </label>
+          <p class="muted" id="randomDesc"></p>
+        </div>
+        <div class="mini" id="miniGrid" aria-hidden="true"></div>
+      </div>
+
+      <div class="setup-actions">
+        <button class="btn btn-primary btn-big" id="startBtn">نبدأ في تكسير الروس؟</button>
+        <button class="btn btn-ghost" id="backIntroBtn">رجّعني للشرح</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ٣) اللعب ============ -->
+  <section class="screen" id="screen-game">
+    <div class="game">
+      <div class="turn" id="turnBox">
+        <span class="turn-label">الدور على</span>
+        <strong class="turn-name" id="turnName"></strong>
+        <span class="turn-hint" id="turnHint">جاوبوا صح… واختاروا مربعكم</span>
+      </div>
+
+      <div class="board-card">
+        <div class="board" id="board" role="grid" aria-label="لوحة المربعات"></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="skipBtn">تجاوز الدور</button>
+        <button class="btn" id="undoBtn">تراجع</button>
+        <button class="btn btn-end" id="endBtn">انتهت اللعبة</button>
+      </div>
+
+      <div class="scores" id="scores" aria-label="عدد مربعات كل فريق"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ رسالة عابرة ============ -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- ============ نافذة التأكيد ============ -->
+<div class="modal" id="modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <h3 id="modalTitle"></h3>
+    <p id="modalText"></p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="modalYes"></button>
+      <button class="btn" id="modalNo"></button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ إعلان الفائز ============ -->
+<div class="reveal" id="reveal" hidden>
+  <canvas id="confetti" aria-hidden="true"></canvas>
+  <div class="reveal-inner" role="dialog" aria-modal="true" aria-labelledby="revealKicker">
+    <p class="reveal-kicker" id="revealKicker">لحظة الحقيقة…</p>
+
+    <div class="winner" id="winnerBox" hidden>
+      <svg class="trophy" viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M18 8h28v14a14 14 0 0 1-28 0V8z"/>
+        <path d="M18 12H8v4a10 10 0 0 0 10 10M46 12h10v4a10 10 0 0 1-10 10" fill="none" stroke-width="4"/>
+        <path d="M28 36h8v10h-8zM20 46h24v8H20z"/>
+      </svg>
+      <h2 id="winnerName"></h2>
+      <p id="winnerSub"></p>
+    </div>
+
+    <div class="reveal-rows" id="revealRows"></div>
+
+    <div class="reveal-actions" id="revealActions" hidden>
+      <button class="btn btn-primary" id="againBtn">نعيدها؟</button>
+      <button class="btn" id="changeBtn">نغيّر الفرق</button>
+      <button class="btn btn-ghost" id="peekBtn">ورّني اللوحة</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js" defer></script>
+</body>
+</html>

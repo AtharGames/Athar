@@ -1,0 +1,389 @@
+/* =========================================================
+   ترابيع | تنسيقات اللعبة
+   الهوية المشتركة في ../assets/athar.css
+   ========================================================= */
+
+/* ---------- أساسيات ---------- */
+*{box-sizing:border-box; margin:0; padding:0;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  min-height:100vh; min-height:100dvh;
+  background:var(--bg-paint); background-attachment:fixed;
+  color:var(--text);
+  font-family:"Thmanyah Sans","IBM Plex Sans Arabic",system-ui,sans-serif;
+  font-weight:500; font-size:16px; line-height:1.7;
+  display:flex; flex-direction:column;
+  overflow-x:hidden;
+  transition:color .25s ease;
+}
+h1,h2,h3,strong{font-weight:700;}
+button,input{font:inherit; color:inherit;}
+button{cursor:pointer; -webkit-tap-highlight-color:transparent;}
+[hidden]{display:none !important;}
+:focus-visible{outline:3px solid var(--hl); outline-offset:2px;}
+.muted{color:var(--text-2); font-size:.86rem; opacity:.9;}
+
+
+/* ---------- الشريط العلوي ---------- */
+.topbar{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:10px clamp(14px,3vw,28px);
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit;}
+.brand .logo{height:52px; width:auto;}
+.brand-name{font-weight:700; font-size:1.35rem;}
+.top-tools{display:flex; align-items:center; gap:10px;}
+
+.icon-btn{
+  width:42px; height:42px; border-radius:50%;
+  display:grid; place-items:center;
+  background:var(--surface); border:1px solid var(--line);
+  transition:transform .15s ease, background .2s ease;
+}
+.icon-btn:hover{background:var(--surface-2);}
+.icon-btn:active{transform:scale(.92);}
+.icon-btn svg{width:22px; height:22px; fill:var(--text);}
+.icon-btn .wave{stroke:var(--text);}
+.icon-btn .ico-off{display:none;}
+.icon-btn[aria-pressed="false"] .ico-on{display:none;}
+.icon-btn[aria-pressed="false"] .ico-off{display:block; opacity:.6;}
+
+/* ---------- الأزرار ---------- */
+.btn{
+  min-height:48px; padding:10px 20px;
+  border-radius:14px; border:1px solid var(--line);
+  background:var(--surface); color:var(--text);
+  font-weight:700; font-size:1rem;
+  transition:transform .15s ease, background .2s ease, box-shadow .2s ease, opacity .2s;
+}
+.btn:hover{background:var(--surface-2); transform:translateY(-2px);}
+.btn:active{transform:translateY(0) scale(.97);}
+.btn:disabled{opacity:.45; cursor:not-allowed; transform:none;}
+.btn-primary{
+  background:var(--accent); color:var(--on-accent); border-color:transparent;
+  box-shadow:0 8px 22px rgba(30,111,224,.28);
+}
+.btn-primary:hover{background:var(--accent-hover);}
+.btn-big{min-height:58px; padding:14px 34px; font-size:1.15rem; border-radius:18px;}
+.btn-small{min-height:40px; padding:6px 14px; font-size:.9rem; border-radius:12px;}
+.btn-ghost{background:transparent; border-color:transparent; color:var(--text-2);}
+.btn-dashed{width:100%; background:transparent; border-style:dashed; color:var(--text-2);}
+.btn-end{border-color:var(--accent); color:var(--accent);}
+
+/* ---------- الشاشات ---------- */
+main{flex:1; display:flex; flex-direction:column; padding:clamp(14px,3vw,28px);}
+.screen{display:none; flex:1;}
+.screen.active{display:block; animation:screenIn .45s ease both;}
+@keyframes screenIn{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:none;}}
+
+/* ---------- ١) التعريف ---------- */
+.intro{max-width:880px; margin:0 auto; text-align:center; padding-bottom:20px;}
+.hero-logo{width:clamp(150px,26vw,210px); height:auto; margin:0 auto 4px; animation:floaty 5s ease-in-out infinite;}
+@keyframes floaty{50%{transform:translateY(-8px);}}
+.kicker{color:var(--hl-2); font-weight:700; letter-spacing:.02em;}
+.intro h1{font-size:clamp(3rem,10vw,5rem); line-height:1.25;}
+.lead{font-size:clamp(1.05rem,2.6vw,1.3rem); color:var(--text-2); max-width:34ch; margin:4px auto 26px;}
+
+.steps{
+  list-style:none; text-align:start;
+  display:grid; grid-template-columns:repeat(2,1fr); gap:12px;
+  margin-bottom:30px;
+}
+.steps li{
+  display:flex; gap:14px; align-items:flex-start;
+  background:var(--surface); border:1px solid var(--line); border-radius:18px;
+  padding:16px;
+}
+.step-num{
+  flex:none; width:42px; height:42px; border-radius:12px;
+  display:grid; place-items:center;
+  background:var(--accent); color:var(--on-accent);
+  font-weight:700; font-size:1.25rem;
+}
+.steps h3{font-size:1.05rem; line-height:1.5;}
+.steps p{color:var(--text-2); font-size:.95rem;}
+
+.home-link{display:block; width:max-content; margin:14px auto 0; color:var(--text-2); font-weight:700; text-decoration:none; padding:6px 10px; border-radius:10px;}
+.home-link:hover{background:var(--surface);}
+
+/* ---------- ٢) الإعدادات ---------- */
+.setup{max-width:620px; margin:0 auto;}
+.setup h2{font-size:clamp(1.7rem,5vw,2.2rem);}
+.sub{color:var(--text-2); margin-bottom:18px;}
+.card{
+  background:var(--surface); border:1px solid var(--line); border-radius:20px;
+  padding:18px; margin-bottom:14px; box-shadow:var(--shadow);
+}
+.card-head{display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:12px;}
+.card-head h3{font-size:1.1rem;}
+
+.teams-list{display:flex; flex-direction:column; gap:8px; margin-bottom:10px;}
+.team-row{display:flex; align-items:center; gap:8px;}
+.swatch{
+  flex:none; width:46px; height:46px; border-radius:13px;
+  border:2px solid rgba(255,255,255,.55); background:var(--c);
+  box-shadow:0 2px 8px rgba(0,0,0,.18);
+  transition:transform .2s cubic-bezier(.3,1.6,.5,1);
+}
+.swatch:hover{transform:rotate(-8deg) scale(1.06);}
+.team-row input{
+  flex:1; min-width:0; height:46px; padding:0 14px;
+  border-radius:13px; border:1px solid var(--line);
+  background:var(--solid); color:var(--text);
+  font-weight:700;
+}
+.team-row input::placeholder{color:var(--text-2); opacity:.6; font-weight:500;}
+.team-remove{
+  flex:none; width:40px; height:46px; border-radius:13px;
+  background:transparent; border:1px solid transparent;
+  font-size:1.4rem; line-height:1; color:var(--text-2);
+}
+.team-remove:hover{border-color:var(--line); background:var(--surface-2);}
+
+.presets{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px;}
+.chip{
+  padding:10px 6px; border-radius:14px; border:1px solid var(--line);
+  background:var(--solid); font-weight:700; line-height:1.4;
+  transition:transform .15s ease, background .2s, color .2s;
+}
+.chip small{display:block; font-weight:500; font-size:.72rem; color:var(--text-2);}
+.chip:hover{transform:translateY(-2px);}
+.chip[aria-pressed="true"]{background:var(--accent); color:var(--on-accent); border-color:transparent;}
+.chip[aria-pressed="true"] small{color:inherit; opacity:.85;}
+
+.steppers{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+.stepper{
+  display:flex; align-items:center; gap:6px;
+  background:var(--solid); border:1px solid var(--line); border-radius:14px; padding:6px 10px;
+}
+.stepper span{flex:1; font-size:.9rem; color:var(--text-2);}
+.stepper output{min-width:2ch; text-align:center; font-weight:700; font-size:1.15rem;}
+.step-btn{
+  width:36px; height:36px; border-radius:10px; border:1px solid var(--line);
+  background:var(--surface); font-weight:700; font-size:1.2rem; line-height:1;
+}
+.step-btn:hover{background:var(--surface-2);}
+
+.random-card{display:flex; align-items:center; gap:16px;}
+.random-text{flex:1; min-width:0;}
+.switch-row{display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer; margin-bottom:6px;}
+.switch-title{font-weight:700; font-size:1.05rem;}
+.switch{position:relative; flex:none;}
+.switch input{position:absolute; opacity:0; inset:0; width:100%; height:100%; cursor:pointer;}
+.track{
+  display:block; width:56px; height:32px; border-radius:999px;
+  background:var(--surface-2); border:1px solid var(--line);
+  transition:background .25s ease;
+}
+.thumb{
+  position:absolute; top:4px; inset-inline-start:4px;
+  width:24px; height:24px; border-radius:50%;
+  background:var(--text); transition:transform .25s cubic-bezier(.3,1.5,.5,1), background .25s;
+}
+.switch input:checked + .track{background:var(--accent);}
+.switch input:checked + .track .thumb{transform:translateX(-24px); background:var(--on-accent);}
+.switch input:focus-visible + .track{outline:3px solid var(--hl); outline-offset:2px;}
+
+.mini{flex:none; display:grid; grid-template-columns:repeat(3,22px); gap:4px;}
+.mini i{width:22px; height:22px; border-radius:6px; background:var(--cell); transition:background .3s ease, transform .3s ease;}
+.mini i.on{background:var(--accent); transform:scale(1.06);}
+.mini i.mid{background:var(--hl);}
+
+.setup-actions{display:flex; flex-direction:column; gap:6px; margin-top:20px;}
+
+/* ---------- ٣) اللعب ---------- */
+.game{
+  --turn:#1E6FE0;
+  display:grid; gap:14px;
+  grid-template-columns:minmax(0,1fr) 320px;
+  grid-template-areas:"board turn" "board actions" "board scores";
+  grid-template-rows:auto auto 1fr;
+  align-items:start;
+  max-width:1280px; margin:0 auto;
+}
+.turn{grid-area:turn;}
+.board-card{grid-area:board;}
+.actions{grid-area:actions;}
+.scores{grid-area:scores;}
+
+.turn{
+  position:relative; overflow:hidden;
+  background:var(--surface); border:1px solid var(--line); border-radius:20px;
+  padding:14px 18px 14px 18px; box-shadow:var(--shadow);
+  border-inline-start:10px solid var(--turn);
+  transition:border-color .3s ease;
+}
+.turn-label{display:block; font-size:.85rem; color:var(--text-2);}
+.turn-name{display:block; font-size:1.6rem; line-height:1.4; overflow-wrap:anywhere;}
+.turn-hint{display:block; font-size:.9rem; color:var(--text-2);}
+.turn.swap .turn-name{animation:turnSwap .45s cubic-bezier(.3,1.5,.5,1);}
+@keyframes turnSwap{from{opacity:0; transform:translateY(12px) scale(.94);} to{opacity:1; transform:none;}}
+
+.board-card{
+  background:var(--surface); border:1px solid var(--line); border-radius:22px;
+  padding:clamp(8px,1.6vw,18px); box-shadow:var(--shadow);
+  border-top:6px solid var(--turn); transition:border-color .3s ease;
+  container-type:inline-size;
+}
+.board{
+  --rows:8; --cols:8;
+  display:grid; grid-template-columns:repeat(var(--cols),1fr);
+  gap:clamp(2px,.6cqi,6px);
+  width:min(100%, calc((100dvh - 190px) * var(--cols) / var(--rows)));
+  margin:0 auto;
+}
+.cell{
+  aspect-ratio:1; min-width:0;
+  border:none; border-radius:18%;
+  background:var(--cell); color:var(--cell-label);
+  font-weight:700; font-size:calc(100cqi / var(--cols) * .26); line-height:1;
+  display:grid; place-items:center; user-select:none;
+  transition:transform .12s ease, filter .12s ease;
+}
+.cell:hover{transform:scale(1.07); filter:brightness(1.08);}
+.cell:active{transform:scale(.94);}
+.cell.owned{
+  background:var(--c);
+  background-image:linear-gradient(160deg, rgba(255,255,255,.28), rgba(255,255,255,0) 60%);
+  color:rgba(255,255,255,.92);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.28);
+}
+.cell.pop{animation:cellPop .5s cubic-bezier(.3,1.6,.5,1);}
+.cell.origin{animation:cellOrigin .6s cubic-bezier(.3,1.6,.5,1);}
+@keyframes cellPop{0%{transform:scale(.4) rotate(-12deg); filter:brightness(1.8);} 100%{transform:none; filter:none;}}
+@keyframes cellOrigin{0%{transform:scale(.4);} 55%{transform:scale(1.3); box-shadow:0 0 0 6px color-mix(in srgb, var(--c) 35%, transparent);} 100%{transform:none;}}
+.board.locked .cell{cursor:default;}
+.board.locked .cell:hover{transform:none; filter:none;}
+
+.actions{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+.actions .btn-end{grid-column:1 / -1;}
+
+.scores{display:flex; flex-direction:column; gap:8px;}
+.score{
+  position:relative; overflow:hidden;
+  display:flex; align-items:center; gap:10px;
+  background:var(--surface); border:1px solid var(--line); border-radius:16px;
+  padding:10px 14px;
+  transition:transform .25s ease, box-shadow .25s ease, border-color .25s;
+}
+.score.now{border-color:var(--c); box-shadow:0 0 0 2px var(--c); transform:scale(1.02);}
+.score-dot{flex:none; width:16px; height:16px; border-radius:5px; background:var(--c);}
+.score-name{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.score-num{font-weight:700; font-size:1.3rem;}
+.score-num small{font-weight:500; font-size:.75rem; color:var(--text-2); margin-inline-start:4px;}
+.score-bar{position:absolute; inset-inline-start:0; bottom:0; height:4px; background:var(--c); width:0; transition:width .5s ease;}
+.score.bump .score-num{animation:bump .4s cubic-bezier(.3,1.6,.5,1);}
+@keyframes bump{50%{transform:scale(1.35);}}
+
+/* ---------- رسالة عابرة ---------- */
+.toast{
+  position:fixed; inset-inline:0; bottom:18px; margin-inline:auto;
+  width:max-content; max-width:min(92vw,520px);
+  background:var(--text); color:var(--bg);
+  padding:12px 20px; border-radius:16px; font-weight:700; text-align:center;
+  box-shadow:0 12px 30px rgba(0,0,0,.25);
+  opacity:0; transform:translateY(20px) scale(.96); pointer-events:none;
+  transition:opacity .25s ease, transform .3s cubic-bezier(.3,1.5,.5,1);
+  z-index:60;
+}
+.toast.show{opacity:1; transform:none;}
+
+/* ---------- نافذة التأكيد ---------- */
+.modal{
+  position:fixed; inset:0; z-index:80;
+  display:grid; place-items:center; padding:20px;
+  background:var(--scrim); backdrop-filter:blur(4px);
+  animation:fade .2s ease both;
+}
+.modal-card{
+  width:min(100%,420px); text-align:center;
+  background:var(--solid); color:var(--text);
+  border:1px solid var(--line); border-radius:24px; padding:28px 22px 22px;
+  box-shadow:0 30px 60px rgba(0,0,0,.3);
+  animation:modalIn .35s cubic-bezier(.3,1.5,.5,1) both;
+}
+.modal-card h3{font-size:1.4rem; line-height:1.5; margin-bottom:6px;}
+.modal-card p{color:var(--text-2); margin-bottom:20px;}
+.modal-actions{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+@keyframes fade{from{opacity:0;}}
+@keyframes modalIn{from{opacity:0; transform:scale(.85) translateY(20px);}}
+
+/* ---------- إعلان الفائز ---------- */
+.reveal{
+  position:fixed; inset:0; z-index:70; overflow-y:auto;
+  background:var(--bg-paint); color:var(--text);
+  display:grid; place-items:center; padding:24px 18px;
+  animation:fade .35s ease both;
+}
+#confetti{position:fixed; inset:0; width:100%; height:100%; pointer-events:none;}
+.reveal-inner{position:relative; width:min(100%,620px); text-align:center;}
+.reveal-kicker{font-size:clamp(1.3rem,4.5vw,1.9rem); font-weight:700; color:var(--text-2); margin-bottom:14px;}
+.reveal.counting .reveal-kicker{animation:pulse .5s ease-in-out infinite alternate;}
+@keyframes pulse{to{transform:scale(1.06); opacity:.75;}}
+.reveal.counting .reveal-inner{animation:shake .12s linear infinite;}
+@keyframes shake{25%{transform:translate(1px,-1px);} 75%{transform:translate(-1px,1px);}}
+
+.winner{margin-bottom:20px; animation:winnerIn .9s cubic-bezier(.2,1.7,.4,1) both;}
+@keyframes winnerIn{0%{opacity:0; transform:scale(.2) rotate(-14deg);} 100%{opacity:1; transform:none;}}
+.trophy{width:92px; height:92px; fill:var(--win,var(--accent)); stroke:var(--win,var(--accent)); filter:drop-shadow(0 8px 18px rgba(0,0,0,.2)); animation:floaty 2.4s ease-in-out infinite;}
+.winner h2{
+  font-size:clamp(2.2rem,9vw,4.2rem); line-height:1.3; overflow-wrap:anywhere;
+  color:var(--text);
+  text-decoration:underline; text-decoration-color:var(--win,var(--accent));
+  text-decoration-thickness:.14em; text-underline-offset:.22em;
+}
+.winner p{font-size:1.15rem; color:var(--text-2); margin-top:12px;}
+
+.reveal-rows{display:flex; flex-direction:column; gap:10px; margin-bottom:22px;}
+.r-row{
+  display:grid; grid-template-columns:minmax(70px,30%) 1fr auto; align-items:center; gap:12px;
+  background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:10px 14px;
+  text-align:start; transition:transform .4s cubic-bezier(.3,1.5,.5,1), box-shadow .3s, opacity .4s;
+}
+.r-name{font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.r-track{display:block; height:18px; border-radius:999px; background:var(--cell); overflow:hidden;}
+.r-bar{display:block; height:100%; width:0; border-radius:999px; background:var(--c);}
+.r-num{font-weight:700; font-size:1.35rem; min-width:3.2ch; text-align:end;}
+.r-num small{display:block; font-size:.7rem; font-weight:500; color:var(--text-2); line-height:1.2;}
+.reveal.done .r-row.win{transform:scale(1.04); box-shadow:0 0 0 3px var(--c);}
+.reveal.done .r-row:not(.win){opacity:.8;}
+
+.reveal-actions{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; animation:screenIn .5s .5s ease both;}
+.reveal-actions .btn{flex:1 1 150px;}
+
+/* ---------- التجاوب ---------- */
+@media (max-width:900px){
+  .game{
+    grid-template-columns:minmax(0,1fr);
+    grid-template-areas:"turn" "board" "actions" "scores";
+    grid-template-rows:auto;
+  }
+  .board{width:100%;}
+  .turn{padding-block:10px;}
+  .turn-name{font-size:1.35rem; display:inline;}
+  .turn-label{display:inline; margin-inline-end:6px;}
+  .actions{grid-template-columns:1fr 1fr 1.3fr;}
+  .actions .btn-end{grid-column:auto;}
+  .actions .btn{padding-inline:8px; font-size:.95rem;}
+  .scores{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));}
+}
+@media (max-width:600px){
+  .steps{grid-template-columns:1fr;}
+  .brand-name{font-size:1.15rem;}
+  .brand .logo{height:44px;}
+  .top-tools{gap:6px;}
+  .theme-dot{width:26px; height:26px;}
+  .icon-btn{width:38px; height:38px;}
+  .random-card{align-items:flex-start;}
+  .presets .chip small{font-size:.66rem;}
+}
+@media (max-width:380px){
+  .btn-small{padding-inline:10px; font-size:.82rem;}
+  .brand-name{display:none;}
+}
+
+/* ---------- تقليل الحركة ---------- */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important;}
+}
