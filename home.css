@@ -76,6 +76,14 @@ a.game-card:hover .art-ladder i:nth-child(5){animation-delay:.2s;}
 a.game-card:hover .art-ladder i:nth-child(6){animation-delay:.25s;}
 @keyframes grow{0%{transform:scaleY(.3);}}
 
+/* ديوان: علامة الكتاب المفتوح بألوان هويته */
+.art-diwan{background:#0D5C46;}
+.art-diwan svg{width:46%; height:auto;}
+.art-diwan .f{fill:#E0BD6A;}
+.art-diwan .l{fill:none; stroke:#E0BD6A;}
+.art-diwan .c{fill:none; stroke:#0D5C46;}
+a.game-card:hover .art-diwan svg{animation:pop .5s cubic-bezier(.3,1.6,.5,1) both;}
+
 .art-snakes svg{width:100%; height:100%;}
 .art-snakes .sq rect{fill:var(--cell);}
 .art-snakes .sq rect.alt{fill:var(--surface);}
