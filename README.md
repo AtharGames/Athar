@@ -36,8 +36,4 @@ sahm/                           مسابقة سهمك الصاعد (questions.js
 ## الخط
 ضع `thmanyahsans-Medium.woff2` و`thmanyahsans-Bold.woff2` في `assets/fonts/` محليًا. بدونها يعمل الخط الاحتياطي IBM Plex Sans Arabic.
 
-## شكر وتقدير: الأصوات
-مقطع إعلان الفائز `assets/sounds/winner-cheer.mp3` مزيج من انبثاق مولّد برمجيًا وتسجيلين حقيقيين، ويُنشر بترخيص [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) لأنه مشتق من تسجيل بهذا الترخيص:
 
-- **Arrowhead Stadium crowd noise** لـ Kj1595، بترخيص [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)، من [Wikimedia Commons](https://commons.wikimedia.org/w/index.php?curid=83467289). التعديلات: قصّ، خفض المستوى، مزج.
-- **Applause 2** لـ Sandermotions، بترخيص [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)، من [Wikimedia Commons](https://commons.wikimedia.org/w/index.php?curid=117971683).
