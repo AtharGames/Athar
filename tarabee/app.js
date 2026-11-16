@@ -46,6 +46,7 @@
     steal:   ['سرقة عيني عينك! {t} خذوا {n} من {v}', 'يا ساتر! {t} شالوا {n} من {v}', '{v}، ودّعوا {n} من مربعاتكم… خذوها {t}'],
     skip:    ['راحت عليكم يا {t}! الدور لـ {x}', 'معليش يا {t}، الجايات أكثر. الدور لـ {x}', 'يا {t} ركّزوا شوي! الدور لـ {x}'],
     hints:   ['جاوبوا صح… واختاروا مربعكم', 'ورّونا شطارتكم', 'السؤال عليكم، ركّزوا', 'فرصتكم… لا تضيّعونها'],
+    blocked: ['على هونك! هذا مربع {v}. اختاروا مربع فاضي أو جنبه', 'لا لا، مربع {v} ما ينلمس مباشرة… اختاروا جنبه', 'ممنوع يا محترم! مربعات {v} تنسرق من الجنب بس'],
     win:     ['مبروك يا وحوش!', 'كفو والله، تستاهلون!', 'هذي الهيبة!', 'ما قصّرتوا يا أبطال!']
   };
   const fill = (s, o) => s.replace(/\{(\w)\}/g, (_, k) => o[k]);
@@ -182,40 +183,6 @@
       };
     }
 
-    // هتاف جماعي «هيييه» بأصوات بشرية مقلَّدة
-    function cheer() {
-      const c = ac(); if (!c) return;
-      const t0 = c.currentTime + 0.05;
-      for (let i = 0; i < 16; i++) {
-        const t = t0 + Math.random() * 0.35;
-        const dur = 1.6 + Math.random();
-        const f = 170 + Math.random() * 260;
-        const o = c.createOscillator();
-        o.type = 'sawtooth';
-        o.frequency.setValueAtTime(f * 0.85, t);
-        o.frequency.exponentialRampToValueAtTime(f * 1.15, t + 0.25);
-        o.frequency.exponentialRampToValueAtTime(f * 0.9, t + dur);
-        // اهتزاز الحنجرة
-        const vib = c.createOscillator(), vg = c.createGain();
-        vib.frequency.value = 5 + Math.random() * 2.5; vg.gain.value = f * 0.02;
-        vib.connect(vg).connect(o.frequency);
-        // مخارج الحروف: من «آ» إلى «ي»
-        const f1 = c.createBiquadFilter(), f2 = c.createBiquadFilter();
-        f1.type = 'bandpass'; f2.type = 'bandpass'; f1.Q.value = 5; f2.Q.value = 5;
-        f1.frequency.setValueAtTime(800, t); f1.frequency.linearRampToValueAtTime(380, t + 0.5);
-        f2.frequency.setValueAtTime(1250, t); f2.frequency.linearRampToValueAtTime(2300, t + 0.5);
-        const g = c.createGain(), v = 0.18 + Math.random() * 0.1;
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(v, t + 0.12);
-        g.gain.setValueAtTime(v, t + dur * 0.6);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-        o.connect(f1); o.connect(f2); f1.connect(g); f2.connect(g); g.connect(master);
-        o.start(t); vib.start(t); o.stop(t + dur + 0.05); vib.stop(t + dur + 0.05);
-      }
-      // أنفاس الجمهور
-      air(t0, { dur: 2.4, vol: 0.12, f0: 1500, f1: 900, q: 0.6, atk: 0.15 });
-    }
-
     return {
       get on() { return on; },
       toggle() { on = !on; store.set('tarabee-sound', on ? '1' : '0'); if (on) this.click(); return on; },
@@ -233,8 +200,10 @@
       wind,
       // لحظة الإعلان: هبّة ريح قوية
       release() { const c = ac(); if (c) air(c.currentTime, { dur: 0.85, vol: 0.35, f0: 2600, f1: 380, q: 0.8, atk: 0.02 }); },
-      // فرحة الفوز: هتاف ثم عصافير
-      celebrate() { cheer(); chirp(1.3, 2800); chirp(1.8, 3400); chirp(2.4, 3000); },
+      // فرحة الفوز: زقزقة عصافير
+      celebrate() { chirp(0.4, 2800); chirp(0.9, 3400); chirp(1.4, 3000); chirp(2.0, 3600); chirp(2.6, 2900); },
+      // محاولة غير مسموحة: «تسك» خفيفة
+      nope() { tongue(0, 0.28); tongue(0.09, 0.2); },
       sigh
     };
   })();
@@ -447,7 +416,16 @@
     for (let i = 0; i < cells.length; i++) paint(i);
   }
 
+  // تعليم مربعات الخصوم بأنها غير قابلة للاختيار المباشر
+  function markBlocked() {
+    cells.forEach((b, k) => {
+      const o = game.grid[k];
+      b.classList.toggle('blocked', !game.over && o >= 0 && o !== game.turn);
+    });
+  }
+
   function renderTurn() {
+    markBlocked();
     const t = game.teams[game.turn];
     el.game.style.setProperty('--turn', t.color);
     el.turnName.textContent = t.name;
@@ -503,6 +481,16 @@
   function capture(i) {
     if (game.over) { toast('خلصت اللعبة يا جماعة! نعيدها؟'); return; }
     const me = game.turn, team = game.teams[me];
+
+    // لا يجوز اختيار مربع الخصم مباشرة، يؤخذ فقط إذا كان جار المربع المختار
+    const owner = game.grid[i];
+    if (owner >= 0 && owner !== me) {
+      Sound.nope();
+      const b = cells[i];
+      b.classList.remove('nope'); void b.offsetWidth; b.classList.add('nope');
+      toast(fill(pick(TXT.blocked), { v: game.teams[owner].name }));
+      return;
+    }
     const targets = targetsFor(i);
 
     game.history.push({ grid: game.grid.slice(), turn: me });

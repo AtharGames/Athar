@@ -253,6 +253,11 @@ main{flex:1; display:flex; flex-direction:column; padding:clamp(14px,3vw,28px);}
 .cell.origin{animation:cellOrigin .6s cubic-bezier(.3,1.6,.5,1);}
 @keyframes cellPop{0%{transform:scale(.4) rotate(-12deg); filter:brightness(1.8);} 100%{transform:none; filter:none;}}
 @keyframes cellOrigin{0%{transform:scale(.4);} 55%{transform:scale(1.3); box-shadow:0 0 0 6px color-mix(in srgb, var(--c) 35%, transparent);} 100%{transform:none;}}
+/* مربع الخصم: لا يُختار مباشرة */
+.cell.blocked{cursor:not-allowed;}
+.cell.blocked:hover{transform:none; filter:brightness(.92);}
+.cell.nope{animation:nope .4s ease;}
+@keyframes nope{20%,60%{transform:translateX(-5px);} 40%,80%{transform:translateX(5px);}}
 .board.locked .cell{cursor:default;}
 .board.locked .cell:hover{transform:none; filter:none;}
 
