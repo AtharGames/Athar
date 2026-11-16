@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>من سيربح التيلفون | أثَر</title>
+<meta name="description" content="مسابقة أسئلة شفهية للفرق بسُلّم نقاط تصاعدي وخزينة ووسائل مساعدة، من لجنة أثَر.">
+<!-- تطبيق الثيم المحفوظ قبل الرسم لتفادي الوميض -->
+<script>
+(function(){
+  var t=null;
+  try{ t=localStorage.getItem('athar-theme'); }catch(e){}
+  if(['light','navy','blue'].indexOf(t)<0){
+    t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'navy':'light';
+  }
+  document.documentElement.setAttribute('data-theme',t);
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/athar.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ الشريط العلوي ============ -->
+<header class="topbar">
+  <a class="brand" href="../" aria-label="الرجوع إلى ألعاب أثَر">
+    <img class="logo logo-main" src="../assets/athar-mark.png" alt="" width="52" height="60">
+    <img class="logo logo-rev" src="../assets/athar-mark-reversed.png" alt="" width="52" height="60">
+    <span class="brand-text">
+      <strong data-bind="title"></strong>
+      <small>مع <span data-bind="host"></span></small>
+    </span>
+  </a>
+
+  <div class="top-tools">
+    <button class="icon-btn" id="soundBtn" aria-pressed="true" aria-label="الصوت">
+      <svg class="ico-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg class="ico-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <!-- مبدّل الثيمات -->
+    <div class="theme-switch" role="group" aria-label="ألوان الواجهة">
+      <button class="theme-dot" data-set-theme="light" aria-label="الثيم الفاتح" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="navy" aria-label="الثيم الكحلي" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="blue" aria-label="ثيم أزرق أثَر" aria-pressed="false"></button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ ١) شاشة البداية ============ -->
+  <section class="screen active" id="screen-setup">
+    <div class="setup">
+      <div class="setup-hero">
+        <img class="hero-logo logo-main" src="../assets/athar-logo.png" alt="شعار لجنة أثَر" width="556" height="720">
+        <img class="hero-logo logo-rev" src="../assets/athar-logo-reversed.png" alt="شعار لجنة أثَر" width="556" height="720">
+        <h1 data-bind="title"></h1>
+        <p class="lead">مسابقة أسئلة شفهية يقدّمها <strong data-bind="host"></strong>. سمِّ المسابقة، سجّل الفرق، وافتح الاستوديو.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>هوية المسابقة</h2><span class="muted">تنحفظ على هذا الجهاز</span></div>
+        <label class="field">
+          <span>عنوان المسابقة</span>
+          <input type="text" id="titleInput" maxlength="40" autocomplete="off">
+        </label>
+        <label class="field">
+          <span>اسم المذيع / المقدّم</span>
+          <input type="text" id="hostInput" maxlength="24" autocomplete="off">
+        </label>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>الفرق المشاركة</h2><span class="muted">من ٢ إلى ٦ فرق</span></div>
+        <div class="counts" id="counts" role="group" aria-label="عدد الفرق"></div>
+        <div class="team-inputs" id="teamInputs"></div>
+      </div>
+
+      <details class="card rules">
+        <summary>قواعد اللعب باختصار</summary>
+        <ul>
+          <li>المقدّم يلقي السؤال شفهيًا على الفريق صاحب الدور، ثم يسجّل: صحيحة أو خاطئة.</li>
+          <li><strong>السُلّم التصاعدي:</strong> كل إجابة صحيحة ترفع قيمة سؤال الفريق القادم: ١٠٠ ثم ٣٠٠ ثم ٥٠٠ ثم ٨٠٠ ثم ١٠٠٠ ثم ١٥٠٠ ثم ٢٠٠٠ ثم ٣٠٠٠ ثم ٥٠٠٠. ولكل فريق سُلّمه المستقل.</li>
+          <li><strong>الإجابة الخاطئة:</strong> تضيع كل النقاط غير المحفوظة ويرجع الفريق لأول السُلّم.</li>
+          <li><strong>الخزينة:</strong> تحفظ نقاط الفريق من الضياع، ومتاحة مرة كل جولتين، وثمنها الرجوع لأول السُلّم.</li>
+          <li><strong>وسائل المساعدة:</strong> حذف إجابتين، تغيير السؤال، تصويت الجمهور. كل واحدة مرة لكل فريق.</li>
+          <li>المسابقة ٢٠ جولة، والفائز صاحب أعلى رصيد.</li>
+        </ul>
+      </details>
+
+      <button class="btn btn-primary btn-big" id="startBtn">افتح الاستوديو وابدأ المسابقة</button>
+      <a class="home-link" href="../">← كل ألعاب أثَر</a>
+    </div>
+  </section>
+
+  <!-- ============ ٢) الاستوديو ============ -->
+  <section class="screen" id="screen-game">
+    <div class="game">
+
+      <!-- طاولة المقدّم -->
+      <div class="hostbar">
+        <span class="mic" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
+        <div class="host-text">
+          <strong>طاولة المقدّم: <span data-bind="host"></span></strong>
+          <p id="hostSpeech"></p>
+        </div>
+        <div class="round-pill">الجولة <b id="roundNow">١</b> / <span id="roundMax">٢٠</span></div>
+      </div>
+
+      <!-- طاولات الفرق -->
+      <div class="desks" id="desks"></div>
+      <p class="hint">اضغط طاولة أي فريق لتحويل الدور له مباشرة.</p>
+
+      <div class="panels">
+        <!-- التقييم -->
+        <div class="panel panel-main">
+          <div class="value-row">
+            <span>قيمة السؤال الحالي</span>
+            <div class="stepper">
+              <button class="step-btn" id="minusBtn" aria-label="نقّص ٥٠ نقطة">−</button>
+              <output id="qPoints">١٠٠</output>
+              <button class="step-btn" id="plusBtn" aria-label="زوّد ٥٠ نقطة">+</button>
+            </div>
+          </div>
+
+          <div class="ladder" id="ladder" aria-label="سُلّم النقاط الخاص بالفريق"></div>
+          <p class="muted ladder-note">سُلّم الزيادة مستقل لكل فريق.</p>
+
+          <h2 class="eval-title">تقييم إجابة <span id="activeName"></span></h2>
+          <div class="eval">
+            <button class="btn btn-correct" id="correctBtn">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              إجابة صحيحة
+              <small>إضافة النقاط</small>
+            </button>
+            <button class="btn btn-wrong" id="wrongBtn">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke-width="3" stroke-linecap="round"/></svg>
+              إجابة خاطئة
+              <small>تصفير غير المحفوظ</small>
+            </button>
+          </div>
+        </div>
+
+        <!-- المساعدات والخزينة -->
+        <div class="panel panel-side">
+          <h3>وسائل المساعدة</h3>
+          <p class="muted">لكل فريق كل وسيلة مرة واحدة طوال المسابقة.</p>
+          <div class="lifelines">
+            <button class="life" data-life="fifty"><span>حذف إجابتين (٥٠:٥٠)</span><em></em></button>
+            <button class="life" data-life="change"><span>تغيير السؤال</span><em></em></button>
+            <button class="life" data-life="audience"><span>تصويت الجمهور</span><em></em></button>
+          </div>
+          <div class="audience-note" id="audienceNote" hidden></div>
+
+          <button class="btn btn-bank" id="bankBtn">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke-width="2"/></svg>
+            حفظ النقاط بالخزينة
+          </button>
+          <button class="btn btn-ghost" id="endBtn">إنهاء المسابقة الآن</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ٣) الفوز ============ -->
+  <section class="screen" id="screen-victory">
+    <canvas id="confetti" aria-hidden="true"></canvas>
+    <div class="victory">
+      <svg class="trophy" viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M18 8h28v14a14 14 0 0 1-28 0V8z"/>
+        <path d="M18 12H8v4a10 10 0 0 0 10 10M46 12h10v4a10 10 0 0 1-10 10" fill="none" stroke-width="4"/>
+        <path d="M28 36h8v10h-8zM20 46h24v8H20z"/>
+      </svg>
+      <p class="kicker" id="victoryKicker"></p>
+      <h1 id="winnerName"></h1>
+      <p class="lead" id="winnerText"></p>
+
+      <div class="final" id="finalBoard"></div>
+
+      <button class="btn btn-primary btn-big" id="resetBtn">مسابقة جديدة مع <span data-bind="host"></span></button>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ رسالة ============ -->
+<div class="modal" id="modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-icon" id="modalIcon" aria-hidden="true"></div>
+    <h3 id="modalTitle"></h3>
+    <p id="modalText"></p>
+    <button class="btn btn-primary" id="modalOk">حسنًا، نكمل</button>
+  </div>
+</div>
+
+<!-- ============ تأكيد ============ -->
+<div class="modal" id="confirm" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h3 id="confirmTitle"></h3>
+    <p id="confirmText"></p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="confirmYes"></button>
+      <button class="btn" id="confirmNo">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/athar-sound.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>

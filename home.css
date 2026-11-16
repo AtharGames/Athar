@@ -60,6 +60,22 @@ a.game-card:hover .art-tarabee i:nth-child(3n){animation-delay:.06s;}
 a.game-card:hover .art-tarabee i:nth-child(3n+1){animation-delay:.12s;}
 @keyframes pop{0%{transform:scale(.6);} 100%{transform:none;}}
 
+.art-ladder{display:flex; align-items:flex-end; justify-content:center; gap:7px; padding:18px 20%;}
+.art-ladder i{flex:1; border-radius:8px 8px 3px 3px; background:var(--accent); transform-origin:bottom;}
+.art-ladder i:nth-child(1){height:22%; opacity:.45;}
+.art-ladder i:nth-child(2){height:36%; opacity:.55;}
+.art-ladder i:nth-child(3){height:50%; opacity:.65;}
+.art-ladder i:nth-child(4){height:64%; opacity:.78;}
+.art-ladder i:nth-child(5){height:80%; opacity:.9;}
+.art-ladder i:nth-child(6){height:100%; background:#E59A1C;}
+a.game-card:hover .art-ladder i{animation:grow .5s cubic-bezier(.3,1.6,.5,1) both;}
+a.game-card:hover .art-ladder i:nth-child(2){animation-delay:.05s;}
+a.game-card:hover .art-ladder i:nth-child(3){animation-delay:.1s;}
+a.game-card:hover .art-ladder i:nth-child(4){animation-delay:.15s;}
+a.game-card:hover .art-ladder i:nth-child(5){animation-delay:.2s;}
+a.game-card:hover .art-ladder i:nth-child(6){animation-delay:.25s;}
+@keyframes grow{0%{transform:scaleY(.3);}}
+
 .art-soon span{font-size:4rem; font-weight:700; color:var(--text-2); opacity:.5;}
 
 .game-body{padding:18px 20px 20px; display:flex; flex-direction:column; flex:1;}
