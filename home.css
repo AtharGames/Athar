@@ -84,6 +84,16 @@ a.game-card:hover .art-ladder i:nth-child(6){animation-delay:.25s;}
 .art-diwan .c{fill:none; stroke:#0D5C46;}
 a.game-card:hover .art-diwan svg{animation:pop .5s cubic-bezier(.3,1.6,.5,1) both;}
 
+/* سهمك الصاعد: مؤشر ينزل ثم يصعد */
+.art-sahm svg{width:100%; height:100%;}
+.art-sahm path{fill:none; stroke-linecap:round; stroke-linejoin:round;}
+.art-sahm .grid{stroke:var(--line); stroke-width:1.5;}
+.art-sahm .dn{stroke:#E8554E; stroke-width:5;}
+.art-sahm .ln{stroke:#1FA971; stroke-width:5;}
+.art-sahm .hd{fill:#1FA971; stroke:#1FA971; stroke-width:3;}
+.art-sahm .pt{fill:var(--solid); stroke:var(--text); stroke-width:2.5;}
+a.game-card:hover .art-sahm svg{animation:pop .5s cubic-bezier(.3,1.6,.5,1) both;}
+
 .art-snakes svg{width:100%; height:100%;}
 .art-snakes .sq rect{fill:var(--cell);}
 .art-snakes .sq rect.alt{fill:var(--surface);}
