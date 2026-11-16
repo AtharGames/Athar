@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>دفتر المحقق | القضية · أثَر</title>
+<meta name="description" content="صفحة الفريق في لعبة القضية: البطاقات السرية ودفتر المحقق والتصويت.">
+<!-- تطبيق الثيم المحفوظ قبل الرسم لتفادي الوميض -->
+<script>
+(function(){
+  var t=null;
+  try{ t=localStorage.getItem('athar-theme'); }catch(e){}
+  if(['light','navy','blue'].indexOf(t)<0){
+    t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'navy':'light';
+  }
+  document.documentElement.setAttribute('data-theme',t);
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/athar.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="phone">
+
+<header class="topbar">
+  <a class="brand" href="./team.html" aria-label="القضية">
+    <img class="logo logo-main" src="../assets/athar-mark.png" alt="" width="52" height="60">
+    <img class="logo logo-rev" src="../assets/athar-mark-reversed.png" alt="" width="52" height="60">
+    <span class="brand-text">
+      <strong>القضية</strong>
+      <small>دفتر المحقق</small>
+    </span>
+  </a>
+  <div class="top-tools">
+    <button class="icon-btn" id="soundBtn" aria-pressed="true" aria-label="الصوت">
+      <svg class="ico-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg class="ico-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="theme-switch" role="group" aria-label="ألوان الواجهة">
+      <button class="theme-dot" data-set-theme="light" aria-label="الثيم الفاتح" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="navy" aria-label="الثيم الكحلي" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="blue" aria-label="ثيم أزرق أثَر" aria-pressed="false"></button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ============ الدخول ============ -->
+  <section class="screen active" id="screen-join">
+    <div class="narrow center">
+      <div class="hero-art small" aria-hidden="true">
+        <img class="hero-logo logo-main" src="../assets/athar-logo.png" alt="" width="556" height="720">
+        <img class="hero-logo logo-rev" src="../assets/athar-logo-reversed.png" alt="" width="556" height="720">
+        <svg class="hero-lens" viewBox="0 0 64 64"><circle cx="26" cy="26" r="17"/><path d="M38.5 38.5L56 56"/></svg>
+      </div>
+      <h1 class="big-title">انضم لفريقك</h1>
+      <p class="lead">اكتب رمز فريقك الظاهر على شاشة المشرف، أو صوّر رمز QR.</p>
+      <form class="card join-form" id="joinForm" autocomplete="off">
+        <label class="field">
+          <span>رمز الفريق</span>
+          <input type="text" id="codeInput" dir="ltr" inputmode="text" autocapitalize="characters" maxlength="12" placeholder="ABCDE-FGHJ" aria-describedby="joinError">
+        </label>
+        <p class="form-error" id="joinError" role="alert" hidden></p>
+        <button class="btn btn-primary btn-big" type="submit">يلا ندخل</button>
+      </form>
+      <a class="home-link" href="../">← كل ألعاب أثَر</a>
+    </div>
+  </section>
+
+  <!-- ============ صفحة الفريق ============ -->
+  <section class="screen" id="screen-team">
+    <div class="narrow phone-stack">
+      <div class="me-card" id="meCard">
+        <span class="team-no" id="meNo"></span>
+        <span class="tchip-text"><b id="meName">جاري الاتصال…</b><small id="meSub"></small></span>
+        <span class="net-dot" id="netDot" title="الاتصال"></span>
+      </div>
+
+      <div class="banner" id="banner" aria-live="polite"></div>
+
+      <!-- اختيار الخصم بعد الإجابة الصحيحة -->
+      <div class="panel action-panel" id="pickBox" hidden>
+        <h2>اختاروا الخصم</h2>
+        <p class="muted">تاخذون منه ورقة عشوائية، وتوصلكم هنا بس.</p>
+        <div class="opp-grid" id="pickOpts"></div>
+      </div>
+
+      <!-- التصويت -->
+      <div class="panel action-panel" id="voteBox" hidden>
+        <h2 id="voteTitle">اتهامكم النهائي</h2>
+        <p class="muted" id="voteHint">اختاروا واحد من كل نوع، ثم أرسلوا.</p>
+        <div id="voteForm"></div>
+        <button class="btn btn-primary btn-big" id="voteSend" disabled>أرسل الاتهام</button>
+      </div>
+
+      <!-- النتيجة -->
+      <div class="panel action-panel" id="resultBox" hidden></div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>بطاقاتكم</h2><span class="muted">مو من القضية</span></div>
+        <div class="cards-grid" id="hand"></div>
+        <ul class="lost" id="lost"></ul>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>دفتر المحقق</h2></div>
+        <p class="muted nb-help">اضغط أي اسم لتعليمه: <span class="nb-key x">مستبعد</span> <span class="nb-key q">مشتبه</span> ثم يرجع فاضي. البطاقات اللي وصلتكم تنشطب لحالها.</p>
+        <div class="notebook" id="notebook"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>سجل التحقيق</h2></div>
+        <ol class="log" id="log"></ol>
+      </div>
+
+      <button class="btn btn-ghost" id="leaveBtn">خروج من الفريق</button>
+    </div>
+  </section>
+</main>
+
+<!-- ============ ورقة جديدة ============ -->
+<div class="modal" id="cardModal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="cardTitle">
+    <h3 id="cardTitle"></h3>
+    <p class="muted" id="cardText"></p>
+    <div class="cards-grid" id="cardShow"></div>
+    <button class="btn btn-primary" id="cardOk">تمام</button>
+  </div>
+</div>
+
+<!-- ============ تأكيد ============ -->
+<div class="modal" id="confirm" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h3 id="confirmTitle"></h3>
+    <p id="confirmText"></p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="confirmYes"></button>
+      <button class="btn" id="confirmNo">لا، هوّنت</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/athar-sound.js" defer></script>
+<script src="net.js" defer></script>
+<script src="shared.js" defer></script>
+<script src="team.js" defer></script>
+</body>
+</html>
