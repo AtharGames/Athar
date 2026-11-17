@@ -26,6 +26,30 @@ button{font:inherit; cursor:pointer;}
 
 main{flex:1; width:min(100%,1040px); margin:0 auto; padding:clamp(16px,4vw,40px);}
 
+/* ---------- خلفية كرتونية ---------- */
+:root,[data-theme="light"]{--fb-op:.8; --blob-1:#FFE3A3; --blob-2:#CDEBFF; --blob-3:#FFD3D0; --hill-1:#D6EBFF; --hill-2:#E8F3FF;}
+[data-theme="navy"]{--fb-op:.6; --blob-1:rgba(245,184,32,.22); --blob-2:rgba(92,194,245,.24); --blob-3:rgba(232,85,78,.2); --hill-1:#123581; --hill-2:#0F2C6E;}
+[data-theme="blue"]{--fb-op:.7; --blob-1:rgba(255,227,163,.4); --blob-2:rgba(255,255,255,.28); --blob-3:rgba(255,211,208,.35); --hill-1:#2A62D6; --hill-2:#3474DD;}
+html,body{overflow-x:clip;}
+.fun-bg{position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden;}
+.topbar, main, footer{position:relative; z-index:1;}
+.fun-bg .blob{position:absolute; border-radius:50%; filter:blur(10px);}
+.fun-bg .b1{width:44vmax; height:44vmax; left:-14vmax; top:-14vmax; background:var(--blob-1);}
+.fun-bg .b2{width:50vmax; height:50vmax; right:-18vmax; top:18vh; background:var(--blob-2);}
+.fun-bg .b3{width:36vmax; height:36vmax; left:22vw; bottom:-20vmax; background:var(--blob-3);}
+.fun-bg .fd{position:absolute; width:var(--s); height:var(--s); border-radius:50%; background:var(--c); opacity:.55; border:2px solid rgba(10,36,99,.35);}
+.fun-bg .fb{--z:calc(var(--s) * 1.7); position:absolute; width:var(--z); height:var(--z); margin:calc(var(--z) / -2) 0 0 calc(var(--z) / -2); opacity:var(--fb-op);
+  transform:rotate(var(--r)); animation:fbFloat 6s ease-in-out infinite; animation-delay:calc(var(--k) * -.7s);}
+.fun-bg .fb svg{width:100%; height:100%; display:block; filter:drop-shadow(0 4px 0 rgba(10,36,99,.18));}
+@keyframes fbFloat{50%{transform:translateY(-12px) rotate(calc(var(--r) + 6deg));}}
+.fun-bg .hills{position:absolute; left:0; right:0; bottom:0; width:100%; height:clamp(70px,14vh,150px);}
+.fun-bg .h1{fill:var(--hill-1);} .fun-bg .h2{fill:var(--hill-2);}
+/* على الجوال: رموز أصغر وأبهت حتى لا تزاحم البطاقات */
+@media (max-width:640px){
+  .fun-bg .fb{--fb-op:.4; width:calc(var(--s) * .7); height:calc(var(--s) * .7); margin:calc(var(--s) * -.35) 0 0 calc(var(--s) * -.35);}
+}
+@media (prefers-reduced-motion:reduce){.fun-bg .fb{animation:none;}}
+
 /* الواجهة */
 .hero{text-align:center; margin-bottom:clamp(24px,5vw,44px); animation:rise .5s ease both;}
 .hero-logo{width:clamp(140px,22vw,190px); height:auto; margin:0 auto; animation:floaty 5s ease-in-out infinite;}
