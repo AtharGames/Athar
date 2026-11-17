@@ -299,15 +299,29 @@ main{flex:1; padding:clamp(12px,3vw,26px); display:flex; flex-direction:column;}
 .d-arrow::after{content:""; position:absolute; left:-2px; top:-4px; border:5.5px solid transparent; border-right:7px solid var(--text-2); border-left:0;}
 .d-bolt{width:16px; height:22px; background:var(--fire); clip-path:polygon(60% 0,0 58%,45% 58%,35% 100%,100% 40%,55% 40%);}
 
-.sw-row{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px;}
-.stepper{display:flex; align-items:center; gap:4px; padding:5px; border-radius:16px; background:var(--solid); border:1px solid var(--line);}
-.stepper button{width:46px; height:46px; border-radius:12px; font-size:1.6rem; font-weight:700; line-height:1; background:var(--accent); color:var(--on-accent); box-shadow:0 3px 0 rgba(10,36,99,.4);}
-.stepper button:active{transform:translateY(2px); box-shadow:0 1px 0 rgba(10,36,99,.4);}
-.stepper button:disabled{opacity:.35; cursor:not-allowed;}
-.stepper output{min-width:3.2ch; text-align:center; font-size:1.7rem; font-weight:700; color:var(--text);}
-.presets{display:flex; gap:6px; flex-wrap:wrap;}
-.presets button{min-width:52px; min-height:40px; padding:0 12px; border-radius:12px; background:var(--solid); border:1px solid var(--line); font-weight:700; box-shadow:0 3px 0 var(--line);}
-.presets button[aria-pressed="true"]{background:var(--gold); color:var(--gold-ink); border-color:transparent; box-shadow:0 3px 0 #B45309;}
+/* بيانات الأسطول */
+.cfg-badge{font-size:.78rem; padding:2px 12px; border-radius:999px; background:var(--surface-2); color:var(--text-2); font-weight:700;}
+.cfg-badge.mod{background:var(--gold); color:var(--gold-ink);}
+.cfg-sum{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;}
+.cfg-sum span{font-size:.82rem; padding:3px 10px; border-radius:10px; background:var(--solid); border:1px solid var(--line);}
+.cfg-acts{display:flex; gap:8px; flex-wrap:wrap;}
+.cfg-panel{margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); animation:screenIn .3s ease both;}
+.cfg-rows{display:flex; flex-direction:column; gap:8px;}
+.cfg-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:8px 10px; border-radius:14px; background:var(--solid); border:1px solid var(--line);}
+.cfg-unit{display:flex; align-items:center; gap:6px; min-width:130px; flex:1;}
+.cfg-unit .ico{width:24px; height:24px; color:var(--hull-W);}
+.r-S .cfg-unit .ico{color:var(--hull-S);} .r-B .cfg-unit .ico{color:var(--hull-B);}
+.r-sw .cfg-unit .ico{color:#CA8A04;} .r-tr .cfg-unit .ico{color:var(--trap);}
+.mini{display:flex; flex-direction:column; align-items:center; gap:2px;}
+.mini small{font-size:.7rem; color:var(--text-2);}
+.mini-ctl{display:flex; align-items:center; gap:2px; padding:3px; border-radius:12px; background:var(--surface); border:1px solid var(--line);}
+.mini-ctl button{width:32px; height:32px; border-radius:9px; font-weight:700; font-size:1.15rem; line-height:1; background:var(--accent); color:var(--on-accent);}
+.mini-ctl button:active{transform:scale(.92);}
+.mini-ctl button:disabled{opacity:.3; cursor:not-allowed;}
+.mini-ctl output{min-width:4.2ch; text-align:center; font-weight:700;}
+.cfg-note{margin-top:8px; font-size:.84rem; color:var(--text-2);}
+.cfg-note.bad{color:var(--trap); font-weight:700;}
+[data-theme="navy"] .cfg-note.bad,[data-theme="blue"] .cfg-note.bad,[data-theme="ops"] .cfg-note.bad{color:#FFB4B4;}
 
 /* ---------- تجهيز الأساطيل ---------- */
 .joinhint{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}

@@ -21,7 +21,7 @@
   if (G && (!G.teams || G.v !== 1)) G = null;
   F.setRules(G && G.cfg);
   const setup = {
-    n: 2, mode: 'A', place: 'random', sw: F.SW_DEFAULT,
+    n: 2, mode: 'A', place: 'random', cfg: F.normCfg(null), cfgOpen: false,
     names: F.TEAM_NAMES.slice()
   };
   let aim = -1;            // المربع المحدد للقصف
@@ -72,7 +72,6 @@
     $$('#modes .mode').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === setup.mode)));
     $$('#placeModes .mode').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.place === setup.place)));
     $('#placeCard').hidden = setup.mode !== 'A';
-    renderSw();
     const box = $('#names');
     // نحافظ على ما كُتب
     $$('input', box).forEach((inp, i) => { setup.names[i] = inp.value; });
@@ -84,23 +83,63 @@
     const ok = setup.mode === 'A' || !!NET;
     $('#setupNext').textContent = setup.mode === 'A' && setup.place === 'random' ? 'وزّع وابدأ المعركة' : 'التالي';
     $('#setupNext').disabled = !ok;
+    renderCfg();
   }
   $('#countSeg').onclick = (e) => { const b = e.target.closest('[data-n]'); if (!b) return; setup.n = +b.dataset.n; F.S.tongue(0, 0.2); renderSetup(); };
   $('#modes').onclick = (e) => { const b = e.target.closest('[data-mode]'); if (!b) return; setup.mode = b.dataset.mode; F.S.tongue(0, 0.2); renderSetup(); };
   $('#placeModes').onclick = (e) => { const b = e.target.closest('[data-place]'); if (!b) return; setup.place = b.dataset.place; F.S.tongue(0, 0.2); renderSetup(); };
-  // عدد الجنود لكل فريق
-  function renderSw() {
-    $('#swVal').textContent = F.ar(setup.sw);
-    $('#swMinus').disabled = setup.sw <= F.SW_MIN;
-    $('#swPlus').disabled = setup.sw >= F.SW_MAX;
-    $$('#swPresets [data-sw]').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.sw === setup.sw)));
-    $('#swNote').textContent = setup.sw === 0 ? 'بدون جنود: الخريطة فيها القطع والأفخاخ فقط.'
-      : `كل جندي مصاب يعطي ${F.ar(F.SWIM.pts)} نقاط، فمجموع جنود الفريق ${F.ar(setup.sw * F.SWIM.pts)} نقطة.`;
+  // =========================================================
+  // بيانات الأسطول: الافتراضي ثابت، ولا تنفتح أدوات التعديل إلا بزر «تعديل»
+  // =========================================================
+  function renderCfg() {
+    const c = setup.cfg, def = F.isDefaultCfg(c);
+    F.setRules(c);
+    $('#cfgBadge').textContent = def ? 'الافتراضي' : 'معدّل';
+    $('#cfgBadge').classList.toggle('mod', !def);
+    $('#cfgSum').innerHTML = F.cfgSummary(c).map((x) => `<span>${esc(x)}</span>`).join('');
+    $('#cfgPanel').hidden = !setup.cfgOpen;
+    $('#cfgEdit').textContent = setup.cfgOpen ? 'إخفاء التعديل' : 'تعديل بيانات الأسطول';
+    $('#cfgEdit').setAttribute('aria-expanded', String(setup.cfgOpen));
+    $('#cfgReset').hidden = def;
+    const cells = F.cfgCells(c), over = cells > F.MAX_CELLS;
+    const ships = F.ORDER.reduce((a, t) => a + c[t].c, 0);
+    const note = $('#cfgNote');
+    note.classList.toggle('bad', over || ships === 0);
+    note.textContent = ships === 0 ? 'لازم يكون فيه قطعة وحدة على الأقل.'
+      : over ? `القطع تاخذ ${ar(cells)} مربع، والحد ${ar(F.MAX_CELLS)} حتى تتسع في الخريطة. قلّل العدد أو الحجم.`
+        : `القطع تاخذ ${ar(cells)} مربع من ١٠٠.`;
+    if (setup.cfgOpen) {
+      $('#cfgRows').innerHTML = F.FIELDS.map(({ u, name, ico, f }) => `
+        <div class="cfg-row r-${u}">
+          <span class="cfg-unit">${F.ico(ico)}<b>${name}</b></span>
+          ${f.map(([k, label, min, max]) => {
+            const v = c[u][k];
+            const shown = u === 'tr' && k === 'p' ? num(-v) : ar(v);
+            return `<span class="mini" role="group" aria-label="${name}: ${label}">
+              <small>${label}</small>
+              <span class="mini-ctl">
+                <button type="button" data-u="${u}" data-k="${k}" data-d="1" ${v >= max ? 'disabled' : ''} aria-label="زيادة">+</button>
+                <output>${shown}</output>
+                <button type="button" data-u="${u}" data-k="${k}" data-d="-1" ${v <= min ? 'disabled' : ''} aria-label="تقليل">−</button>
+              </span>
+            </span>`;
+          }).join('')}
+        </div>`).join('');
+    }
+    $('#setupNext').disabled = over || ships === 0 || !(setup.mode === 'A' || !!NET);
   }
-  const stepSw = (d) => { setup.sw = Math.max(F.SW_MIN, Math.min(F.SW_MAX, setup.sw + d)); F.S.tongue(0, 0.2); renderSw(); };
-  $('#swMinus').onclick = () => stepSw(-10);
-  $('#swPlus').onclick = () => stepSw(10);
-  $('#swPresets').onclick = (e) => { const b = e.target.closest('[data-sw]'); if (!b) return; setup.sw = +b.dataset.sw; F.S.tongue(0, 0.2); renderSw(); };
+  $('#cfgEdit').onclick = () => { setup.cfgOpen = !setup.cfgOpen; F.S.whoosh(setup.cfgOpen); renderCfg(); };
+  $('#cfgReset').onclick = () => { setup.cfg = F.normCfg(null); F.S.whoosh(false); renderCfg(); };
+  $('#cfgRows').onclick = (e) => {
+    const b = e.target.closest('[data-u]');
+    if (!b) return;
+    const { u, k } = b.dataset;
+    const fld = F.FIELDS.find((x) => x.u === u).f.find((x) => x[0] === k);
+    const [, , min, max, step] = fld;
+    setup.cfg[u][k] = Math.max(min, Math.min(max, setup.cfg[u][k] + step * +b.dataset.d));
+    F.S.tongue(0, 0.2);
+    renderCfg();
+  };
 
   $('#setupBack').onclick = () => { renderIntro(); show('screen-intro'); };
   $('#setupNext').onclick = async () => {
@@ -114,9 +153,9 @@
 
   function newGame() {
     const online = setup.mode !== 'A';
-    F.setRules({ sw: setup.sw });
+    F.setRules(setup.cfg);
     G = {
-      v: 1, mode: setup.mode, place: setup.place, phase: 'prep', cfg: { sw: setup.sw },
+      v: 1, mode: setup.mode, place: setup.place, phase: 'prep', cfg: F.normCfg(setup.cfg),
       teams: Array.from({ length: setup.n }, (_, i) => ({
         name: setup.names[i] || F.TEAM_NAMES[i], color: F.TEAM_COLORS[i],
         fleet: null, hits: {}, score: 0, strikes: F.START_STRIKES, ready: false,
@@ -130,7 +169,7 @@
       startBattle(true);
       return;
     }
-    addLog('sys', `تجهيز ${ar(G.teams.length)} فرق · ${MODE_NAME[G.mode]} · ${ar(G.cfg.sw)} جندي لكل فريق`);
+    addLog('sys', `تجهيز ${ar(G.teams.length)} فرق · ${MODE_NAME[G.mode]} · ${F.isDefaultCfg(G.cfg) ? 'بيانات الأسطول الافتراضية' : 'بيانات أسطول معدّلة'}`);
     saveNow();
     if (online) connect();
     renderPrep();
@@ -605,7 +644,7 @@
     clearTimeout(pubTimer);
     pubTimer = setTimeout(() => {
       const p = {
-        m: G.mode, ph: G.phase, cfg: G.cfg || { sw: F.SW_DEFAULT },
+        m: G.mode, ph: G.phase, cfg: F.normCfg(G.cfg),
         T: G.teams.map((t) => ({
           n: t.name, c: t.color, h: F.hash(G.net.room + t.key),
           sc: t.score, st: t.strikes, rd: t.ready ? 1 : 0, on: isOnline(t) ? 1 : 0,
@@ -645,6 +684,7 @@
   // =========================================================
   function resume() {
     if (!G) return;
+    F.setRules(G.cfg);
     if (G.net) connect();
     if (G.phase === 'prep') { renderPrep(); show('screen-prep'); }
     else if (G.phase === 'end') { renderEnd(); show('screen-end'); }

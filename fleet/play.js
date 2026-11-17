@@ -16,6 +16,7 @@
   let subs = [], helloTimer = 0;
   let ed = null, tab = 'strike', tgt = -1, aim = -1, pending = null, flash = null, ownFlash = null;
   let bannerTimer = 0;
+  let curCfg = '';
 
   const LAST = 'athar-fleet-last';
   const keyOf = () => `athar-fleet-team-${code}`;
@@ -43,7 +44,7 @@
     if (!NET) { joinErr('الاتصال غير متاح'); return; }
     code = c; room = c.slice(0, 5); key = c.slice(5);
     mine = F.store.get(keyOf(), null) || { fleet: null, sent: false, ev: 0 };
-    P = null; me = -1; pending = null; aim = -1; tgt = -1;
+    P = null; me = -1; pending = null; aim = -1; tgt = -1; curCfg = '';
     if (ed) ed.set(mine.fleet ? F.clone(mine.fleet) : F.empty());
     F.store.set(LAST, code);
     joinErr('');
@@ -94,10 +95,20 @@
     if (P && typeof p.s === 'number' && typeof P.s === 'number' && p.s < P.s) return; // رسالة أقدم
     const prev = P;
     p.T.forEach((t) => { t.pb = t.pb ? F.unpackPB(t.pb) : null; });
-    // عدد الجنود يحدده المقدّم
-    const swBefore = F.SWIM.count;
-    F.setRules(p.cfg);
-    if (ed && swBefore !== F.SWIM.count) ed.draw();
+    // بيانات الأسطول (الأعداد والأحجام والنقاط) يحددها المقدّم
+    const cfgKey = JSON.stringify(F.normCfg(p.cfg));
+    if (cfgKey !== curCfg) {
+      curCfg = cfgKey;
+      F.setRules(p.cfg);
+      // أسطول محفوظ ببيانات قديمة ما عاد يصلح
+      if (mine.fleet && mine.cfg && mine.cfg !== cfgKey && !(p.T.find((t) => t.h === F.hash(room + key)) || {}).rd) {
+        mine.fleet = null; mine.sent = false;
+        if (ed) ed.set(F.empty());
+        toast('المقدّم غيّر بيانات الأسطول، ارسموه من جديد', 'bad');
+      }
+      mine.cfg = cfgKey; persist();
+      if (ed) ed.draw();
+    }
     P = p;
     me = p.T.findIndex((t) => t.h === F.hash(room + key));
     if (me < 0) { renderAll(); return; }

@@ -21,11 +21,48 @@ window.Fleet = (() => {
   const SWIM = { name: 'سبّاح', plural: 'سبّاحين', pts: 5, count: 50, ico: 'i-swim' };
   const TRAP = { name: 'فخ', plural: 'أفخاخ', pts: -100, count: 5, ico: 'i-mine' };
   const START_STRIKES = 1; // ضربة البداية لكل فريق
-  // عدد الجنود (السبّاحين) قابل للتعديل من الإعداد، والجوالات تأخذه من شاشة المقدّم
-  const SW_DEFAULT = 50, SW_MIN = 0, SW_MAX = 200;
+  // =========================================================
+  // بيانات الأسطول قابلة للتعديل من الإعداد (الافتراضي = المسابقة الأصلية)
+  // cfg: { S:{c,z,p}, W:{c,z,p}, B:{c,z,p}, sw:{c,p}, tr:{c,p} }
+  // c العدد، z حجم القطعة بالمربعات، p النقاط (وللفخ: مقدار الخصم)
+  // =========================================================
+  const DEFAULTS = { S: { c: 2, z: 4, p: 1000 }, W: { c: 5, z: 3, p: 500 }, B: { c: 10, z: 2, p: 50 }, sw: { c: 50, p: 5 }, tr: { c: 5, p: 100 } };
+  const FIELDS = [
+    { u: 'S', name: 'غواصة', ico: 'i-sub', f: [['c', 'العدد', 0, 6, 1], ['z', 'الحجم (مربعات)', 1, 5, 1], ['p', 'نقاط المربع', 0, 5000, 100]] },
+    { u: 'W', name: 'سفينة', ico: 'i-ship', f: [['c', 'العدد', 0, 8, 1], ['z', 'الحجم (مربعات)', 1, 5, 1], ['p', 'نقاط المربع', 0, 5000, 50]] },
+    { u: 'B', name: 'قارب', ico: 'i-boat', f: [['c', 'العدد', 0, 15, 1], ['z', 'الحجم (مربعات)', 1, 5, 1], ['p', 'نقاط المربع', 0, 2000, 10]] },
+    { u: 'sw', name: 'جنود (سبّاحين)', ico: 'i-swim', f: [['c', 'العدد', 0, 200, 10], ['p', 'نقاط الجندي', 0, 100, 1]] },
+    { u: 'tr', name: 'أفخاخ', ico: 'i-mine', f: [['c', 'العدد', 0, 15, 1], ['p', 'خصم الفخ', 0, 1000, 50]] }
+  ];
+  const MAX_CELLS = 60; // أقصى مجموع مربعات للقطع حتى يتسع التوزيع في خريطة ١٠×١٠
+  function normCfg(c) {
+    const out = JSON.parse(JSON.stringify(DEFAULTS));
+    if (c && typeof c === 'object') {
+      if (typeof c.sw === 'number') out.sw.c = c.sw; // صيغة قديمة: عدد الجنود فقط
+      FIELDS.forEach(({ u, f }) => f.forEach(([k, , min, max]) => {
+        const v = c[u] && typeof c[u] === 'object' ? Number(c[u][k]) : NaN;
+        if (Number.isInteger(v)) out[u][k] = Math.max(min, Math.min(max, v));
+      }));
+      out.sw.c = Math.max(0, Math.min(200, Math.round(out.sw.c) || 0));
+    }
+    return out;
+  }
+  const cfgCells = (c) => ORDER.reduce((a, t) => a + c[t].c * c[t].z, 0);
+  const isDefaultCfg = (c) => JSON.stringify(normCfg(c)) === JSON.stringify(DEFAULTS);
   function setRules(c) {
-    const n = c && Number(c.sw);
-    SWIM.count = Number.isInteger(n) && n >= SW_MIN && n <= SW_MAX ? n : SW_DEFAULT;
+    const n = normCfg(c);
+    ORDER.forEach((t) => { SHIPS[t].count = n[t].c; SHIPS[t].size = n[t].z; SHIPS[t].pts = n[t].p; });
+    SWIM.count = n.sw.c; SWIM.pts = n.sw.p;
+    TRAP.count = n.tr.c; TRAP.pts = -n.tr.p;
+    return n;
+  }
+  // وصف مختصر للبيانات الحالية
+  function cfgSummary(c) {
+    const n = normCfg(c);
+    return [
+      ...ORDER.map((t) => `${SHIPS[t].name}: ${ar(n[t].c)} بحجم ${ar(n[t].z)} ونقاط المربع ${ar(n[t].p)}`),
+      `جنود: ${ar(n.sw.c)} ونقاط الجندي ${ar(n.sw.p)}`, `أفخاخ: ${ar(n.tr.c)} وخصم الفخ ${ar(n.tr.p)}`
+    ];
   }
   const TEAM_COLORS = ['#E8554E', '#E59A1C', '#1FA971', '#8257E5', '#E0559B', '#0FA3B1'];
   const TEAM_NAMES = ['أسرة الفرسان', 'أسرة الأمل', 'أسرة الصقور', 'أسرة النصر', 'أسرة الشموخ', 'أسرة الريادة'];
@@ -341,9 +378,9 @@ window.Fleet = (() => {
   // محرر التقسيم اليدوي (مشترك بين المقدّم والجوال)
   // =========================================================
   const TOOLS = [
-    { id: 'S', label: `غواصة`, sub: '٤ مربعات' },
-    { id: 'W', label: `سفينة`, sub: '٣ مربعات' },
-    { id: 'B', label: `قارب`, sub: 'مربعان' },
+    { id: 'S', label: `غواصة` },
+    { id: 'W', label: `سفينة` },
+    { id: 'B', label: `قارب` },
     { id: 'sw', label: 'سبّاحين', sub: 'تجميع' },
     { id: 'tr', label: 'أفخاخ', sub: 'تجميع' },
     { id: 'er', label: 'ممحاة', sub: 'تفريغ خانة' }
@@ -431,6 +468,9 @@ window.Fleet = (() => {
         b.setAttribute('aria-pressed', String(t === st.tool));
         const n = $('.tn', b);
         if (t === 'er') { n.textContent = TOOLS[5].sub; b.classList.remove('done'); return; }
+        const total = SHIPS[t] ? SHIPS[t].count : t === 'sw' ? SWIM.count : TRAP.count;
+        b.hidden = total === 0; // وحدة ألغاها المقدّم
+        if (SHIPS[t]) $('.tl', b).textContent = `${SHIPS[t].name} (${ar(SHIPS[t].size)})`;
         n.textContent = l[t] > 0 ? `باقي ${ar(l[t])}` : l[t] < 0 ? `زايد ${ar(-l[t])}` : 'اكتمل';
         b.classList.toggle('done', l[t] === 0);
         b.classList.toggle('over', l[t] < 0);
@@ -686,7 +726,7 @@ window.Fleet = (() => {
   }
 
   return {
-    $, $$, S, ROWS, SHIPS, ORDER, SWIM, TRAP, START_STRIKES, TEAM_COLORS, TEAM_NAMES, totalItems, setRules, SW_DEFAULT, SW_MIN, SW_MAX,
+    $, $$, S, ROWS, SHIPS, ORDER, SWIM, TRAP, START_STRIKES, TEAM_COLORS, TEAM_NAMES, totalItems, setRules, DEFAULTS, FIELDS, MAX_CELLS, normCfg, cfgCells, isDefaultCfg, cfgSummary,
     ar, esc, sgn, num, cellName, uid, toLatin, hash, store,
     empty, clone, shipCells, occ, counts, left, isComplete, placedItems, fits, place, addStack, eraseAt, rotateAt,
     fillRandom, random, validate, encode, decode, resolve, isSunk, publicBoard, explored, packPB, unpackPB,

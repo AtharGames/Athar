@@ -97,14 +97,14 @@
         <div class="unit u-S"><span class="u-ico" data-ico="i-sub"></span><strong>غواصة</strong><small>٤ مربعات · ٢ لكل فريق</small><b class="u-pts">١٠٠٠ للمربع</b></div>
         <div class="unit u-W"><span class="u-ico" data-ico="i-ship"></span><strong>سفينة</strong><small>٣ مربعات · ٥ لكل فريق</small><b class="u-pts">٥٠٠ للمربع</b></div>
         <div class="unit u-B"><span class="u-ico" data-ico="i-boat"></span><strong>قارب</strong><small>مربعان · ١٠ لكل فريق</small><b class="u-pts">٥٠ للمربع</b></div>
-        <div class="unit u-sw"><span class="u-ico" data-ico="i-swim"></span><strong>سبّاح</strong><small>تجميع · ٥٠ والعدد يتغيّر</small><b class="u-pts">٥ لكل سبّاح</b></div>
+        <div class="unit u-sw"><span class="u-ico" data-ico="i-swim"></span><strong>سبّاح</strong><small>تجميع · ٥٠ لكل فريق</small><b class="u-pts">٥ لكل سبّاح</b></div>
         <div class="unit u-tr"><span class="u-ico" data-ico="i-mine"></span><strong>فخ</strong><small>تجميع · ٥ لكل فريق</small><b class="u-pts neg">−١٠٠ لكل فخ</b></div>
       </div>
 
       <details class="card rules">
         <summary>كيف تمشي المسابقة؟</summary>
         <ul>
-          <li>لكل فريق خريطة ١٠×١٠ فيها أسطوله: غواصتان وخمس سفن وعشرة قوارب، وجنود سبّاحين (٥٠ افتراضيًا، وتقدر تزيدهم أو تنقصهم من الإعداد) وخمسة أفخاخ، والجنود والأفخاخ يجوز تجميعها في خانة وحدة.</li>
+          <li>لكل فريق خريطة ١٠×١٠ فيها أسطوله: غواصتان وخمس سفن وعشرة قوارب، و٥٠ جنديًا سبّاحًا وخمسة أفخاخ، والجنود والأفخاخ يجوز تجميعها في خانة وحدة. وتقدر تعدّل الأعداد والأحجام والنقاط من «بيانات الأسطول» في الإعداد.</li>
           <li>يبدأ كل فريق بضربة وحدة، والمقدّم يسأل: <strong>إجابة صحيحة = ضربة جديدة</strong>.</li>
           <li>يختار الفريق خصمًا ومربعًا ويقصفه: نقاط ما في المربع تنضاف للفريق المهاجم.</li>
           <li><strong>إصابة قطعة أو سبّاحين = ضربة إضافية فورًا</strong>، أما <strong>الفخ</strong> فيخصم ١٠٠ عن كل فخ وبلا ضربة إضافية.</li>
@@ -136,23 +136,20 @@
         <div class="names" id="names"></div>
       </div>
 
-      <div class="card">
-        <div class="card-head"><h3>عدد الجنود لكل فريق</h3><span class="muted">السبّاحين اللي ينتشرون في الخريطة</span></div>
-        <div class="sw-row">
-          <div class="stepper" role="group" aria-label="عدد الجنود">
-            <button type="button" id="swPlus" aria-label="زيادة ١٠">+</button>
-            <output id="swVal" aria-live="polite">٥٠</output>
-            <button type="button" id="swMinus" aria-label="تقليل ١٠">−</button>
-          </div>
-          <div class="presets" id="swPresets" role="group" aria-label="أعداد جاهزة">
-            <button type="button" data-sw="0" aria-pressed="false">بدون</button>
-            <button type="button" data-sw="20" aria-pressed="false">٢٠</button>
-            <button type="button" data-sw="50" aria-pressed="true">٥٠</button>
-            <button type="button" data-sw="100" aria-pressed="false">١٠٠</button>
-            <button type="button" data-sw="150" aria-pressed="false">١٥٠</button>
-          </div>
+      <div class="card fleetcfg" id="cfgCard">
+        <div class="card-head">
+          <h3>بيانات الأسطول</h3>
+          <span class="cfg-badge" id="cfgBadge">الافتراضي</span>
         </div>
-        <p class="muted" id="swNote"></p>
+        <div class="cfg-sum" id="cfgSum"></div>
+        <div class="cfg-acts">
+          <button type="button" class="btn btn-small" id="cfgEdit" aria-expanded="false">تعديل بيانات الأسطول</button>
+          <button type="button" class="btn btn-small btn-ghost" id="cfgReset" hidden>رجوع للافتراضي</button>
+        </div>
+        <div class="cfg-panel" id="cfgPanel" hidden>
+          <div class="cfg-rows" id="cfgRows"></div>
+          <p class="cfg-note" id="cfgNote"></p>
+        </div>
       </div>
 
       <div class="card">
