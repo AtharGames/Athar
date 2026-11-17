@@ -10,7 +10,7 @@
    ========================================================= */
 (() => {
   'use strict';
-  const { diff, $, $$, S, store, ar, esc, secs, ordinal, colorOf, queueOf, initChrome, show, toast, confirmBox } = window.BuzzUI;
+  const { SFX, diff, $, $$, S, store, ar, esc, secs, ordinal, colorOf, queueOf, initChrome, show, toast, confirmBox } = window.BuzzUI;
   const NET = window.BuzzNet;
   const HOST_KEY = 'athar-buzzer-host';
   const STALE = 12 * 60 * 60 * 1000; // غرفة أقدم من ١٢ ساعة تُعتبر منتهية
@@ -131,10 +131,10 @@
     if (lastRound !== s.r) { lastRound = s.r; lastLen = 0; seenRows.clear(); }
     if (q.length > lastLen) {
       if (lastLen === 0) {
-        S.chirp(0, 3200); S.drop(520, 0.12);
+        SFX.play('bell-host'); // جرس قوي لأول ضغطة
         // وميض ذهبي على المسرح لأول ضغطة
         el.stage.classList.remove('flash'); void el.stage.offsetWidth; el.stage.classList.add('flash');
-      } else S.drop(420);
+      } else SFX.play('bell-next', 0.9); // جرس أخف للي بعده
     }
     lastLen = q.length;
 

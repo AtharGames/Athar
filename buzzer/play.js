@@ -5,7 +5,7 @@
    ========================================================= */
 (() => {
   'use strict';
-  const { diff, $, S, confetti, store, ar, toLatin, esc, secs, ordinal, queueOf, initChrome, show, toast, confirmBox } = window.BuzzUI;
+  const { SFX, diff, $, S, confetti, store, ar, toLatin, esc, secs, ordinal, queueOf, initChrome, show, toast, confirmBox } = window.BuzzUI;
   const NET = window.BuzzNet;
   const ME_KEY = 'athar-buzzer-me';
 
@@ -184,13 +184,14 @@
     setTimeout(() => el.bell.classList.remove('down'), 140);
 
     if (el.wrap.dataset.state !== 'ready') {
-      // مقفول: هزّة خفيفة بدون تسجيل
+      // مقفول أو ممنوع أو خلصت محاولته: صوت منع وهزّة بدون تسجيل
+      if (['locked', 'wait', 'blocked', 'done'].includes(el.wrap.dataset.state)) { SFX.play('deny', 0.8); vibrate([60, 40, 60]); }
       el.bell.classList.remove('shake'); void el.bell.offsetWidth; el.bell.classList.add('shake');
       return;
     }
     const r = room.s.r;
     pending = r;
-    S.tongue(0, 0.35);
+    SFX.play('bell-press');
     vibrate(40);
     render();
     NET.set(`${me.room}/b/${r}/${me.pid}`, { t: NET.TS }).catch(() => {

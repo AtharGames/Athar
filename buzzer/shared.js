@@ -8,6 +8,53 @@ window.BuzzUI = (() => {
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const S = window.AtharSound;
 
+  // ---------- مؤثرات الجرس المسجّلة (sounds/) ----------
+  // جرس طاولة قوي للمقدّم، دِنغ للمشارك، وصوت منع عند الضغط والجرس مقفول.
+  // تحترم زر كتم الصوت المشترك، وتُفك على الجوال من أول لمسة.
+  const SFX = (() => {
+    const BASE = new URL('sounds/', (document.currentScript && document.currentScript.src) || location.href).href;
+    const NAMES = ['bell-host', 'bell-next', 'bell-press', 'deny'];
+    const raw = {}, bufs = {};
+    let ctx = null, out = null;
+    const decode = (n) => {
+      if (!ctx || bufs[n] || !raw[n]) return;
+      try { ctx.decodeAudioData(raw[n].slice(0), (b) => { bufs[n] = b; }, () => {}); } catch { /* تجاهل */ }
+    };
+    NAMES.forEach((n) => {
+      fetch(BASE + n + '.mp3').then((r) => (r.ok ? r.arrayBuffer() : null))
+        .then((b) => { if (b) { raw[n] = b; decode(n); } }).catch(() => {});
+    });
+    function ensure() {
+      try {
+        if (!ctx) {
+          const C = window.AudioContext || window.webkitAudioContext;
+          if (!C) return null;
+          ctx = new C();
+          out = ctx.createGain(); out.gain.value = 1; out.connect(ctx.destination);
+          NAMES.forEach(decode);
+        }
+        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      } catch { /* تجاهل */ }
+      return ctx;
+    }
+    // فك الصوت مع أي لمسة أو ضغطة زر (متطلب المتصفحات في الجوال)
+    ['pointerdown', 'keydown', 'touchend'].forEach((ev) => document.addEventListener(ev, ensure, { capture: true, passive: true }));
+    function play(name, vol = 1) {
+      if (!window.AtharSound || !window.AtharSound.on) return;
+      const c = ensure();
+      const b = bufs[name];
+      if (c && b) {
+        const src = c.createBufferSource(), g = c.createGain();
+        src.buffer = b; g.gain.value = vol;
+        src.connect(g).connect(out); src.start();
+      } else {
+        // احتياطي إذا ما انفك الملف بعد
+        try { const a = new Audio(BASE + name + '.mp3'); a.volume = Math.min(1, vol); a.play().catch(() => {}); } catch { /* تجاهل */ }
+      }
+    }
+    return { play };
+  })();
+
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch { /* تجاهل */ } },
@@ -124,5 +171,5 @@ window.BuzzUI = (() => {
     requestAnimationFrame(tick);
   }
 
-  return { confetti, diff, $, $$, S, store, ar, toLatin, esc, secs, ordinal, colorOf, queueOf, initChrome, show, toast, confirmBox };
+  return { SFX, confetti, diff, $, $$, S, store, ar, toLatin, esc, secs, ordinal, colorOf, queueOf, initChrome, show, toast, confirmBox };
 })();

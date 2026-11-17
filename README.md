@@ -23,7 +23,7 @@ assets/fonts/                   ملفات خط ثمانية (لا تُرفع ب
 tarabee/                        لعبة ترابيع
 telephone/                      مسابقة من سيربح التيلفون
 snakes/                         لعبة السلم والثعبان
-buzzer/                         جرس أثَر (index.html شاشة المقدّم، play.html صفحة المشارك، net.js الاتصال؛ مشروع Firebase مستقل: firebase-config.js و database.rules.json)
+buzzer/                         جرس أثَر (index.html شاشة المقدّم، play.html صفحة المشارك، net.js الاتصال، sounds/ مؤثرات الجرس المولّدة؛ مشروع Firebase مستقل: firebase-config.js و database.rules.json)
 diwan/                          بنك أسئلة ديوان (data.js مولّد من ملفات الأسئلة الأصلية)
 sahm/                           مسابقة سهمك الصاعد (questions.js بنك الأسئلة)
 crime/                          مسابقة مسرح جريمة (team.html صفحة الفريق بالجوال، net.js الاتصال: Firebase إذا وُجدت firebase-config.js وإلا ntfy.sh، الأسئلة من ../diwan/data.js)
