@@ -1,0 +1,166 @@
+/* =========================================================
+   شاشة البداية المتحركة لأثَر (المدة الكلية 3.5 ثانية)
+   0.00 – 0.65  ظهور الأيقونة
+   0.65 – 1.60  كشف «أثَر» من اليمين إلى اليسار
+   1.60 – 2.05  تمدد الخط المضيء
+   1.85 – 2.35  ظهور نص اللجنة
+   2.00 – 2.80  لمعة تمرّ على الشعار + وميض نجمة على رأس السهم
+   2.90 – 3.50  انتقال: الشعار يكبر ويتلاشى والصفحة تصعد من خلفه
+   تظهر فقط إذا أضاف سكربت الرأس الصنف splash-on على <html>
+   الأصوات في assets/athar-splash.js
+   ========================================================= */
+.splash{display:none;}
+
+html.splash-on .splash{
+  position:fixed; inset:0; z-index:9999;
+  display:flex; align-items:center; justify-content:center;
+  /* الكحلي الأساسي + توهج دائري ناعم بأزرق أثَر المضيء */
+  background:
+    radial-gradient(circle at 50% 44%, rgba(92,194,245,.26) 0%, rgba(30,111,224,.14) 26%, rgba(10,36,99,0) 58%),
+    #0A2463;
+  /* مقاس واحد يتبع أصغر بُعدَي الشاشة: جوال، آيباد (طولي وعرضي)، لابتوب */
+  --splash-w:clamp(110px, min(40vw, 26vh), 250px);
+  --splash-img:url("athar-logo-reversed.png");
+  padding:16px; text-align:center; overflow:hidden;
+  animation:splash-out .6s ease 2.9s both;
+}
+
+/* منع التمرير ما دامت الشاشة ظاهرة */
+html.splash-on, html.splash-on body{overflow:hidden;}
+
+/* حاوية العناصر: هي التي تكبر وتتلاشى عند الانتقال */
+.splash-stage{
+  display:flex; flex-direction:column; align-items:center;
+  animation:splash-stage-out .6s cubic-bezier(.5,0,.75,0) 2.9s both;
+}
+
+/* الأيقونة والاسم مقصوصان من صورة الشعار المعكوس الكاملة (556×720) لتبقى حادّة على الشاشات الكبيرة */
+.splash-icon, .splash-title{
+  position:relative;
+  background-image:var(--splash-img);
+  background-repeat:no-repeat;
+}
+
+/* المرحلة 1: الأيقونة */
+.splash-icon{
+  width:var(--splash-w); aspect-ratio:370/336;
+  background-size:150.27% auto; background-position:54.30% 3.39%;
+  filter:drop-shadow(0 0 calc(var(--splash-w) * .16) rgba(92,194,245,.45));
+  animation:splash-icon .65s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* المرحلة 2: الاسم يُكشف من اليمين إلى اليسار */
+.splash-title{
+  width:calc(var(--splash-w) * .62); aspect-ratio:218/206;
+  margin-top:calc(var(--splash-w) * .12);
+  background-size:255.05% auto; background-position:47.04% 77.82%;
+  animation:splash-title .95s ease-out .65s both;
+}
+
+/* اللمعة: شريط ضوء يمرّ من اليمين إلى اليسار داخل حدود الشعار فقط (قناع بنفس الصورة) */
+.splash-icon::after, .splash-title::after{
+  content:""; position:absolute; inset:0;
+  -webkit-mask-image:var(--splash-img); mask-image:var(--splash-img);
+  -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+  background-image:linear-gradient(110deg,
+    rgba(255,255,255,0) 36%, rgba(92,194,245,.8) 45%, #FFFFFF 50%,
+    rgba(92,194,245,.8) 55%, rgba(255,255,255,0) 64%);
+  background-size:300% 100%; background-repeat:no-repeat; background-position:0% 0;
+  opacity:0;
+}
+.splash-icon::after{
+  -webkit-mask-size:150.27% auto; mask-size:150.27% auto;
+  -webkit-mask-position:54.30% 3.39%; mask-position:54.30% 3.39%;
+  animation:splash-shine .7s ease-in-out 2s both;
+}
+.splash-title::after{
+  -webkit-mask-size:255.05% auto; mask-size:255.05% auto;
+  -webkit-mask-position:47.04% 77.82%; mask-position:47.04% 77.82%;
+  animation:splash-shine .7s ease-in-out 2.1s both;
+}
+
+/* وميض نجمة على رأس السهم */
+.splash-icon::before{
+  content:""; position:absolute; top:-4%; right:-3%;
+  width:22%; aspect-ratio:1; background:#FFFFFF;
+  clip-path:polygon(50% 0, 58% 42%, 100% 50%, 58% 58%, 50% 100%, 42% 58%, 0 50%, 42% 42%);
+  filter:drop-shadow(0 0 6px #BFE3FC);
+  animation:splash-glint .55s ease-out 2.25s both;
+}
+
+/* المرحلة 3: الخط المضيء يتمدد من المنتصف ثم ينبض مع اللمعة */
+.splash-line{
+  width:max(160px, var(--splash-w)); height:2px; border-radius:2px;
+  margin-top:calc(var(--splash-w) * .13);
+  background:linear-gradient(90deg, rgba(92,194,245,0), #5CC2F5 50%, rgba(92,194,245,0));
+  box-shadow:0 0 14px rgba(92,194,245,.55);
+  animation:splash-line .45s ease-out 1.6s both, splash-line-glow .7s ease-in-out 2.1s both;
+}
+
+/* نص اللجنة أسفل الخط: يظهر بنعومة مع ارتفاع خفيف */
+.splash-tag{
+  margin-top:calc(var(--splash-w) * .11);
+  font-family:"Thmanyah Sans","IBM Plex Sans Arabic",system-ui,sans-serif;
+  color:#DCEEFE; line-height:1.5;
+  animation:splash-tag .5s ease-out 1.85s both;
+}
+.splash-tag-ar{font-weight:500; font-size:max(13px, calc(var(--splash-w) * .1)); white-space:nowrap;}
+.splash-tag-en{
+  font-weight:500; font-size:max(9.5px, calc(var(--splash-w) * .062));
+  letter-spacing:.06em; opacity:.8; margin-top:2px; white-space:nowrap;
+}
+
+@keyframes splash-icon{
+  from{opacity:0; transform:scale(.85);}
+  to{opacity:1; transform:scale(1);}
+}
+@keyframes splash-title{
+  from{clip-path:inset(0 0 0 100%);}
+  to{clip-path:inset(0 0 0 0);}
+}
+@keyframes splash-line{
+  from{transform:scaleX(0);}
+  to{transform:scaleX(1);}
+}
+@keyframes splash-line-glow{
+  50%{box-shadow:0 0 26px 2px rgba(191,227,252,.95); filter:brightness(1.6);}
+}
+@keyframes splash-tag{
+  from{opacity:0; transform:translateY(8px);}
+  to{opacity:1; transform:translateY(0);}
+}
+@keyframes splash-shine{
+  0%{opacity:0; background-position:0% 0;}
+  15%,85%{opacity:1;}
+  100%{opacity:0; background-position:100% 0;}
+}
+@keyframes splash-glint{
+  0%{opacity:0; transform:scale(0) rotate(0deg);}
+  45%{opacity:1; transform:scale(1) rotate(45deg);}
+  100%{opacity:0; transform:scale(0) rotate(90deg);}
+}
+
+/* المرحلة 4: الانتقال */
+@keyframes splash-stage-out{
+  from{opacity:1; transform:scale(1); filter:blur(0);}
+  to{opacity:0; transform:scale(1.22); filter:blur(6px);}
+}
+@keyframes splash-out{
+  from{opacity:1; visibility:visible;}
+  to{opacity:0; visibility:hidden; pointer-events:none;}
+}
+
+/* عناصر الصفحة تنتظر خلف الشاشة، ثم تصعد بحركتها المعتادة مع بدء الانتقال */
+html.splash-on:not(.splash-leaving) .hero,
+html.splash-on:not(.splash-leaving) .game-card{animation-play-state:paused;}
+
+/* تخطٍّ فوري عند اللمس */
+html.splash-on .splash.is-skipped{animation:splash-out .35s ease both;}
+html.splash-on .splash.is-skipped .splash-stage{animation:splash-stage-out .35s ease-in both;}
+
+/* لمن يفضّل تقليل الحركة: ظهور ثابت قصير بلا حركات ولا لمعة */
+@media (prefers-reduced-motion: reduce){
+  html.splash-on .splash{animation-delay:1s; animation-duration:.3s;}
+  .splash-stage, .splash-icon, .splash-title, .splash-line, .splash-tag{animation:none;}
+  .splash-icon::before, .splash-icon::after, .splash-title::after{display:none;}
+}
