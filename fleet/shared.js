@@ -21,6 +21,12 @@ window.Fleet = (() => {
   const SWIM = { name: 'سبّاح', plural: 'سبّاحين', pts: 5, count: 50, ico: 'i-swim' };
   const TRAP = { name: 'فخ', plural: 'أفخاخ', pts: -100, count: 5, ico: 'i-mine' };
   const START_STRIKES = 1; // ضربة البداية لكل فريق
+  // عدد الجنود (السبّاحين) قابل للتعديل من الإعداد، والجوالات تأخذه من شاشة المقدّم
+  const SW_DEFAULT = 50, SW_MIN = 0, SW_MAX = 200;
+  function setRules(c) {
+    const n = c && Number(c.sw);
+    SWIM.count = Number.isInteger(n) && n >= SW_MIN && n <= SW_MAX ? n : SW_DEFAULT;
+  }
   const TEAM_COLORS = ['#E8554E', '#E59A1C', '#1FA971', '#8257E5', '#E0559B', '#0FA3B1'];
   const TEAM_NAMES = ['أسرة الفرسان', 'أسرة الأمل', 'أسرة الصقور', 'أسرة النصر', 'أسرة الشموخ', 'أسرة الريادة'];
 
@@ -66,8 +72,8 @@ window.Fleet = (() => {
     return { S: SHIPS.S.count - c.S, W: SHIPS.W.count - c.W, B: SHIPS.B.count - c.B, sw: SWIM.count - c.sw, tr: TRAP.count - c.tr };
   }
   const isComplete = (f) => Object.values(left(f)).every((x) => x === 0);
-  const TOTAL_ITEMS = SHIPS.S.count + SHIPS.W.count + SHIPS.B.count + SWIM.count + TRAP.count;
-  const placedItems = (f) => TOTAL_ITEMS - Object.values(left(f)).reduce((a, b) => a + Math.max(0, b), 0);
+  const totalItems = () => SHIPS.S.count + SHIPS.W.count + SHIPS.B.count + SWIM.count + TRAP.count;
+  const placedItems = (f) => totalItems() - Object.values(left(f)).reduce((a, b) => a + Math.max(0, b), 0);
 
   // هل تتسع القطعة؟ يرجّع '' إذا تمام، أو سبب الرفض
   function fits(f, t, r, c, v, ignore = -1) {
@@ -425,8 +431,9 @@ window.Fleet = (() => {
         b.setAttribute('aria-pressed', String(t === st.tool));
         const n = $('.tn', b);
         if (t === 'er') { n.textContent = TOOLS[5].sub; b.classList.remove('done'); return; }
-        n.textContent = l[t] > 0 ? `باقي ${ar(l[t])}` : 'اكتمل';
-        b.classList.toggle('done', l[t] <= 0);
+        n.textContent = l[t] > 0 ? `باقي ${ar(l[t])}` : l[t] < 0 ? `زايد ${ar(-l[t])}` : 'اكتمل';
+        b.classList.toggle('done', l[t] === 0);
+        b.classList.toggle('over', l[t] < 0);
       });
       const isShip = !!SHIPS[st.tool], isStack = st.tool === 'sw' || st.tool === 'tr';
       const rot = $('[data-act="rot"]', root);
@@ -438,8 +445,8 @@ window.Fleet = (() => {
       $('.ed-hint', root).textContent = isShip ? 'اضغط المربع الأول للقطعة، واضغط قطعة موضوعة لتدويرها'
         : isStack ? 'اضغط أي خانة للإضافة، ويجوز التجميع فوق القطع' : 'اضغط خانة لتفريغها (القطعة كاملة مع ما فوقها)';
       const done = placedItems(f);
-      $('.prog i', root).style.width = `${(done / TOTAL_ITEMS) * 100}%`;
-      $('.prog-t', root).textContent = isComplete(f) ? 'الأسطول مكتمل ✓' : `وضعت ${ar(done)} من ${ar(TOTAL_ITEMS)}`;
+      $('.prog i', root).style.width = `${(done / totalItems()) * 100}%`;
+      $('.prog-t', root).textContent = isComplete(f) ? 'الأسطول مكتمل ✓' : `وضعت ${ar(done)} من ${ar(totalItems())}`;
       root.classList.toggle('complete', isComplete(f));
       // معاينة مكان القطعة بالماوس
       let ghost = null;
@@ -679,7 +686,7 @@ window.Fleet = (() => {
   }
 
   return {
-    $, $$, S, ROWS, SHIPS, ORDER, SWIM, TRAP, START_STRIKES, TEAM_COLORS, TEAM_NAMES, TOTAL_ITEMS,
+    $, $$, S, ROWS, SHIPS, ORDER, SWIM, TRAP, START_STRIKES, TEAM_COLORS, TEAM_NAMES, totalItems, setRules, SW_DEFAULT, SW_MIN, SW_MAX,
     ar, esc, sgn, num, cellName, uid, toLatin, hash, store,
     empty, clone, shipCells, occ, counts, left, isComplete, placedItems, fits, place, addStack, eraseAt, rotateAt,
     fillRandom, random, validate, encode, decode, resolve, isSunk, publicBoard, explored, packPB, unpackPB,

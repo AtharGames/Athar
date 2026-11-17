@@ -19,8 +19,9 @@
   // ---------- الحالة ----------
   let G = F.store.get(KEY, null);
   if (G && (!G.teams || G.v !== 1)) G = null;
+  F.setRules(G && G.cfg);
   const setup = {
-    n: 2, mode: 'A', place: 'random',
+    n: 2, mode: 'A', place: 'random', sw: F.SW_DEFAULT,
     names: F.TEAM_NAMES.slice()
   };
   let aim = -1;            // المربع المحدد للقصف
@@ -71,6 +72,7 @@
     $$('#modes .mode').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === setup.mode)));
     $$('#placeModes .mode').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.place === setup.place)));
     $('#placeCard').hidden = setup.mode !== 'A';
+    renderSw();
     const box = $('#names');
     // نحافظ على ما كُتب
     $$('input', box).forEach((inp, i) => { setup.names[i] = inp.value; });
@@ -86,6 +88,20 @@
   $('#countSeg').onclick = (e) => { const b = e.target.closest('[data-n]'); if (!b) return; setup.n = +b.dataset.n; F.S.tongue(0, 0.2); renderSetup(); };
   $('#modes').onclick = (e) => { const b = e.target.closest('[data-mode]'); if (!b) return; setup.mode = b.dataset.mode; F.S.tongue(0, 0.2); renderSetup(); };
   $('#placeModes').onclick = (e) => { const b = e.target.closest('[data-place]'); if (!b) return; setup.place = b.dataset.place; F.S.tongue(0, 0.2); renderSetup(); };
+  // عدد الجنود لكل فريق
+  function renderSw() {
+    $('#swVal').textContent = F.ar(setup.sw);
+    $('#swMinus').disabled = setup.sw <= F.SW_MIN;
+    $('#swPlus').disabled = setup.sw >= F.SW_MAX;
+    $$('#swPresets [data-sw]').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.sw === setup.sw)));
+    $('#swNote').textContent = setup.sw === 0 ? 'بدون جنود: الخريطة فيها القطع والأفخاخ فقط.'
+      : `كل جندي مصاب يعطي ${F.ar(F.SWIM.pts)} نقاط، فمجموع جنود الفريق ${F.ar(setup.sw * F.SWIM.pts)} نقطة.`;
+  }
+  const stepSw = (d) => { setup.sw = Math.max(F.SW_MIN, Math.min(F.SW_MAX, setup.sw + d)); F.S.tongue(0, 0.2); renderSw(); };
+  $('#swMinus').onclick = () => stepSw(-10);
+  $('#swPlus').onclick = () => stepSw(10);
+  $('#swPresets').onclick = (e) => { const b = e.target.closest('[data-sw]'); if (!b) return; setup.sw = +b.dataset.sw; F.S.tongue(0, 0.2); renderSw(); };
+
   $('#setupBack').onclick = () => { renderIntro(); show('screen-intro'); };
   $('#setupNext').onclick = async () => {
     $$('#names input').forEach((inp, i) => { setup.names[i] = inp.value.trim() || F.TEAM_NAMES[i]; });
@@ -98,8 +114,9 @@
 
   function newGame() {
     const online = setup.mode !== 'A';
+    F.setRules({ sw: setup.sw });
     G = {
-      v: 1, mode: setup.mode, place: setup.place, phase: 'prep',
+      v: 1, mode: setup.mode, place: setup.place, phase: 'prep', cfg: { sw: setup.sw },
       teams: Array.from({ length: setup.n }, (_, i) => ({
         name: setup.names[i] || F.TEAM_NAMES[i], color: F.TEAM_COLORS[i],
         fleet: null, hits: {}, score: 0, strikes: F.START_STRIKES, ready: false,
@@ -113,7 +130,7 @@
       startBattle(true);
       return;
     }
-    addLog('sys', `تجهيز ${ar(G.teams.length)} فرق · ${MODE_NAME[G.mode]}`);
+    addLog('sys', `تجهيز ${ar(G.teams.length)} فرق · ${MODE_NAME[G.mode]} · ${ar(G.cfg.sw)} جندي لكل فريق`);
     saveNow();
     if (online) connect();
     renderPrep();
@@ -588,7 +605,7 @@
     clearTimeout(pubTimer);
     pubTimer = setTimeout(() => {
       const p = {
-        m: G.mode, ph: G.phase,
+        m: G.mode, ph: G.phase, cfg: G.cfg || { sw: F.SW_DEFAULT },
         T: G.teams.map((t) => ({
           n: t.name, c: t.color, h: F.hash(G.net.room + t.key),
           sc: t.score, st: t.strikes, rd: t.ready ? 1 : 0, on: isOnline(t) ? 1 : 0,

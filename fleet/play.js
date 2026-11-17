@@ -94,6 +94,10 @@
     if (P && typeof p.s === 'number' && typeof P.s === 'number' && p.s < P.s) return; // رسالة أقدم
     const prev = P;
     p.T.forEach((t) => { t.pb = t.pb ? F.unpackPB(t.pb) : null; });
+    // عدد الجنود يحدده المقدّم
+    const swBefore = F.SWIM.count;
+    F.setRules(p.cfg);
+    if (ed && swBefore !== F.SWIM.count) ed.draw();
     P = p;
     me = p.T.findIndex((t) => t.h === F.hash(room + key));
     if (me < 0) { renderAll(); return; }

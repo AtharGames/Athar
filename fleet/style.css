@@ -34,25 +34,25 @@
 
 /* ---------- ألوان اللعبة لكل ثيم ---------- */
 :root,[data-theme="light"]{
-  --water:#D6ECFC; --water-2:#C3E2FA; --wave:rgba(30,111,224,.16); --chart:rgba(10,36,99,.06);
+  --water:#D6ECFC; --water-2:#C3E2FA; --wave:rgba(30,111,224,.16); --chart:rgba(10,36,99,.035);
   --miss:#22B8CF; --miss-bg:#E6F8FB;
   --hull-S:#2B3650; --hull-W:#4B5B76; --hull-B:#7D8CA6; --hull-line:rgba(10,36,99,.25);
   --frame:#FFFFFF; --frame-line:rgba(10,36,99,.14);
 }
 [data-theme="navy"]{
-  --water:rgba(92,194,245,.13); --water-2:rgba(92,194,245,.07); --wave:rgba(191,227,252,.14); --chart:rgba(220,238,254,.05);
+  --water:rgba(92,194,245,.13); --water-2:rgba(92,194,245,.07); --wave:rgba(191,227,252,.14); --chart:rgba(220,238,254,.035);
   --miss:#5EE3F2; --miss-bg:rgba(34,184,207,.16);
   --hull-S:#8FA3BF; --hull-W:#A9BAD1; --hull-B:#C4D2E4; --hull-line:rgba(255,255,255,.35);
   --frame:#0F2F7A; --frame-line:rgba(220,238,254,.18);
 }
 [data-theme="blue"]{
-  --water:rgba(255,255,255,.20); --water-2:rgba(255,255,255,.12); --wave:rgba(255,255,255,.22); --chart:rgba(255,255,255,.06);
+  --water:rgba(255,255,255,.20); --water-2:rgba(255,255,255,.12); --wave:rgba(255,255,255,.22); --chart:rgba(255,255,255,.04);
   --miss:#E0FBFF; --miss-bg:rgba(10,36,99,.20);
   --hull-S:#0A2463; --hull-W:#163A86; --hull-B:#2552A8; --hull-line:rgba(255,255,255,.45);
   --frame:rgba(255,255,255,.14); --frame-line:rgba(255,255,255,.3);
 }
 [data-theme="ops"]{
-  --water:#0B2848; --water-2:#08203C; --wave:rgba(34,211,238,.16); --chart:rgba(34,211,238,.05);
+  --water:#0B2848; --water-2:#08203C; --wave:rgba(34,211,238,.16); --chart:rgba(34,211,238,.035);
   --miss:#22D3EE; --miss-bg:rgba(34,211,238,.12);
   --hull-S:#7F93AD; --hull-W:#9AACC4; --hull-B:#B7C6D9; --hull-line:rgba(103,232,249,.45);
   --frame:#071B35; --frame-line:rgba(103,232,249,.25);
@@ -67,7 +67,7 @@ body{
 html{-webkit-text-size-adjust:100%; background:var(--bg); overflow-x:clip;}
 body{
   min-height:100vh; min-height:100dvh;
-  background:var(--bg-paint); background-attachment:fixed;
+  background:transparent; /* الخلفية في طبقة .sea حتى تظهر الصورة والنقش */
   color:var(--text);
   font-family:"Thmanyah Sans","IBM Plex Sans Arabic",system-ui,sans-serif;
   font-weight:500; font-size:16px; line-height:1.7;
@@ -85,7 +85,19 @@ ul,ol{list-style:none;}
 .ico{width:1.2em; height:1.2em; fill:currentColor; flex:none; vertical-align:-.22em;}
 
 /* ---------- الخلفية: خريطة ملاحية بخطوط إحداثيات وأعماق ونقش مائي ---------- */
-.sea{position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden;}
+.sea{position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden; background:var(--bg-paint);}
+/* صورة الأسطول في الضباب: شفافة وتذوب في لون الثيم */
+.sea-photo{
+  position:absolute; inset:0;
+  background:url("img/bg.webp") center 38% / cover no-repeat;
+  opacity:var(--photo-op,.16); filter:saturate(var(--photo-sat,.9));
+  -webkit-mask:linear-gradient(180deg, rgba(0,0,0,.35) 0%, #000 30%, #000 70%, rgba(0,0,0,.25) 100%);
+          mask:linear-gradient(180deg, rgba(0,0,0,.35) 0%, #000 30%, #000 70%, rgba(0,0,0,.25) 100%);
+}
+[data-theme="light"] .sea-photo{--photo-op:.17;}
+[data-theme="navy"] .sea-photo{--photo-op:.26; mix-blend-mode:luminosity;}
+[data-theme="blue"] .sea-photo{--photo-op:.22; mix-blend-mode:soft-light; --photo-sat:1;}
+[data-theme="ops"] .sea-photo{--photo-op:.32; --photo-sat:1.1;}
 .sea::before{
   content:""; position:absolute; inset:0;
   background:
@@ -96,7 +108,7 @@ ul,ol{list-style:none;}
 }
 .sea::after{
   content:""; position:absolute; inset:0;
-  background:var(--text); opacity:.05;
+  background:var(--text); opacity:.035;
   -webkit-mask:url("img/pattern.svg") 0 0 / 260px 260px repeat;
           mask:url("img/pattern.svg") 0 0 / 260px 260px repeat;
 }
@@ -286,6 +298,16 @@ main{flex:1; padding:clamp(12px,3vw,26px); display:flex; flex-direction:column;}
 .d-arrow{width:20px; height:3px; background:var(--text-2); border-radius:2px;}
 .d-arrow::after{content:""; position:absolute; left:-2px; top:-4px; border:5.5px solid transparent; border-right:7px solid var(--text-2); border-left:0;}
 .d-bolt{width:16px; height:22px; background:var(--fire); clip-path:polygon(60% 0,0 58%,45% 58%,35% 100%,100% 40%,55% 40%);}
+
+.sw-row{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px;}
+.stepper{display:flex; align-items:center; gap:4px; padding:5px; border-radius:16px; background:var(--solid); border:1px solid var(--line);}
+.stepper button{width:46px; height:46px; border-radius:12px; font-size:1.6rem; font-weight:700; line-height:1; background:var(--accent); color:var(--on-accent); box-shadow:0 3px 0 rgba(10,36,99,.4);}
+.stepper button:active{transform:translateY(2px); box-shadow:0 1px 0 rgba(10,36,99,.4);}
+.stepper button:disabled{opacity:.35; cursor:not-allowed;}
+.stepper output{min-width:3.2ch; text-align:center; font-size:1.7rem; font-weight:700; color:var(--text);}
+.presets{display:flex; gap:6px; flex-wrap:wrap;}
+.presets button{min-width:52px; min-height:40px; padding:0 12px; border-radius:12px; background:var(--solid); border:1px solid var(--line); font-weight:700; box-shadow:0 3px 0 var(--line);}
+.presets button[aria-pressed="true"]{background:var(--gold); color:var(--gold-ink); border-color:transparent; box-shadow:0 3px 0 #B45309;}
 
 /* ---------- تجهيز الأساطيل ---------- */
 .joinhint{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}
@@ -571,6 +593,8 @@ main{flex:1; padding:clamp(12px,3vw,26px); display:flex; flex-direction:column;}
 .tool .tn{font-size:.7rem; color:var(--text-2);}
 .tool.done{opacity:.55;}
 .tool.done .tn{color:var(--ok);}
+.tool.over{border-color:var(--trap);}
+.tool.over .tn{color:var(--trap); font-weight:700;}
 .tool[aria-pressed="true"]{border-color:var(--accent); background:var(--surface-2); box-shadow:0 3px 0 var(--accent); opacity:1;}
 .ed-opts{display:flex; align-items:center; gap:10px; flex-wrap:wrap; min-height:40px;}
 .chip-btn{display:inline-flex; align-items:center; gap:6px; min-height:38px; padding:4px 14px; border-radius:999px; background:var(--accent); color:var(--on-accent); font-weight:700; box-shadow:0 3px 0 rgba(10,36,99,.4);}
