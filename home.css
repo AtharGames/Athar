@@ -47,17 +47,24 @@ a.game-card:hover{transform:translateY(-6px); box-shadow:0 18px 40px rgba(10,36,
 a.game-card:active{transform:translateY(-2px) scale(.99);}
 
 .game-art{aspect-ratio:16/9; background:var(--surface-2); display:grid; place-items:center;}
+/* ترابيع: لوحة بلاط ثلاثية الأبعاد ومكعبات بشكل + تنزل عليها */
 .art-tarabee{
-  grid-template-columns:repeat(5,1fr); gap:6px; padding:18px 22%;
-  place-items:stretch; align-content:center;
+  --tile-top:#DCE8FA; --tile-seam:#C3D5F2; --tile-l:#B7CBEB; --tile-r:#A4BBE2;
+  background:radial-gradient(70% 80% at 50% 40%, #FFFFFF, #E6F0FD 70%);
+  overflow:hidden;
 }
-.art-tarabee i{display:block; aspect-ratio:1; border-radius:22%; background:var(--cell);}
-.art-tarabee i.a{background:#E8554E;}
-.art-tarabee i.b{background:#E59A1C;}
-.art-tarabee i.c{background:#1FA971;}
-a.game-card:hover .art-tarabee i{animation:pop .5s cubic-bezier(.3,1.6,.5,1) both;}
-a.game-card:hover .art-tarabee i:nth-child(3n){animation-delay:.06s;}
-a.game-card:hover .art-tarabee i:nth-child(3n+1){animation-delay:.12s;}
+.art-tarabee .iso{width:74%; height:auto; overflow:visible; margin-top:4%;}
+.art-tarabee .t-top{fill:var(--tile-top); stroke:var(--tile-seam); stroke-width:1;}
+.art-tarabee .t-l{fill:var(--tile-l);} .art-tarabee .t-r{fill:var(--tile-r);}
+.art-tarabee .iso-shadow{fill:#0A2463; opacity:.12;}
+.art-tarabee .cube .c-top{fill:color-mix(in srgb, var(--c) 72%, #fff);}
+.art-tarabee .cube .c-l{fill:var(--c);}
+.art-tarabee .cube .c-r{fill:color-mix(in srgb, var(--c) 70%, #000);}
+.art-tarabee .cube .c-shine{fill:#fff; opacity:.35;}
+a.game-card:hover .art-tarabee .cube.drop{animation:trDrop .6s cubic-bezier(.3,1.5,.5,1) both; animation-delay:var(--d);}
+a.game-card:hover .art-tarabee .cube.still{transform-box:fill-box; transform-origin:center; animation:trFlip .6s ease-in-out .5s both;}
+@keyframes trDrop{from{transform:translateY(-46px); opacity:0;}}
+@keyframes trFlip{50%{transform:scaleX(0);}}
 @keyframes pop{0%{transform:scale(.6);} 100%{transform:none;}}
 
 @keyframes grow{0%{transform:scaleY(.3);}}

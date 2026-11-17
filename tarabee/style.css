@@ -357,6 +357,112 @@ main{flex:1; display:flex; flex-direction:column; padding:clamp(14px,3vw,28px);}
 .reveal-actions{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; animation:screenIn .5s .5s ease both;}
 .reveal-actions .btn{flex:1 1 150px;}
 
+/* =========================================================
+   هوية «ترابيع» الخاصة: ساحة مكعبات ثلاثية الأبعاد
+   شبكة أيزومترية، بلاط بارز، مكعبات بلون الفريق، والمسروق ينقلب
+   ========================================================= */
+:root,[data-theme="light"]{
+  --tile-top:#DCE8FA; --tile-seam:#C3D5F2; --tile-l:#B7CBEB; --tile-r:#A4BBE2;
+  --cell-edge:#B9CCEA; --iso-op:.06; --press:#C6D8F1; --press-accent:#0F4FB0;
+}
+[data-theme="navy"]{--tile-top:#1B3A7E; --tile-seam:#2A4E9A; --tile-l:#122C66; --tile-r:#0D2252; --cell-edge:rgba(0,0,0,.4); --iso-op:.08; --press:rgba(0,0,0,.4); --press-accent:#4C9FD8;}
+[data-theme="blue"]{--tile-top:#7FB2F2; --tile-seam:#9CC4F5; --tile-l:#4D8BE0; --tile-r:#3A76CF; --cell-edge:rgba(10,36,99,.32); --iso-op:.1; --press:rgba(10,36,99,.32); --press-accent:#9CCBF3;}
+
+/* ---------- الخلفية: شبكة أيزومترية ومكعبات تطفو ---------- */
+html{background:var(--bg-paint); background-attachment:fixed; background-color:var(--bg);}
+body{background:transparent;}
+html,body{overflow-x:clip;}
+body::before{
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:var(--text); opacity:var(--iso-op);
+  -webkit-mask:url("img/iso.svg") 0 0 / 60px 34.64px repeat; mask:url("img/iso.svg") 0 0 / 60px 34.64px repeat;
+}
+.iso-bg{position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.55;}
+.iso-bg svg{width:100%; height:100%;}
+.iso-bg .fl{transform-box:fill-box; transform-origin:center; animation:cubeFloat 7s ease-in-out infinite; animation-delay:calc(var(--k) * -1.1s);}
+@keyframes cubeFloat{50%{transform:translateY(-14px) rotate(4deg);}}
+.topbar, main{position:relative; z-index:1;}
+
+/* ---------- المكعبات والبلاط (البطل، الفوز، الخلفية) ---------- */
+.iso{overflow:visible;}
+.iso .t-top{fill:var(--tile-top); stroke:var(--tile-seam); stroke-width:1;}
+.iso .t-l{fill:var(--tile-l);} .iso .t-r{fill:var(--tile-r);}
+.iso-shadow{fill:var(--text); opacity:.12;}
+.cube .c-top{fill:color-mix(in srgb, var(--c) 72%, #fff);}
+.cube .c-l{fill:var(--c);}
+.cube .c-r{fill:color-mix(in srgb, var(--c) 70%, #000);}
+.cube .c-shine{fill:#fff; opacity:.35;}
+.hero-iso{width:clamp(230px,44vw,330px); margin:0 auto -6px;}
+.hero-iso svg{width:100%; height:auto; display:block;}
+/* المكعبات تنزل على شكل + ثم تختفي وتعيد */
+.hero-iso .cube.drop{animation:cubeDrop 5.5s cubic-bezier(.3,1.4,.5,1) infinite; animation-delay:var(--d);}
+@keyframes cubeDrop{
+  0%{transform:translateY(-70px); opacity:0;}
+  9%{transform:translateY(3px); opacity:1;}
+  12%,84%{transform:none; opacity:1;}
+  94%,100%{transform:none; opacity:0;}
+}
+/* مكعب الخصم ينقلب بين حين وآخر */
+.hero-iso .cube.still{transform-box:fill-box; transform-origin:center; animation:cubeFlip 5.5s ease-in-out infinite;}
+.hero-iso .cube.still:nth-of-type(2n){animation-delay:-2.7s;}
+@keyframes cubeFlip{0%,60%,100%{transform:none;} 66%{transform:scaleX(0);} 72%{transform:none;}}
+
+/* برج الفوز */
+.trophy.iso{width:clamp(180px,30vw,230px); height:auto; fill:initial; stroke:none; filter:none; animation:none;}
+.trophy .cube.stack{animation:stackDrop .7s cubic-bezier(.3,1.5,.5,1) both; animation-delay:calc(var(--d) + .3s);}
+@keyframes stackDrop{from{transform:translateY(-90px); opacity:0;}}
+.trophy .t-star{fill:#F5B820; stroke:#B7791F; stroke-width:2; stroke-linejoin:round; transform-box:fill-box; transform-origin:center; animation:starIn .8s cubic-bezier(.3,1.6,.5,1) 1s both, starSpin 4s ease-in-out 1.8s infinite;}
+@keyframes starIn{from{transform:scale(0) rotate(-120deg);}}
+@keyframes starSpin{50%{transform:scale(1.12) rotate(12deg);}}
+
+/* ---------- اللوحة: بلاط بارز له سماكة ---------- */
+.board{row-gap:calc(clamp(2px,.6cqi,6px) + 4px); padding-bottom:6px; perspective:900px;}
+.cell{box-shadow:0 4px 0 var(--cell-edge); transition:transform .12s ease, filter .12s ease, box-shadow .12s ease;}
+.cell:hover{transform:translateY(-2px) scale(1.04);}
+.cell:active{transform:translateY(3px); box-shadow:0 1px 0 var(--cell-edge);}
+.cell.owned{
+  box-shadow:0 5px 0 color-mix(in srgb, var(--c) 60%, #000), inset 0 2px 0 rgba(255,255,255,.35), 0 8px 14px color-mix(in srgb, var(--c) 30%, transparent);
+  transform:translateY(-2px);
+}
+.cell.blocked:hover{transform:translateY(-2px);}
+/* المربع المختار ينزل مكعبًا من فوق */
+.cell.origin{animation:cellOriginUp .6s cubic-bezier(.3,1.6,.5,1);}
+@keyframes cellOriginUp{0%{transform:translateY(-34px) scale(.6); filter:brightness(1.7);} 55%{transform:translateY(-6px) scale(1.18); box-shadow:0 0 0 6px color-mix(in srgb, var(--c) 35%, transparent);} 100%{transform:translateY(-2px);}}
+/* المسروق ينقلب */
+.cell.flip{animation:cellFlip .65s cubic-bezier(.4,1.4,.5,1);}
+@keyframes cellFlip{
+  0%{transform:translateY(-2px) rotateY(0); filter:brightness(1);}
+  45%{transform:translateY(-14px) rotateY(90deg) scale(1.08); filter:brightness(1.6);}
+  100%{transform:translateY(-2px) rotateY(0); filter:brightness(1);}
+}
+.cell.pop{animation:cellDrop .5s cubic-bezier(.3,1.6,.5,1);}
+@keyframes cellDrop{0%{transform:translateY(-22px) scale(.7); filter:brightness(1.6);} 100%{transform:translateY(-2px);}}
+
+/* ---------- أزرار مجسّمة ---------- */
+.btn{box-shadow:0 5px 0 var(--press); transition:transform .12s ease, box-shadow .12s ease, background .2s ease, filter .2s, opacity .2s;}
+.btn:hover:not(:disabled){transform:translateY(-1px);}
+.btn:active:not(:disabled){transform:translateY(5px); box-shadow:0 0 0 var(--press);}
+.btn-primary{box-shadow:0 6px 0 var(--press-accent), 0 14px 24px rgba(10,36,99,.2);}
+.btn-primary:active:not(:disabled){box-shadow:0 0 0 var(--press-accent);}
+.btn-ghost,.btn:disabled{box-shadow:none;}
+.chip{box-shadow:0 4px 0 var(--press);}
+.chip:active{transform:translateY(4px); box-shadow:none;}
+.step-btn{box-shadow:0 3px 0 var(--press);}
+.step-btn:active{transform:translateY(3px); box-shadow:none;}
+.step-num{box-shadow:0 4px 0 var(--press-accent);}
+
+/* ---------- أشرطة الصوت المتمايلة ---------- */
+.snd .bars{display:flex; align-items:center; gap:3px; height:20px;}
+.snd .bars i{width:3.5px; height:100%; border-radius:3px; background:var(--text); transform-origin:50% 100%; transform:scaleY(.35);}
+.snd[aria-pressed="true"] .bars i{animation:eq 1s ease-in-out infinite;}
+.snd[aria-pressed="true"] .bars i:nth-child(2){animation-delay:-.35s; animation-duration:.8s;}
+.snd[aria-pressed="true"] .bars i:nth-child(3){animation-delay:-.6s; animation-duration:1.15s;}
+.snd[aria-pressed="true"] .bars i:nth-child(4){animation-delay:-.2s; animation-duration:.9s;}
+@keyframes eq{0%,100%{transform:scaleY(.3);} 50%{transform:scaleY(1);}}
+.snd[aria-pressed="false"] .bars{position:relative; opacity:.5;}
+.snd[aria-pressed="false"] .bars i{transform:scaleY(.22);}
+.snd[aria-pressed="false"] .bars::after{content:""; position:absolute; left:-3px; right:-3px; top:50%; height:2.5px; border-radius:2px; background:var(--text); transform:rotate(-38deg);}
+
 /* ---------- التجاوب ---------- */
 @media (max-width:900px){
   .game{

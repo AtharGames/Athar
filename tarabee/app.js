@@ -404,7 +404,7 @@
 
   function paint(i, anim) {
     const b = cells[i], owner = game.grid[i];
-    b.classList.remove('pop', 'origin');
+    b.classList.remove('pop', 'origin', 'flip');
     if (owner < 0) {
       b.classList.remove('owned');
       b.style.removeProperty('--c');
@@ -509,7 +509,8 @@
       game.grid[t] = me;
       Sound.pop(k, isSteal);
       // تعبئة متتابعة
-      pending.push(setTimeout(() => paint(t, k === 0 ? 'origin' : 'pop'), k * 70));
+      // المسروق من الخصم ينقلب انقلابة ثلاثية الأبعاد
+      pending.push(setTimeout(() => paint(t, isSteal ? 'flip' : k === 0 ? 'origin' : 'pop'), k * 70));
     });
 
     const victims = Object.keys(stolen).map(Number);
