@@ -14,11 +14,11 @@
   const reducedMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const S = window.AtharSound;
 
-  // ---------- مؤثرات اللعبة المسجّلة (sounds/): نرد، سلّم، ثعبان ----------
+  // ---------- مؤثر الثعبان المسجّل (sounds/snake.mp3) ----------
   // تحترم زر الكتم المشترك، وتُفك على الجوال من أول لمسة.
   const SFX = (() => {
     const BASE = new URL('sounds/', (document.currentScript && document.currentScript.src) || location.href).href;
-    const NAMES = ['dice', 'ladder', 'snake'];
+    const NAMES = ['snake'];
     const raw = {}, bufs = {};
     let ctx = null;
     const decode = (n) => {
@@ -596,9 +596,10 @@
     const spinMs = reducedMotion() ? 0 : 950;
     el.diceResult.textContent = '…';
     showDice(n);
-    // خشخشة النرد
-    SFX.play('dice');
+    // خشخشة النرد بنقرات لسان
+    [0, 0.11, 0.24, 0.4, 0.58, 0.78].forEach((d) => S.tongue(d, 0.2));
     await sleep(spinMs);
+    S.drop(520);
     el.diceResult.textContent = `طلع لكم ${num(n)}`;
     await sleep(250);
     await walk(teams[cur], n);
@@ -658,7 +659,7 @@
       const up = Boolean(ladders[from]);
       await sleep(280);
       team.pos = up ? ladders[from] : snakes[from];
-      SFX.play(up ? 'ladder' : 'snake');
+      if (up) { S.whoosh(true); S.chirp(0.3); } else SFX.play('snake');
       moment(team, from, team.pos, up);
       placePawns(SLIDE_MS);
       await sleep(reducedMotion() ? 0 : SLIDE_MS + 80);

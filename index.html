@@ -102,15 +102,26 @@
     <a class="game-card" href="snakes/">
       <div class="game-art art-snakes" aria-hidden="true">
         <svg viewBox="0 0 160 90">
-          <g class="sq">
-            <rect x="20" y="5" width="30" height="27"/><rect class="alt" x="50" y="5" width="30" height="27"/><rect x="80" y="5" width="30" height="27"/><rect class="alt" x="110" y="5" width="30" height="27"/>
-            <rect class="alt" x="20" y="32" width="30" height="27"/><rect x="50" y="32" width="30" height="27"/><rect class="alt" x="80" y="32" width="30" height="27"/><rect x="110" y="32" width="30" height="27"/>
-            <rect x="20" y="59" width="30" height="27"/><rect class="alt" x="50" y="59" width="30" height="27"/><rect x="80" y="59" width="30" height="27"/><rect class="alt" x="110" y="59" width="30" height="27"/>
+          <g class="tiles"><rect class="tr" x="0" y="0" width="20" height="18"/><rect class="ty" x="20" y="0" width="20" height="18"/><rect class="tg" x="40" y="0" width="20" height="18"/><rect class="tb" x="60" y="0" width="20" height="18"/><rect class="tw" x="80" y="0" width="20" height="18"/><rect class="tr" x="100" y="0" width="20" height="18"/><rect class="ty" x="120" y="0" width="20" height="18"/><rect class="tg" x="140" y="0" width="20" height="18"/><rect class="tb" x="0" y="18" width="20" height="18"/><rect class="tw" x="20" y="18" width="20" height="18"/><rect class="tr" x="40" y="18" width="20" height="18"/><rect class="ty" x="60" y="18" width="20" height="18"/><rect class="tg" x="80" y="18" width="20" height="18"/><rect class="tb" x="100" y="18" width="20" height="18"/><rect class="tw" x="120" y="18" width="20" height="18"/><rect class="tr" x="140" y="18" width="20" height="18"/><rect class="ty" x="0" y="36" width="20" height="18"/><rect class="tg" x="20" y="36" width="20" height="18"/><rect class="tb" x="40" y="36" width="20" height="18"/><rect class="tw" x="60" y="36" width="20" height="18"/><rect class="tr" x="80" y="36" width="20" height="18"/><rect class="ty" x="100" y="36" width="20" height="18"/><rect class="tg" x="120" y="36" width="20" height="18"/><rect class="tb" x="140" y="36" width="20" height="18"/><rect class="tw" x="0" y="54" width="20" height="18"/><rect class="tr" x="20" y="54" width="20" height="18"/><rect class="ty" x="40" y="54" width="20" height="18"/><rect class="tg" x="60" y="54" width="20" height="18"/><rect class="tb" x="80" y="54" width="20" height="18"/><rect class="tw" x="100" y="54" width="20" height="18"/><rect class="tr" x="120" y="54" width="20" height="18"/><rect class="ty" x="140" y="54" width="20" height="18"/><rect class="tg" x="0" y="72" width="20" height="18"/><rect class="tb" x="20" y="72" width="20" height="18"/><rect class="tw" x="40" y="72" width="20" height="18"/><rect class="tr" x="60" y="72" width="20" height="18"/><rect class="ty" x="80" y="72" width="20" height="18"/><rect class="tg" x="100" y="72" width="20" height="18"/><rect class="tb" x="120" y="72" width="20" height="18"/><rect class="tw" x="140" y="72" width="20" height="18"/></g>
+          <rect class="veil" width="160" height="90"/>
+          <g transform="translate(27 4) scale(.5)">
+            <ellipse class="shadow" cx="112" cy="161" rx="86" ry="7"/>
+            <path class="rail" d="M84 158L98 16M126 158L140 16"/>
+            <path class="rail-hi" d="M84 158L98 16M126 158L140 16"/>
+            <path class="rung" d="M86 136h42M88 114h42M90 92h42M92 70h42M95 48h42M97 27h41"/>
+            <path class="body" d="M54 152C30 134 98 132 110 114S78 88 110 74S154 62 150 42"/>
+            <path class="spots" d="M54 152C30 134 98 132 110 114S78 88 110 74S154 62 150 42"/>
+            <g class="head">
+              <ellipse cx="153" cy="33" rx="14" ry="11" fill="#2FA862"/>
+              <circle cx="149" cy="28" r="4" fill="#fff"/><circle cx="158" cy="28" r="4" fill="#fff"/>
+              <circle cx="150" cy="28.5" r="2" fill="#0A2463"/><circle cx="159" cy="28.5" r="2" fill="#0A2463"/>
+            </g>
+            <g class="die">
+              <rect x="14" y="104" width="44" height="44" rx="10" fill="#fff" stroke="#BCC8DD" stroke-width="2"/>
+              <g fill="#0A2463"><circle cx="26" cy="116" r="4"/><circle cx="46" cy="116" r="4"/><circle cx="26" cy="126" r="4"/><circle cx="46" cy="126" r="4"/><circle cx="26" cy="136" r="4"/><circle cx="46" cy="136" r="4"/></g>
+            </g>
+            <g class="stars"><path d="M172 12l2.6 5.4 6 .8-4.4 4 1.1 5.9-5.3-2.9-5.3 2.9 1.1-5.9-4.4-4 6-.8z"/><path d="M196 40l1.8 3.7 4 .5-3 2.8.8 4-3.6-2-3.6 2 .8-4-3-2.8 4-.5z"/></g>
           </g>
-          <g class="lad"><path d="M30 78L52 16M42 80L64 18M33 68h12M37 57h12M41 46h12M45 35h12M49 24h12"/></g>
-          <path class="snk" d="M124 16c-18 6 4 22-12 30s-2 22-18 28"/>
-          <circle class="snk-head" cx="125" cy="15" r="7"/>
-          <circle cx="123" cy="13" r="1.6" fill="#fff"/><circle cx="128" cy="14" r="1.6" fill="#fff"/>
         </svg>
       </div>
       <div class="game-body">

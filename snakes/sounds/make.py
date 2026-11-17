@@ -1,5 +1,5 @@
 # لإعادة التوليد: python3 make.py <مجلد الإخراج>  (يحتاج numpy و scipy و ffmpeg)
-# مؤثرات السلم والثعبان: خشخشة نرد، طرقات خشبية صاعدة للسلم، فحيح وانزلاق للثعبان (بلا موسيقى ولا آلات)
+# مؤثر الثعبان: فحيح وانزلاق (بلا موسيقى ولا آلات). النرد والسلم يستخدمان أصوات athar-sound.js
 import numpy as np, subprocess, sys
 from scipy.io import wavfile
 from scipy.signal import butter, sosfilt
@@ -20,34 +20,6 @@ def finish(y, name, gain=0.95, drive=1.4):
     f = int(SR*0.02); y[-f:] *= np.linspace(1, 0, f)
     wavfile.write(f'/tmp/{name}.wav', SR, (y*32767).astype(np.int16))
     subprocess.run(['ffmpeg','-y','-loglevel','error','-i',f'/tmp/{name}.wav','-ac','1','-b:a','128k',f'{OUT}/{name}.mp3'], check=True)
-
-# نقرة نرد بلاستيكي على خشب: ضجيج قصير مرشّح + رنين صغير
-def click(amp=1.0):
-    n = int(SR*0.05); t = np.arange(n)/SR
-    x = bp(rng.standard_normal(n), 1800, 7000)*np.exp(-t/0.006)
-    f = rng.uniform(2600, 4200)
-    x += 0.35*np.sin(2*np.pi*f*t)*np.exp(-t/0.012)
-    return amp*x
-
-# ١) خشخشة النرد (~٠٫٩٥ ثانية مثل دوران النرد) ثم ارتدادتان واستقرار
-times, t, a = [], 0.0, 1.0
-while t < 0.72:
-    times.append((t, a*rng.uniform(.55, 1))); t += rng.uniform(.035, .085); a *= 0.985
-times += [(0.80, .85), (0.88, .55), (0.93, .3)]
-finish(place(1.05, [(at, click(am)) for at, am in times]), 'dice')
-
-# طرقة خشبية: رنين منخفض قصير مع ضربة
-def knock(f, amp=1.0):
-    n = int(SR*0.18); t = np.arange(n)/SR
-    body = np.sin(2*np.pi*f*t)*np.exp(-t/0.045) + 0.5*np.sin(2*np.pi*f*2.3*t)*np.exp(-t/0.02)
-    hit = bp(rng.standard_normal(n), 800, 4000)*np.exp(-t/0.004)
-    return amp*(body + 0.6*hit)
-
-# ٢) السلم: سبع طرقات تصعد بالنبرة خلال ~٠٫٨٥ ثانية ثم «بُب» فم للوصول
-steps = [(i*0.11, knock(330*1.12**i, 0.8+0.03*i)) for i in range(7)]
-n = int(SR*0.12); tt = np.arange(n)/SR
-pop = np.sin(2*np.pi*(380 + 900*tt/0.12)*tt)*np.exp(-tt/0.03)   # فرقعة فم صاعدة
-finish(place(1.05, steps + [(0.8, 1.1*pop)]), 'ladder')
 
 # ٣) الثعبان: فحيح يكبر ثم انزلاق نازل
 dur = 1.0; n = int(SR*dur); t = np.arange(n)/SR
