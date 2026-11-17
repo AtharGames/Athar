@@ -480,6 +480,19 @@
   el.soundBtn.setAttribute('aria-pressed', String(S.on));
   el.soundBtn.addEventListener('click', () => el.soundBtn.setAttribute('aria-pressed', String(S.toggle())));
 
+  // زر أنوار المسرح: يطفّي حزم الضوء وتوهّج الأضواء الأرضية، ويحفظ الاختيار على الجهاز
+  const lightsBtn = $('#lightsBtn');
+  const lightsOn = () => document.documentElement.getAttribute('data-lights') !== 'off';
+  lightsBtn.setAttribute('aria-pressed', String(lightsOn()));
+  lightsBtn.addEventListener('click', () => {
+    const on = !lightsOn();
+    if (on) document.documentElement.removeAttribute('data-lights');
+    else document.documentElement.setAttribute('data-lights', 'off');
+    try { localStorage.setItem('tel-lights', on ? 'on' : 'off'); } catch { /* تجاهل */ }
+    lightsBtn.setAttribute('aria-pressed', String(on));
+    S.tongue(0, 0.2);
+  });
+
   // العنوان واسم المقدّم: تحديث مباشر وحفظ
   el.titleInput.value = cfg.title;
   el.hostInput.value = cfg.host;

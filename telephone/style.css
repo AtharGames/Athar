@@ -317,9 +317,55 @@ html{background-color:var(--bg); background:linear-gradient(180deg, var(--stage)
 .studio-bg .b1{left:4vw; background:linear-gradient(180deg, var(--beam), transparent 85%); clip-path:polygon(40% 0, 60% 0, 100% 100%, 0 100%); transform:rotate(-18deg); transform-origin:50% 0; animation:sweep 9s ease-in-out infinite alternate;}
 .studio-bg .b2{right:4vw; background:linear-gradient(180deg, var(--beam-2), transparent 85%); clip-path:polygon(40% 0, 60% 0, 100% 100%, 0 100%); transform:rotate(18deg); transform-origin:50% 0; animation:sweep2 11s ease-in-out infinite alternate;}
 @keyframes sweep{to{transform:rotate(-8deg);}} @keyframes sweep2{to{transform:rotate(8deg);}}
-.studio-bg .floor{display:block; left:50%; bottom:-34vh; width:130vw; height:62vh; transform:translateX(-50%); border-radius:50%;
-  background:repeating-radial-gradient(ellipse at center, transparent 0 36px, var(--floor) 36px 39px), radial-gradient(ellipse at center, var(--floor), transparent 70%);
-  -webkit-mask:radial-gradient(ellipse at center, #000 30%, transparent 70%); mask:radial-gradient(ellipse at center, #000 30%, transparent 70%);}
+/* ---------- المسرح بالأسفل ---------- */
+:root,[data-theme="light"]{--stage-top:#E4D8FF; --stage-top-2:#C4B0F7; --stage-ring:rgba(109,40,217,.16); --stage-edge:#4C1D95; --stage-edge-2:#2E1065;}
+[data-theme="navy"]{--stage-top:#3B1E8F; --stage-top-2:#24125F; --stage-ring:rgba(196,181,253,.18); --stage-edge:#1C0D4A; --stage-edge-2:#0E0630;}
+[data-theme="blue"]{--stage-top:#6D5BF0; --stage-top-2:#4A3BCB; --stage-ring:rgba(255,255,255,.2); --stage-edge:#2E1E8A; --stage-edge-2:#1A0F5C;}
+.stage-floor{position:relative; z-index:1; flex:none; height:clamp(96px,18vh,180px); overflow:hidden; pointer-events:none; margin-top:8px;}
+.stage-floor > span{position:absolute; left:-12vw; right:-12vw; display:block;}
+/* سطح المسرح: قوس عريض بدوائر متحدة المركز ولمعة */
+.stage-top{
+  top:0; bottom:26px; border-radius:50% 50% 0 0 / 100% 100% 0 0;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.35), transparent 45%),
+    repeating-radial-gradient(ellipse at 50% 100%, transparent 0 26px, var(--stage-ring) 26px 28px),
+    linear-gradient(180deg, var(--stage-top), var(--stage-top-2));
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.4);
+}
+/* الحافة الأمامية بخط ذهبي وأضواء أرضية */
+.stage-edge{
+  bottom:0; height:26px;
+  background:
+    radial-gradient(circle at 50% 50%, #FFF3C4 0 3px, #F5B820 4px, rgba(245,184,32,.35) 6px, transparent 9px) 0 0 / 54px 26px repeat-x,
+    linear-gradient(180deg, var(--stage-edge), var(--stage-edge-2));
+  border-top:3px solid var(--gold);
+}
+/* توهّج الأضواء الأرضية للأعلى */
+.stage-glow{
+  bottom:26px; height:70px;
+  background:repeating-linear-gradient(90deg, rgba(245,184,32,.28) 0 2px, transparent 2px 54px);
+  -webkit-mask:linear-gradient(0deg, #000, transparent); mask:linear-gradient(0deg, #000, transparent);
+  filter:blur(6px); opacity:.8; animation:footGlow 3s ease-in-out infinite alternate;
+}
+@keyframes footGlow{to{opacity:.45;}}
+
+/* ---------- إطفاء الأنوار ---------- */
+html[data-lights="off"] .studio-bg .beam,
+html[data-lights="off"] .stage-glow{display:none;}
+html[data-lights="off"] .stage-edge{background:
+    radial-gradient(circle at 50% 50%, #8C7A3C 0 3px, transparent 4px) 0 0 / 54px 26px repeat-x,
+    linear-gradient(180deg, var(--stage-edge), var(--stage-edge-2));}
+html[data-lights="off"] .studio-bg .fl{animation:none;}
+.lights-btn svg{width:26px; height:26px;}
+.lights-btn .lamp{fill:var(--text); stroke:var(--text); stroke-width:1.2; stroke-linejoin:round;}
+.lights-btn .slash{fill:none; stroke:var(--text); stroke-width:2.2; stroke-linecap:round; opacity:0;}
+.lights-btn[aria-pressed="false"] .slash{opacity:.75;}
+.lights-btn .stand{fill:none; stroke:var(--text); stroke-width:2; stroke-linecap:round;}
+.lights-btn .ray{fill:var(--gold); opacity:.85;}
+.lights-btn[aria-pressed="false"] .lamp{fill:none; opacity:.6;}
+.lights-btn[aria-pressed="false"] .stand{opacity:.6;}
+.lights-btn[aria-pressed="false"] .ray{fill:none; stroke:var(--text); stroke-width:1.2; stroke-dasharray:2 2; opacity:.5;}
+
 .studio-bg .shapes{display:block;}
 
 /* ---------- الهاتف أبو قرص (البطل، الفوز، الرئيسية) ---------- */
