@@ -1,6 +1,6 @@
 /* =========================================================
    جرس أثَر | طبقة الاتصال اللحظي بين شاشة المقدّم وجوالات المشاركين
-   ١) Firebase Realtime Database (الأساسي): الإعدادات في ../assets/athar-firebase.js
+   ١) Firebase Realtime Database (الأساسي): مشروع مستقل، إعداداته في firebase-config.js
    ٢) ?net=local : تجربة على نفس المتصفح (تبويبات متعددة) بلا إنترنت
    الواجهة:
      BuzzNet.get(path) / set(path, val) / update(path, obj) / remove(path)
@@ -13,7 +13,7 @@
 window.BuzzNet = (() => {
   'use strict';
   const params = new URLSearchParams(location.search);
-  const FB = window.ATHAR_FIREBASE && window.ATHAR_FIREBASE.databaseURL ? window.ATHAR_FIREBASE : null;
+  const FB = window.BUZZER_FIREBASE && window.BUZZER_FIREBASE.databaseURL ? window.BUZZER_FIREBASE : null;
   const MODE = (params.get('net') === 'local' || window.BUZZ_NET === 'local' || !FB) ? 'local' : 'firebase';
   const ROOT = 'buzzer/';
   const TS = Object.freeze({ '.sv': 'timestamp' });
