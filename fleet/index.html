@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>الأسطول البحري | شاشة المقدّم</title>
+<meta name="description" content="مسابقة ثقافية تكتيكية: جاوب صح واكسب ضربة، واقصف أسطول الفريق المنافس على شبكة ١٠×١٠ بين غواصات وسفن وقوارب وسبّاحين وأفخاخ.">
+<meta name="theme-color" content="#0A2463">
+<!-- تطبيق الثيم المحفوظ قبل الرسم لتفادي الوميض (ops ثيم خاص باللعبة) -->
+<script>
+(function(){
+  var t=null;
+  try{ t=localStorage.getItem('athar-theme'); }catch(e){}
+  if(['light','navy','blue','ops'].indexOf(t)<0){
+    t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'navy':'light';
+  }
+  document.documentElement.setAttribute('data-theme',t);
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/athar.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="host">
+<div class="sea" aria-hidden="true"></div>
+
+<!-- ============ الشريط العلوي ============ -->
+<header class="topbar">
+  <a class="brand" href="../" aria-label="الرجوع إلى ألعاب أثَر">
+    <img class="logo logo-main" src="../assets/athar-mark.png" alt="" width="52" height="60">
+    <img class="logo logo-rev" src="../assets/athar-mark-reversed.png" alt="" width="52" height="60">
+    <span class="brand-text">
+      <strong>الأسطول البحري</strong>
+      <small>غرفة عمليات المقدّم</small>
+    </span>
+  </a>
+  <div class="top-tools">
+    <span class="net" id="netDot" data-on="false" title="حالة الاتصال" hidden><i></i><b id="netText">يتصل…</b></span>
+    <button class="icon-btn snd" id="soundBtn" aria-pressed="true" aria-label="المؤثرات الصوتية">
+      <span class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    </button>
+    <!-- مبدّل الثيمات: ثيمات أثَر الثلاثة + غرفة العمليات -->
+    <div class="theme-switch" role="group" aria-label="ألوان الواجهة">
+      <button class="theme-dot" data-set-theme="light" aria-label="الثيم الفاتح" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="navy" aria-label="الثيم الكحلي" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="blue" aria-label="ثيم أزرق أثَر" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="ops" aria-label="ثيم غرفة العمليات" aria-pressed="false"></button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ ١) البداية ============ -->
+  <section class="screen active" id="screen-intro">
+    <div class="setup">
+      <div class="setup-hero">
+        <div class="hero-radar" aria-hidden="true">
+          <svg viewBox="0 0 220 220">
+            <defs>
+              <radialGradient id="rdScreen" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#11408F"/><stop offset="1" stop-color="#061A4A"/></radialGradient>
+              <linearGradient id="rdBezel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3B98EA"/><stop offset="1" stop-color="#0A2463"/></linearGradient>
+              <linearGradient id="rdSweep" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#5CC2F5" stop-opacity="0"/><stop offset="1" stop-color="#8FD0FA" stop-opacity=".8"/></linearGradient>
+            </defs>
+            <circle cx="110" cy="110" r="106" fill="url(#rdBezel)"/>
+            <circle cx="110" cy="110" r="93" fill="url(#rdScreen)"/>
+            <g fill="none" stroke="#5CC2F5" stroke-opacity=".32" stroke-width="1.4">
+              <circle cx="110" cy="110" r="70"/><circle cx="110" cy="110" r="46"/><circle cx="110" cy="110" r="22"/>
+              <path d="M110 17v186M17 110h186"/>
+            </g>
+            <g class="sweep"><path d="M110 110L110 17A93 93 0 0 1 175.8 44.2z" fill="url(#rdSweep)"/></g>
+            <g class="blip b1"><circle cx="152" cy="74" r="13" class="ping"/><path d="M140 76h24l-3.4 5h-17.2zM146 76v-3h4v-3h3v3h4v3z" fill="#FFFFFF"/></g>
+            <g class="blip b2"><circle cx="74" cy="146" r="10" class="ping"/><circle cx="74" cy="146" r="4.5" fill="#F97316"/></g>
+            <g class="blip b3"><circle cx="150" cy="150" r="3.5" fill="#FACC15"/></g>
+            <circle cx="110" cy="110" r="5" fill="#BFE3FC"/>
+          </svg>
+          <span class="hero-sea"></span>
+        </div>
+        <h1>الأسطول البحري</h1>
+        <p class="lead">مسابقة ثقافية تكتيكية: كل إجابة صحيحة تعطي فريقك ضربة، وكل إصابة تعطيكم ضربة زيادة. اكشفوا أسطول الخصم، وانتبهوا للأفخاخ!</p>
+      </div>
+
+      <div class="card resume" id="resumeCard" hidden>
+        <div>
+          <strong>عندك مسابقة ما خلصت</strong>
+          <p class="muted" id="resumeText"></p>
+        </div>
+        <div class="resume-acts">
+          <button class="btn btn-primary" id="resumeBtn">كمّلها</button>
+          <button class="btn btn-ghost btn-small" id="resumeDrop">احذفها</button>
+        </div>
+      </div>
+
+      <div class="units" aria-label="وحدات الأسطول">
+        <div class="unit u-S"><span class="u-ico" data-ico="i-sub"></span><strong>غواصة</strong><small>٤ مربعات · ٢ لكل فريق</small><b class="u-pts">١٠٠٠ للمربع</b></div>
+        <div class="unit u-W"><span class="u-ico" data-ico="i-ship"></span><strong>سفينة</strong><small>٣ مربعات · ٥ لكل فريق</small><b class="u-pts">٥٠٠ للمربع</b></div>
+        <div class="unit u-B"><span class="u-ico" data-ico="i-boat"></span><strong>قارب</strong><small>مربعان · ١٠ لكل فريق</small><b class="u-pts">٥٠ للمربع</b></div>
+        <div class="unit u-sw"><span class="u-ico" data-ico="i-swim"></span><strong>سبّاح</strong><small>تجميع · ٥٠ لكل فريق</small><b class="u-pts">٥ لكل سبّاح</b></div>
+        <div class="unit u-tr"><span class="u-ico" data-ico="i-mine"></span><strong>فخ</strong><small>تجميع · ٥ لكل فريق</small><b class="u-pts neg">−١٠٠ لكل فخ</b></div>
+      </div>
+
+      <details class="card rules">
+        <summary>كيف تمشي المسابقة؟</summary>
+        <ul>
+          <li>لكل فريق خريطة ١٠×١٠ فيها أسطوله: غواصتان وخمس سفن وعشرة قوارب، و٥٠ سبّاحًا وخمسة أفخاخ يجوز تجميعها في خانة وحدة.</li>
+          <li>يبدأ كل فريق بضربة وحدة، والمقدّم يسأل: <strong>إجابة صحيحة = ضربة جديدة</strong>.</li>
+          <li>يختار الفريق خصمًا ومربعًا ويقصفه: نقاط ما في المربع تنضاف للفريق المهاجم.</li>
+          <li><strong>إصابة قطعة أو سبّاحين = ضربة إضافية فورًا</strong>، أما <strong>الفخ</strong> فيخصم ١٠٠ عن كل فخ وبلا ضربة إضافية.</li>
+          <li>أعلى مجموع نقاط عند نهاية المسابقة يفوز.</li>
+        </ul>
+      </details>
+
+      <button class="btn btn-primary btn-big" id="startBtn">جهّز المسابقة</button>
+      <a class="home-link" href="play.html">أنا فريق وعندي رمز ←</a>
+      <a class="home-link" href="../">← كل ألعاب أثَر</a>
+    </div>
+  </section>
+
+  <!-- ============ ٢) الإعداد ============ -->
+  <section class="screen" id="screen-setup">
+    <div class="setup wide">
+      <div class="step-head">
+        <h2>تجهيز المسابقة</h2>
+        <p class="muted">اختر عدد الفرق وأسماءها، ثم طريقة اللعب.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>عدد الفرق</h3></div>
+        <div class="seg" id="countSeg" role="group" aria-label="عدد الفرق">
+          <button data-n="2" aria-pressed="true">٢</button><button data-n="3" aria-pressed="false">٣</button>
+          <button data-n="4" aria-pressed="false">٤</button><button data-n="5" aria-pressed="false">٥</button>
+          <button data-n="6" aria-pressed="false">٦</button>
+        </div>
+        <div class="names" id="names"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>طريقة اللعب</h3><span class="muted">مين يقسّم الأسطول ومين يقصف؟</span></div>
+        <div class="modes" id="modes" role="group" aria-label="طريقة اللعب">
+          <button class="mode" data-mode="A" aria-pressed="true">
+            <span class="mode-art" aria-hidden="true"><i class="d-screen"></i></span>
+            <strong>المقدّم يدير كل شيء</strong>
+            <span>التقسيم والقصف على شاشة المقدّم. بدون جوالات.</span>
+          </button>
+          <button class="mode" data-mode="B" aria-pressed="false">
+            <span class="mode-art" aria-hidden="true"><i class="d-phone"></i><i class="d-arrow"></i><i class="d-screen"></i></span>
+            <strong>الفرق ترسم، والمقدّم يقصف</strong>
+            <span>كل فريق يرسم خريطة أسطوله من جواله، والقصف من شاشة المقدّم.</span>
+          </button>
+          <button class="mode" data-mode="C" aria-pressed="false">
+            <span class="mode-art" aria-hidden="true"><i class="d-phone"></i><i class="d-bolt"></i><i class="d-phone"></i></span>
+            <strong>الفرق ترسم وتقصف</strong>
+            <span>التقسيم والقصف من جوال كل فريق، والمقدّم يمنح الضربات ويعرض المعركة.</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card" id="placeCard">
+        <div class="card-head"><h3>تقسيم الأسطول</h3></div>
+        <div class="modes two" id="placeModes" role="group" aria-label="طريقة التقسيم">
+          <button class="mode" data-place="random" aria-pressed="true"><strong>عشوائي تلقائي</strong><span>النظام يوزّع كل الأساطيل في ثانية.</span></button>
+          <button class="mode" data-place="manual" aria-pressed="false"><strong>يدوي</strong><span>ترسم أسطول كل فريق بنفسك، مع إكمال الناقص عشوائيًا.</span></button>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="setupBack">رجوع</button>
+        <button class="btn btn-primary" id="setupNext">التالي</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ٣) تجهيز الأساطيل ============ -->
+  <section class="screen" id="screen-prep">
+    <div class="setup wider">
+      <div class="step-head">
+        <h2 id="prepTitle">تجهيز الأساطيل</h2>
+        <p class="muted" id="prepText"></p>
+      </div>
+      <div class="joinhint card" id="joinHint" hidden>
+        <div>
+          <span class="muted">من جوال كل فريق افتحوا</span>
+          <strong class="join-url" id="joinUrl" dir="ltr"></strong>
+          <span class="muted">واكتبوا رمز فريقكم، أو صوّروا رمز QR تحت اسمكم.</span>
+        </div>
+        <span class="net-label muted" id="netLabel"></span>
+      </div>
+      <div class="prep-grid" id="prepGrid"></div>
+      <div class="actions">
+        <button class="btn" id="prepBack">رجوع للإعداد</button>
+        <button class="btn btn-primary" id="battleBtn">ابدأ المعركة</button>
+      </div>
+      <p class="muted center" id="prepNote"></p>
+    </div>
+  </section>
+
+  <!-- ============ ٤) المعركة ============ -->
+  <section class="screen" id="screen-battle">
+    <div class="battle">
+      <div class="arena">
+        <div class="pick">
+          <span class="pick-l">المهاجم</span>
+          <div class="chips" id="attChips" role="group" aria-label="الفريق المهاجم"></div>
+        </div>
+        <div class="pick">
+          <span class="pick-l">الهدف</span>
+          <div class="tabs" id="tgtTabs" role="group" aria-label="أسطول الفريق المستهدف"></div>
+        </div>
+
+        <div class="radar-frame" id="radarFrame">
+          <div class="frame-head">
+            <span class="live"><i></i><b id="frameTitle"></b></span>
+            <span class="frame-stat" id="frameStat"></span>
+          </div>
+          <div class="board-wrap"><div id="battleBoard"></div></div>
+          <div class="banner" id="banner" hidden>
+            <span class="banner-ico" id="bannerIco"></span>
+            <strong id="bannerTitle"></strong>
+            <span id="bannerText"></span>
+          </div>
+        </div>
+
+        <div class="firebar" id="firebar">
+          <p id="fireText" class="muted">اضغط مربعًا في خريطة الهدف لتحديده</p>
+          <button class="btn btn-fire" id="fireBtn" disabled>أطلق</button>
+        </div>
+        <p class="modeC-note muted" id="modeNote" hidden></p>
+
+        <div class="legend" aria-label="دليل الألوان">
+          <span><i class="lg fog"></i>مجهول</span>
+          <span><i class="lg miss"></i>ماء</span>
+          <span><i class="lg hit"></i>إصابة</span>
+          <span><i class="lg sunk"></i>غرقت</span>
+          <span><i class="lg trap"></i>فخ</span>
+        </div>
+      </div>
+
+      <aside class="side">
+        <div class="panel">
+          <div class="card-head">
+            <h3>الفرق والأسئلة</h3>
+            <span class="code-chip" id="roomChip" hidden></span>
+          </div>
+          <p class="muted tip">بعد كل سؤال: <b>✓</b> تعطي الفريق ضربة، و<b>✗</b> للإجابة الخاطئة.</p>
+          <ol class="scores" id="scores"></ol>
+        </div>
+        <div class="panel">
+          <div class="card-head"><h3>سجل المعركة</h3></div>
+          <ol class="log" id="log"></ol>
+        </div>
+        <div class="side-acts">
+          <button class="btn btn-primary" id="endBtn">إنهاء المسابقة وإعلان الفائز</button>
+          <button class="btn btn-ghost btn-small" id="toIntroBtn">الرجوع للبداية</button>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ ٥) الفائز ============ -->
+  <section class="screen" id="screen-end">
+    <div class="setup">
+      <div class="end-hero">
+        <div class="medal" aria-hidden="true"><svg class="ico"><use href="#i-trophy"/></svg></div>
+        <span class="kicker">انتهت المعركة</span>
+        <h1 id="winName"></h1>
+        <p class="lead" id="winText"></p>
+      </div>
+      <ol class="final" id="finalList"></ol>
+      <div class="actions">
+        <button class="btn" id="backBattle">رجوع للمعركة</button>
+        <button class="btn btn-primary" id="newGame">مسابقة جديدة</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ محرر الأسطول (للمقدّم) ============ -->
+<div class="modal" id="editModal" hidden>
+  <div class="modal-card big" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+    <div class="modal-head">
+      <h3 id="editTitle"></h3>
+      <button class="icon-btn" data-close aria-label="إغلاق"><svg class="ico"><use href="#i-x"/></svg></button>
+    </div>
+    <div id="editor"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="editSave">حفظ الأسطول</button>
+      <button class="btn" data-close>إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ عرض أسطول فريق ============ -->
+<div class="modal" id="viewModal" hidden>
+  <div class="modal-card big" role="dialog" aria-modal="true" aria-labelledby="viewTitle">
+    <div class="modal-head">
+      <h3 id="viewTitle"></h3>
+      <button class="icon-btn" data-close aria-label="إغلاق"><svg class="ico"><use href="#i-x"/></svg></button>
+    </div>
+    <p class="muted">انتبه: الأسطول ظاهر الحين على الشاشة.</p>
+    <div class="board-wrap"><div id="viewBoard"></div></div>
+  </div>
+</div>
+
+<!-- ============ تعديل النقاط والضربات ============ -->
+<div class="modal" id="adjModal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="adjTitle">
+    <div class="modal-head">
+      <h3 id="adjTitle"></h3>
+      <button class="icon-btn" data-close aria-label="إغلاق"><svg class="ico"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="adj">
+      <div class="adj-row"><span>النقاط</span><b id="adjScore"></b>
+        <div class="adj-btns"><button class="btn btn-small" data-adj="p" data-v="-100">−١٠٠</button><button class="btn btn-small" data-adj="p" data-v="100">+١٠٠</button></div></div>
+      <div class="adj-row"><span>الضربات</span><b id="adjStrikes"></b>
+        <div class="adj-btns"><button class="btn btn-small" data-adj="s" data-v="-1">−١</button><button class="btn btn-small" data-adj="s" data-v="1">+١</button></div></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="adjView"><svg class="ico"><use href="#i-eye"/></svg>اعرض أسطولهم</button>
+      <button class="btn btn-primary" data-close>تم</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<div class="modal" id="confirm" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h3 id="confirmTitle"></h3>
+    <p id="confirmText"></p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="confirmYes"></button>
+      <button class="btn" id="confirmNo">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
+
+<script src="firebase-config.js" defer></script>
+<script src="../assets/athar-sound.js" defer></script>
+<script src="net.js" defer></script>
+<script src="shared.js" defer></script>
+<script src="lib/qrcode.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>

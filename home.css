@@ -184,6 +184,20 @@ a.game-card:hover .art-crime .tape{animation:tapeShake .5s ease both;}
 a.game-card:hover .art-buzzer .cap{transform:scaleY(.82);}
 a.game-card:hover .art-buzzer .waves{animation:buzzWave .6s ease infinite alternate;}
 @keyframes buzzWave{to{opacity:.25;}}
+.art-fleet{background:linear-gradient(160deg,#062B4F,#0E7490);}
+.art-fleet svg{width:100%; height:100%;}
+.art-fleet .grid rect{fill:rgba(191,227,252,.22);}
+.art-fleet .grid .hit{fill:#F97316;}
+.art-fleet .grid .trap{fill:#EF4444;}
+.art-fleet .grid .miss{fill:rgba(34,211,238,.55);}
+.art-fleet .scope{fill:#061A4A; stroke:#5CC2F5; stroke-width:3;}
+.art-fleet .rings{fill:none; stroke:#5CC2F5; stroke-width:1; opacity:.4;}
+.art-fleet .sweep{fill:#8FD0FA; opacity:.45; transform-origin:42px 46px;}
+.art-fleet .ship{fill:#fff;}
+.art-fleet .blip{fill:#F97316;}
+a.game-card:hover .art-fleet .sweep{animation:fleetSweep 1.6s linear infinite;}
+a.game-card:hover .art-fleet .grid .hit{animation:pop .5s cubic-bezier(.3,1.6,.5,1) both; transform-box:fill-box; transform-origin:center;}
+@keyframes fleetSweep{to{transform:rotate(360deg);}}
 .art-soon span{font-size:4rem; font-weight:700; color:var(--text-2); opacity:.5;}
 
 .game-body{padding:18px 20px 20px; display:flex; flex-direction:column; flex:1;}

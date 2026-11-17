@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>الأسطول البحري | جوال الفريق</title>
+<meta name="description" content="ادخل برمز فريقك، ارسم أسطولك واقصف أساطيل الخصوم من جوالك.">
+<meta name="theme-color" content="#0A2463">
+<!-- تطبيق الثيم المحفوظ قبل الرسم لتفادي الوميض -->
+<script>
+(function(){
+  var t=null;
+  try{ t=localStorage.getItem('athar-theme'); }catch(e){}
+  if(['light','navy','blue','ops'].indexOf(t)<0){
+    t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'navy':'light';
+  }
+  document.documentElement.setAttribute('data-theme',t);
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/athar.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="play">
+<div class="sea" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="brand" href="./play.html" aria-label="الأسطول البحري">
+    <img class="logo logo-main" src="../assets/athar-mark.png" alt="" width="52" height="60">
+    <img class="logo logo-rev" src="../assets/athar-mark-reversed.png" alt="" width="52" height="60">
+    <span class="brand-text">
+      <strong id="meName">الأسطول البحري</strong>
+      <small id="meSub">جوال الفريق</small>
+    </span>
+  </a>
+  <div class="top-tools">
+    <span class="net" id="netDot" data-on="false" title="حالة الاتصال" hidden><i></i><b id="netText">يتصل…</b></span>
+    <button class="icon-btn snd" id="soundBtn" aria-pressed="true" aria-label="المؤثرات الصوتية">
+      <span class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    </button>
+    <div class="theme-switch" role="group" aria-label="ألوان الواجهة">
+      <button class="theme-dot" data-set-theme="light" aria-label="الثيم الفاتح" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="navy" aria-label="الثيم الكحلي" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="blue" aria-label="ثيم أزرق أثَر" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="ops" aria-label="ثيم غرفة العمليات" aria-pressed="false"></button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ ١) الدخول ============ -->
+  <section class="screen active" id="screen-join">
+    <form class="setup" id="joinForm" autocomplete="off" novalidate>
+      <div class="setup-hero">
+        <div class="hero-radar small" aria-hidden="true">
+          <svg viewBox="0 0 220 220">
+            <defs>
+              <radialGradient id="rdScreen" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#11408F"/><stop offset="1" stop-color="#061A4A"/></radialGradient>
+              <linearGradient id="rdBezel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3B98EA"/><stop offset="1" stop-color="#0A2463"/></linearGradient>
+              <linearGradient id="rdSweep" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#5CC2F5" stop-opacity="0"/><stop offset="1" stop-color="#8FD0FA" stop-opacity=".8"/></linearGradient>
+            </defs>
+            <circle cx="110" cy="110" r="106" fill="url(#rdBezel)"/>
+            <circle cx="110" cy="110" r="93" fill="url(#rdScreen)"/>
+            <g fill="none" stroke="#5CC2F5" stroke-opacity=".32" stroke-width="1.4">
+              <circle cx="110" cy="110" r="70"/><circle cx="110" cy="110" r="46"/><circle cx="110" cy="110" r="22"/>
+              <path d="M110 17v186M17 110h186"/>
+            </g>
+            <g class="sweep"><path d="M110 110L110 17A93 93 0 0 1 175.8 44.2z" fill="url(#rdSweep)"/></g>
+            <g class="blip b1"><circle cx="152" cy="74" r="13" class="ping"/><path d="M140 76h24l-3.4 5h-17.2zM146 76v-3h4v-3h3v3h4v3z" fill="#FFFFFF"/></g>
+            <g class="blip b2"><circle cx="74" cy="146" r="10" class="ping"/><circle cx="74" cy="146" r="4.5" fill="#F97316"/></g>
+            <circle cx="110" cy="110" r="5" fill="#BFE3FC"/>
+          </svg>
+        </div>
+        <h1>الأسطول البحري</h1>
+        <p class="lead">اكتبوا رمز فريقكم اللي يظهر على شاشة المقدّم.</p>
+      </div>
+      <div class="card">
+        <label class="field">
+          <span>رمز الفريق</span>
+          <input id="codeInput" class="code-input" dir="ltr" inputmode="text" autocapitalize="characters" spellcheck="false" maxlength="11" placeholder="ABCDE-FGHJ">
+        </label>
+        <p class="err" id="joinErr" hidden></p>
+        <button class="btn btn-primary btn-big" type="submit">ادخل</button>
+      </div>
+      <a class="home-link" href="./">أنا المقدّم ←</a>
+    </form>
+  </section>
+
+  <!-- ============ ٢) الفريق ============ -->
+  <section class="screen" id="screen-team">
+    <div class="phone">
+
+      <!-- بطاقة الفريق -->
+      <div class="me-card" id="meCard">
+        <div class="me-id"><i class="dot"></i><strong id="teamName">…</strong><span class="muted" id="teamMode"></span></div>
+        <div class="me-stats">
+          <span class="stat"><small>النقاط</small><b id="myScore">٠</b></span>
+          <span class="stat strikes"><small>الضربات</small><b id="myStrikes">٠</b></span>
+        </div>
+      </div>
+
+      <!-- بانتظار المقدّم -->
+      <div class="card wait" id="waitBox">
+        <div class="mini-sweep" aria-hidden="true"></div>
+        <strong id="waitTitle">نتصل بغرفة العمليات…</strong>
+        <p class="muted" id="waitText">خلّ الصفحة مفتوحة.</p>
+      </div>
+
+      <!-- رسم الأسطول -->
+      <div id="prepBox" hidden>
+        <div class="card status" id="sentBox" hidden>
+          <div class="st-ico" id="sentIco"></div>
+          <div>
+            <strong id="sentTitle"></strong>
+            <p class="muted" id="sentText"></p>
+          </div>
+          <button class="btn btn-small" id="editAgain">عدّل الأسطول</button>
+        </div>
+        <div class="card" id="drawBox">
+          <div class="card-head"><h3>ارسموا أسطولكم</h3><span class="muted">ما يشوفه أحد غيركم</span></div>
+          <div id="phoneEditor"></div>
+          <button class="btn btn-primary btn-big" id="sendFleet">ثبّت أسطولنا وأرسله</button>
+        </div>
+      </div>
+
+      <!-- المعركة -->
+      <div id="playBox" hidden>
+        <div class="seg tabs2" id="phoneTabs" role="tablist">
+          <button data-tab="strike" aria-pressed="true">القصف</button>
+          <button data-tab="own" aria-pressed="false">أسطولنا</button>
+        </div>
+
+        <div id="tab-strike">
+          <div class="pick">
+            <span class="pick-l">اقصفوا</span>
+            <div class="tabs" id="pTargets"></div>
+          </div>
+          <div class="radar-frame" id="pFrame">
+            <div class="frame-head"><span class="live"><i></i><b id="pFrameTitle"></b></span><span class="frame-stat" id="pFrameStat"></span></div>
+            <div class="board-wrap"><div id="pBoard"></div></div>
+            <div class="banner" id="banner" hidden>
+              <span class="banner-ico" id="bannerIco"></span>
+              <strong id="bannerTitle"></strong>
+              <span id="bannerText"></span>
+            </div>
+          </div>
+          <div class="firebar" id="pFirebar">
+            <p id="pFireText" class="muted"></p>
+            <button class="btn btn-fire" id="pFireBtn" disabled>أطلق</button>
+          </div>
+        </div>
+
+        <div id="tab-own" hidden>
+          <div class="radar-frame own" id="ownFrame">
+            <div class="frame-head"><span class="live"><i></i><b>أسطولنا</b></span><span class="frame-stat" id="ownStat"></span></div>
+            <div class="board-wrap"><div id="ownBoard"></div></div>
+          </div>
+          <p class="muted center" id="ownNote"></p>
+        </div>
+
+        <div class="card mini-scores">
+          <div class="card-head"><h3>الترتيب</h3></div>
+          <ol class="scores compact" id="pScores"></ol>
+        </div>
+      </div>
+
+      <!-- النهاية -->
+      <div class="card end-card" id="endBox" hidden>
+        <div class="medal" aria-hidden="true"><svg class="ico"><use href="#i-trophy"/></svg></div>
+        <span class="kicker">انتهت المعركة</span>
+        <h2 id="pWin"></h2>
+        <p class="muted" id="pWinText"></p>
+        <ol class="final" id="pFinal"></ol>
+      </div>
+
+      <button class="home-link" id="leaveBtn" type="button">خروج من الفريق</button>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" hidden></div>
+<div class="modal" id="confirm" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h3 id="confirmTitle"></h3>
+    <p id="confirmText"></p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="confirmYes"></button>
+      <button class="btn" id="confirmNo">إلغاء</button>
+    </div>
+  </div>
+</div>
+<canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
+
+<script src="firebase-config.js" defer></script>
+<script src="../assets/athar-sound.js" defer></script>
+<script src="net.js" defer></script>
+<script src="shared.js" defer></script>
+<script src="play.js" defer></script>
+</body>
+</html>
