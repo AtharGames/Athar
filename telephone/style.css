@@ -296,26 +296,31 @@ input[type="text"]::placeholder{color:var(--text-2); opacity:.6; font-weight:500
 [data-theme="navy"]{--royal-glow:rgba(167,139,250,.26); --ring:rgba(196,181,253,.10); --press:rgba(0,0,0,.4); --press-accent:#4C9FD8; --pattern:.06;}
 [data-theme="blue"]{--royal-glow:rgba(255,255,255,.2); --ring:rgba(255,255,255,.12); --press:rgba(10,36,99,.32); --press-accent:#9CCBF3; --pattern:.08;}
 
-/* ---------- الاستوديو: توهّج بنفسجي ودوائر الأرضية ونقش مائي ---------- */
-html{background:radial-gradient(70% 50% at 50% -12%, var(--royal-glow), transparent 72%), var(--bg-paint); background-attachment:fixed; background-color:var(--bg);}
-body{background:transparent;}
+/* ---------- الاستوديو ---------- */
 html,body{overflow-x:clip;}
-body::before{
-  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
-  background:var(--text); opacity:var(--pattern);
-  -webkit-mask:url("img/pattern.svg") 0 0 / 250px 250px repeat;
-          mask:url("img/pattern.svg") 0 0 / 250px 250px repeat;
-}
-/* دوائر أرضية الاستوديو حول «كرسي المتسابق» */
-body::after{
-  content:""; position:fixed; left:50%; bottom:-62vmax; width:150vmax; height:150vmax; z-index:0; pointer-events:none;
-  transform:translateX(-50%); border-radius:50%;
-  background:repeating-radial-gradient(circle, transparent 0 54px, var(--ring) 54px 57px);
-  -webkit-mask:radial-gradient(circle, #000 20%, transparent 62%); mask:radial-gradient(circle, #000 20%, transparent 62%);
-  animation:floorSpin 120s linear infinite;
-}
-@keyframes floorSpin{to{transform:translateX(-50%) rotate(360deg);}}
+body{background:transparent;}
 .topbar, main{position:relative; z-index:1;}
+
+/* ---------- خلفية «أضواء الاستوديو»: مسرح من الأعلى، حزمتا ضوء، أرضية متوهجة، وأشكال الهاتف عائمة ---------- */
+.studio-bg{position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; color:var(--deco);}
+:root,[data-theme="light"]{--deco:#6D28D9; --deco-op:.13; --beam:rgba(139,92,246,.30); --beam-2:rgba(245,184,32,.30); --floor:rgba(139,92,246,.30); --stage:#EADFFF;}
+[data-theme="navy"]{--deco:#C4B5FD; --deco-op:.17; --beam:rgba(167,139,250,.34); --beam-2:rgba(245,184,32,.24); --floor:rgba(139,92,246,.5); --stage:#241670;}
+[data-theme="blue"]{--deco:#FFFFFF; --deco-op:.2; --beam:rgba(255,255,255,.3); --beam-2:rgba(252,211,77,.34); --floor:rgba(255,255,255,.3); --stage:#4B5FE0;}
+.studio-bg i{position:absolute; display:none;}
+.studio-bg .shapes{position:absolute; inset:0; width:100%; height:100%; fill:none; stroke:currentColor; stroke-width:3.2; stroke-linecap:round; stroke-linejoin:round; opacity:var(--deco-op);}
+.studio-bg .fl{transform-box:fill-box; transform-origin:center; animation:drift 9s ease-in-out infinite;}
+.studio-bg .f2{animation-duration:11s; animation-delay:-3s;} .studio-bg .f3{animation-duration:13s; animation-delay:-6s;} .studio-bg .f4{animation-duration:10s; animation-delay:-2s;}
+@keyframes drift{50%{transform:translateY(-16px) rotate(3deg);}}
+
+html{background-color:var(--bg); background:linear-gradient(180deg, var(--stage), transparent 55%), var(--bg-paint); background-attachment:fixed;}
+.studio-bg .beam{display:block; top:-10vh; width:42vw; height:120vh; filter:blur(2px);}
+.studio-bg .b1{left:4vw; background:linear-gradient(180deg, var(--beam), transparent 85%); clip-path:polygon(40% 0, 60% 0, 100% 100%, 0 100%); transform:rotate(-18deg); transform-origin:50% 0; animation:sweep 9s ease-in-out infinite alternate;}
+.studio-bg .b2{right:4vw; background:linear-gradient(180deg, var(--beam-2), transparent 85%); clip-path:polygon(40% 0, 60% 0, 100% 100%, 0 100%); transform:rotate(18deg); transform-origin:50% 0; animation:sweep2 11s ease-in-out infinite alternate;}
+@keyframes sweep{to{transform:rotate(-8deg);}} @keyframes sweep2{to{transform:rotate(8deg);}}
+.studio-bg .floor{display:block; left:50%; bottom:-34vh; width:130vw; height:62vh; transform:translateX(-50%); border-radius:50%;
+  background:repeating-radial-gradient(ellipse at center, transparent 0 36px, var(--floor) 36px 39px), radial-gradient(ellipse at center, var(--floor), transparent 70%);
+  -webkit-mask:radial-gradient(ellipse at center, #000 30%, transparent 70%); mask:radial-gradient(ellipse at center, #000 30%, transparent 70%);}
+.studio-bg .shapes{display:block;}
 
 /* ---------- الهاتف أبو قرص (البطل، الفوز، الرئيسية) ---------- */
 .phone{--phone:var(--royal); overflow:visible;}
