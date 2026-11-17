@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>جرس أثَر | شاشة المقدّم</title>
+<meta name="description" content="نظام جرس تفاعلي للمسابقات: المقدّم يفتح غرفة برمز، والمشاركون يضغطون الجرس من جوالاتهم، والأسرع يظهر بدقة أجزاء من الثانية.">
+<meta name="theme-color" content="#0A2463">
+<!-- تطبيق الثيم المحفوظ قبل الرسم لتفادي الوميض -->
+<script>
+(function(){
+  var t=null;
+  try{ t=localStorage.getItem('athar-theme'); }catch(e){}
+  if(['light','navy','blue'].indexOf(t)<0){
+    t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'navy':'light';
+  }
+  document.documentElement.setAttribute('data-theme',t);
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/athar.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="host">
+
+<!-- ============ الشريط العلوي ============ -->
+<header class="topbar">
+  <a class="brand" href="../" aria-label="الرجوع إلى ألعاب أثَر">
+    <img class="logo logo-main" src="../assets/athar-mark.png" alt="" width="52" height="60">
+    <img class="logo logo-rev" src="../assets/athar-mark-reversed.png" alt="" width="52" height="60">
+    <span class="brand-text">
+      <strong>جرس أثَر</strong>
+      <small>شاشة المقدّم</small>
+    </span>
+  </a>
+  <div class="top-tools">
+    <span class="net" id="netDot" data-on="false" title="حالة الاتصال"><i></i><b id="netText">جارٍ الاتصال</b></span>
+    <button class="icon-btn" id="soundBtn" aria-pressed="true" aria-label="الصوت">
+      <svg class="ico-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg class="ico-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <!-- مبدّل الثيمات -->
+    <div class="theme-switch" role="group" aria-label="ألوان الواجهة">
+      <button class="theme-dot" data-set-theme="light" aria-label="الثيم الفاتح" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="navy" aria-label="الثيم الكحلي" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="blue" aria-label="ثيم أزرق أثَر" aria-pressed="false"></button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ ١) البداية ============ -->
+  <section class="screen active" id="screen-intro">
+    <div class="setup">
+      <div class="setup-hero">
+        <img class="hero-logo logo-main" src="../assets/athar-logo.png" alt="شعار لجنة أثَر" width="556" height="720">
+        <img class="hero-logo logo-rev" src="../assets/athar-logo-reversed.png" alt="شعار لجنة أثَر" width="556" height="720">
+        <h1>جرس أثَر</h1>
+        <p class="lead">افتح غرفة، وخلّ المشاركين يدخلون من جوالاتهم. أول من يضغط الجرس يطلع اسمه عندك، والباقين بالترتيب وبأجزاء الثانية.</p>
+      </div>
+
+      <!-- رجوع لغرفة مفتوحة -->
+      <div class="card resume" id="resumeCard" hidden>
+        <div>
+          <strong>عندك غرفة مفتوحة</strong>
+          <p class="muted">رمزها <b class="code-inline" id="resumeCode"></b>، والمشاركون لسّا فيها.</p>
+        </div>
+        <button class="btn btn-primary" id="resumeBtn">ارجع لها</button>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>طريقة الجرس</h2><span class="muted">تقدر تغيّرها وسط اللعب</span></div>
+        <div class="modes" id="introModes" role="group" aria-label="طريقة الجرس">
+          <button class="mode" data-mode="q" aria-pressed="true">
+            <strong>طابور بالترتيب</strong>
+            <span>الكل يضغط مرة، ويطلعون عندك الأول ثم الثاني ثم الثالث.</span>
+          </button>
+          <button class="mode" data-mode="1" aria-pressed="false">
+            <strong>الأسرع فقط</strong>
+            <span>أول ضغطة تقفل الجرس على البقية، وإذا غلط تفتحه لهم من جديد.</span>
+          </button>
+        </div>
+      </div>
+
+      <details class="card rules">
+        <summary>كيف تمشي اللعبة؟</summary>
+        <ul>
+          <li>اضغط <strong>افتح غرفة</strong> ويطلع لك رمز من خمسة أرقام ورمز QR.</li>
+          <li>المشاركون يفتحون الرابط من متصفح الجوال، يكتبون الرمز واسمهم، ويطلع لهم زر الجرس.</li>
+          <li>اقرأ السؤال، وأسرع ضغطة تتسجّل بوقت الخادم نفسه، فما يفرق جوال عن جوال.</li>
+          <li><strong>إجابة خاطئة:</strong> الدور ينتقل للي بعده بالترتيب، وإذا خلصوا ينفتح الجرس للبقية.</li>
+          <li><strong>سؤال جديد:</strong> يصفّر الجرس للكل. وتقدر <strong>تمنع</strong> أي مشارك مؤقتًا أو تطلّعه من الغرفة.</li>
+        </ul>
+      </details>
+
+      <button class="btn btn-primary btn-big" id="createBtn">افتح غرفة جديدة</button>
+      <a class="home-link" href="play.html" id="joinLink">أنا مشارك وعندي رمز ←</a>
+      <a class="home-link" href="../">← كل ألعاب أثَر</a>
+    </div>
+  </section>
+
+  <!-- ============ ٢) الغرفة ============ -->
+  <section class="screen" id="screen-room">
+    <div class="room">
+
+      <!-- بطاقة الدخول: الرمز + QR -->
+      <div class="joinbar">
+        <div class="qr" id="qr" aria-hidden="true"></div>
+        <div class="join-info">
+          <span class="muted">ادخلوا من الجوال على</span>
+          <strong class="join-url" id="joinUrl" dir="ltr"></strong>
+          <span class="muted">واكتبوا رمز الغرفة</span>
+          <div class="code" id="roomCode" dir="ltr" aria-label="رمز الغرفة"></div>
+        </div>
+        <div class="join-actions">
+          <button class="btn btn-small" id="copyBtn">نسخ رابط الدخول</button>
+          <button class="btn btn-small btn-ghost" id="endBtn">إنهاء الغرفة</button>
+        </div>
+      </div>
+
+      <div class="room-grid">
+
+        <!-- المسرح: نتيجة الجرس -->
+        <div class="stage-col">
+          <div class="stage" id="stage" data-state="open">
+            <div class="stage-head">
+              <span class="pill" id="roundPill"></span>
+              <span class="pill" id="modePill"></span>
+            </div>
+
+            <!-- بانتظار أول ضغطة -->
+            <div class="waiting" id="waiting">
+              <div class="pulse" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0-6 6v3.6L4.3 16a1 1 0 0 0 .9 1.5h13.6a1 1 0 0 0 .9-1.5L18 12.6V9a6 6 0 0 0-6-6z"/><path d="M9.5 19.5a2.6 2.6 0 0 0 5 0z"/></svg></div>
+              <h2 id="waitTitle"></h2>
+              <p class="muted" id="waitText"></p>
+            </div>
+
+            <!-- صاحب الدور -->
+            <div class="winner" id="winner" hidden>
+              <span class="kicker" id="winKicker"></span>
+              <h2 id="winName"></h2>
+              <p class="win-time" id="winTime"></p>
+            </div>
+
+            <!-- الترتيب الكامل -->
+            <ol class="queue" id="queue" aria-label="ترتيب الضغطات"></ol>
+          </div>
+
+          <!-- أزرار المقدّم -->
+          <div class="controls">
+            <button class="btn btn-primary btn-ctl" id="resetBtn">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v5h5" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>سؤال جديد<small>إعادة ضبط الجرس للكل</small></span>
+            </button>
+            <button class="btn btn-ctl btn-wrong" id="wrongBtn">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke-width="2.8" stroke-linecap="round"/></svg>
+              <span>إجابة خاطئة<small id="wrongHint">الدور للي بعده</small></span>
+            </button>
+            <button class="btn btn-ctl" id="armBtn" aria-pressed="true">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path class="shackle" d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke-width="2.2"/></svg>
+              <span id="armLabel">قفل الجرس<small>وقّفه مؤقتًا</small></span>
+            </button>
+          </div>
+
+          <div class="modes compact" id="roomModes" role="group" aria-label="طريقة الجرس">
+            <button class="mode" data-mode="q" aria-pressed="true"><strong>طابور بالترتيب</strong></button>
+            <button class="mode" data-mode="1" aria-pressed="false"><strong>الأسرع فقط</strong></button>
+          </div>
+        </div>
+
+        <!-- المشاركون -->
+        <aside class="people">
+          <div class="card-head">
+            <h2>المشاركون</h2>
+            <span class="pill" id="peopleCount">٠</span>
+          </div>
+          <p class="muted empty" id="peopleEmpty">ما دخل أحد للحين. اعرض الرمز على الشاشة وخلّهم يدخلون.</p>
+          <ul class="people-list" id="peopleList"></ul>
+        </aside>
+
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ تنبيه عائم ============ -->
+<div class="toast" id="toast" role="status" hidden></div>
+
+<!-- ============ تأكيد ============ -->
+<div class="modal" id="confirm" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h3 id="confirmTitle"></h3>
+    <p id="confirmText"></p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="confirmYes"></button>
+      <button class="btn" id="confirmNo">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/athar-firebase.js" defer></script>
+<script src="../assets/athar-sound.js" defer></script>
+<script src="net.js" defer></script>
+<script src="shared.js" defer></script>
+<script src="lib/qrcode.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>

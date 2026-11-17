@@ -13,6 +13,54 @@
           ".validate": "$topic.endsWith('-u') && newData.hasChildren(['d', 't']) && newData.child('d').isString() && newData.child('d').val().length < 2000 && newData.child('t').isNumber()"
         }
       }
+    },
+    "buzzer": {
+      "$room": {
+        ".read": "$room.matches(/^[0-9]{5}$/)",
+        ".write": "$room.matches(/^[0-9]{5}$/) && !newData.exists()",
+        "s": {
+          ".write": "$room.matches(/^[0-9]{5}$/)",
+          ".validate": "newData.hasChildren(['r', 'n', 'a', 'm', 'k', 'at', 'c'])",
+          "r": { ".validate": "newData.isString() && newData.val().matches(/^[0-9]{1,6}$/)" },
+          "n": { ".validate": "newData.isNumber() && newData.val() >= 1" },
+          "a": { ".validate": "newData.isBoolean()" },
+          "m": { ".validate": "newData.isString() && newData.val().matches(/^(q|1)$/)" },
+          "k": { ".validate": "newData.isNumber() && newData.val() >= 0" },
+          "at": { ".validate": "newData.isNumber()" },
+          "c": { ".validate": "newData.isNumber()" },
+          "ex": {
+            "$pid": { ".validate": "$pid.matches(/^[a-z0-9]{10}$/) && newData.isBoolean()" }
+          },
+          "$other": { ".validate": false }
+        },
+        "p": {
+          "$pid": {
+            ".write": "$room.matches(/^[0-9]{5}$/) && $pid.matches(/^[a-z0-9]{10}$/) && (!newData.exists() || root.child('buzzer').child($room).child('s').exists())",
+            ".validate": "newData.hasChildren(['n', 'j'])",
+            "n": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20" },
+            "j": { ".validate": "newData.isNumber()" },
+            "on": { ".validate": "newData.isBoolean()" },
+            "$other": { ".validate": false }
+          }
+        },
+        "x": {
+          "$pid": {
+            ".write": "$room.matches(/^[0-9]{5}$/) && $pid.matches(/^[a-z0-9]{10}$/)",
+            ".validate": "newData.isBoolean()"
+          }
+        },
+        "b": {
+          "$round": {
+            ".write": "$room.matches(/^[0-9]{5}$/) && !newData.exists()",
+            "$pid": {
+              ".write": "$room.matches(/^[0-9]{5}$/) && !data.exists() && newData.exists() && root.child('buzzer').child($room).child('s').child('a').val() === true && root.child('buzzer').child($room).child('s').child('r').val() === $round && root.child('buzzer').child($room).child('p').child($pid).exists() && !root.child('buzzer').child($room).child('x').child($pid).exists() && !root.child('buzzer').child($room).child('s').child('ex').child($pid).exists()",
+              ".validate": "newData.hasChildren(['t']) && newData.child('t').val() === now",
+              "t": { ".validate": "newData.isNumber()" },
+              "$other": { ".validate": false }
+            }
+          }
+        }
+      }
     }
   }
 }
