@@ -73,8 +73,8 @@ window.Q = (() => {
   const S = window.AtharSound || new Proxy({ on: true, toggle: () => true }, { get: (t, p) => (p in t ? t[p] : () => {}) });
 
   // الثيمات: ثلاث أجواء للجريمة + ثلاث هوية أثَر، وزر الصوت
-  const THEMES = ['noir', 'tape', 'file', 'light', 'navy', 'blue'];
-  const DARK = ['noir', 'tape', 'navy', 'blue'];
+  const THEMES = ['noir', 'wall', 'amber', 'light', 'navy', 'blue'];
+  const DARK = ['noir', 'wall', 'navy', 'blue'];
   function setTheme(t) {
     if (!THEMES.includes(t)) t = 'noir';
     const d = document.documentElement;
@@ -88,6 +88,11 @@ window.Q = (() => {
     $$('[data-set-theme]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.setTheme === t)));
   }
   function initChrome() {
+    // أشرطة مسرح الجريمة المتقاطعة
+    $$('.tape-x').forEach((t) => {
+      const row = '<span>مسرح جريمة</span><span>●</span><span>لا تقترب</span><span>●</span>'.repeat(10);
+      t.innerHTML = `<div class="strip">${row}</div>`.repeat(t.classList.contains('bottom') ? 3 : 2);
+    });
     const btn = $('#themeBtn'), pop = $('#themePop');
     const close = () => { if (!pop) return; pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
     if (btn && pop) {
