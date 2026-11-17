@@ -36,9 +36,8 @@
   </a>
 
   <div class="top-tools">
-    <button class="icon-btn" id="soundBtn" aria-pressed="true" aria-label="الصوت">
-      <svg class="ico-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
-      <svg class="ico-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
+    <button class="icon-btn snd" id="soundBtn" aria-pressed="true" aria-label="المؤثرات الصوتية">
+      <span class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
     </button>
     <!-- مبدّل الثيمات -->
     <div class="theme-switch" role="group" aria-label="ألوان الواجهة">
@@ -49,14 +48,37 @@
   </div>
 </header>
 
+<!-- ============ شريط الأسعار المتحرك ============ -->
+<div class="ticker" aria-hidden="true">
+  <span class="ticker-tag">السوق</span>
+  <div class="ticker-view"><div class="ticker-track" id="tickerTrack"></div></div>
+</div>
+
+<!-- ============ خلفية المنصة: شبكة ومؤشر كبير صاعد ============ -->
+<div class="market-bg" aria-hidden="true">
+  <svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+    <path class="mb-area" d="M0 820L120 780L220 800L340 700L460 720L580 610L700 650L820 540L940 570L1060 450L1180 480L1300 360L1420 380L1600 240V1000H0Z"/>
+    <path class="mb-line" d="M0 820L120 780L220 800L340 700L460 720L580 610L700 650L820 540L940 570L1060 450L1180 480L1300 360L1420 380L1600 240"/>
+  </svg>
+</div>
+
 <main>
 
   <!-- ============ ١) البداية والإعدادات ============ -->
   <section class="screen active" id="screen-setup">
     <div class="setup">
       <div class="setup-hero">
-        <img class="hero-logo logo-main" src="../assets/athar-logo.png" alt="شعار لجنة أثَر" width="556" height="720">
-        <img class="hero-logo logo-rev" src="../assets/athar-logo-reversed.png" alt="شعار لجنة أثَر" width="556" height="720">
+        <div class="hero-chart">
+        <svg class="chart" viewBox="0 0 240 170" aria-hidden="true">
+          <g class="grid"><path d="M0 40H240"/><path d="M0 70H240"/><path d="M0 100H240"/><path d="M0 130H240"/></g>
+          <ellipse class="shadow" cx="120" cy="158" rx="96" ry="6"/>
+          <g class="candle up" style="--i:0"><path class="wick" d="M34 104V134"/><rect x="27" y="112" width="14" height="16" rx="2.5"/></g><g class="candle dn" style="--i:1"><path class="wick" d="M60 104V128"/><rect x="53" y="110" width="14" height="12" rx="2.5"/></g><g class="candle up" style="--i:2"><path class="wick" d="M86 88V126"/><rect x="79" y="96" width="14" height="24" rx="2.5"/></g><g class="candle up" style="--i:3"><path class="wick" d="M112 76V104"/><rect x="105" y="84" width="14" height="14" rx="2.5"/></g><g class="candle dn" style="--i:4"><path class="wick" d="M138 80V106"/><rect x="131" y="86" width="14" height="14" rx="2.5"/></g><g class="candle up" style="--i:5"><path class="wick" d="M164 58V104"/><rect x="157" y="66" width="14" height="32" rx="2.5"/></g><g class="candle up" style="--i:6"><path class="wick" d="M190 34V74"/><rect x="183" y="44" width="14" height="24" rx="2.5"/></g>
+          <path class="trend" pathLength="100" d="M18 124L34 112L60 122L86 96L112 84L138 100L164 66L190 44L212 28"/>
+          <path class="arrowhead" d="M200 24L216 24L214 40Z"/>
+          <circle class="tip" cx="212" cy="28" r="5"/>
+          
+        </svg>
+        </div>
         <h1>سهمك الصاعد</h1>
         <p class="lead">لكل فريق رصيد يشتري به أسهمًا في المدن. جاوب صح لتدخل السوق، وبعد كل جولة تتغيّر الأسعار: شيء منها حظ، وشيء له منطق.</p>
       </div>
@@ -174,11 +196,15 @@
   <section class="screen" id="screen-victory">
     <canvas id="confetti" aria-hidden="true"></canvas>
     <div class="victory">
-      <svg class="trophy" viewBox="0 0 64 64" aria-hidden="true">
-        <path d="M18 8h28v14a14 14 0 0 1-28 0V8z"/>
-        <path d="M18 12H8v4a10 10 0 0 0 10 10M46 12h10v4a10 10 0 0 1-10 10" fill="none" stroke-width="4"/>
-        <path d="M28 36h8v10h-8zM20 46h24v8H20z"/>
-      </svg>
+      <svg class="chart trophy" viewBox="0 0 240 170" aria-hidden="true">
+          <g class="grid"><path d="M0 40H240"/><path d="M0 70H240"/><path d="M0 100H240"/><path d="M0 130H240"/></g>
+          <ellipse class="shadow" cx="120" cy="158" rx="96" ry="6"/>
+          <g class="candle up" style="--i:0"><path class="wick" d="M34 104V134"/><rect x="27" y="112" width="14" height="16" rx="2.5"/></g><g class="candle dn" style="--i:1"><path class="wick" d="M60 104V128"/><rect x="53" y="110" width="14" height="12" rx="2.5"/></g><g class="candle up" style="--i:2"><path class="wick" d="M86 88V126"/><rect x="79" y="96" width="14" height="24" rx="2.5"/></g><g class="candle up" style="--i:3"><path class="wick" d="M112 76V104"/><rect x="105" y="84" width="14" height="14" rx="2.5"/></g><g class="candle dn" style="--i:4"><path class="wick" d="M138 80V106"/><rect x="131" y="86" width="14" height="14" rx="2.5"/></g><g class="candle up" style="--i:5"><path class="wick" d="M164 58V104"/><rect x="157" y="66" width="14" height="32" rx="2.5"/></g><g class="candle up" style="--i:6"><path class="wick" d="M190 34V74"/><rect x="183" y="44" width="14" height="24" rx="2.5"/></g>
+          <path class="trend" pathLength="100" d="M18 124L34 112L60 122L86 96L112 84L138 100L164 66L190 44L212 28"/>
+          <path class="arrowhead" d="M200 24L216 24L214 40Z"/>
+          <circle class="tip" cx="212" cy="28" r="5"/>
+          <g class="coins"><ellipse class="coin" cx="196" cy="150" rx="18" ry="6"/><ellipse class="coin" cx="196" cy="143" rx="18" ry="6"/><ellipse class="coin" cx="196" cy="136" rx="18" ry="6"/><ellipse class="coin" cx="196" cy="129" rx="18" ry="6"/><ellipse class="coin" cx="220" cy="152" rx="14" ry="5"/><ellipse class="coin" cx="220" cy="145" rx="14" ry="5"/></g>
+        </svg>
       <p class="kicker" id="victoryKicker"></p>
       <h1 id="winnerName"></h1>
       <p class="lead" id="winnerText"></p>

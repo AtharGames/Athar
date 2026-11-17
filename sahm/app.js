@@ -7,6 +7,23 @@
   'use strict';
 
   const S = window.AtharSound;
+
+  // ---------- جرس السوق المسجّل (sounds/bell.mp3) ----------
+  const BELL_URL = new URL('sounds/bell.mp3', (document.currentScript && document.currentScript.src) || location.href).href;
+  let bellCtx = null, bellBuf = null, bellRaw = null;
+  fetch(BELL_URL).then((r) => (r.ok ? r.arrayBuffer() : null)).then((b) => { bellRaw = b; }).catch(() => {});
+  function playBell() {
+    if (!S || !S.on) return;
+    try {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!bellCtx && C) bellCtx = new C();
+      if (bellCtx && bellCtx.state === 'suspended') bellCtx.resume().catch(() => {});
+      const go = (b) => { const src = bellCtx.createBufferSource(); src.buffer = b; src.connect(bellCtx.destination); src.start(); };
+      if (bellCtx && bellBuf) return go(bellBuf);
+      if (bellCtx && bellRaw) return bellCtx.decodeAudioData(bellRaw.slice(0), (b) => { bellBuf = b; go(b); }, () => {});
+      const a = new Audio(BELL_URL); a.play().catch(() => {});
+    } catch { /* تجاهل */ }
+  }
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
@@ -170,6 +187,8 @@
     });
     bindNum(el.cashInput, 'cash', 500, 50000);
     bindNum(el.priceInput, 'price', 50, 1000);
+    el.priceInput.addEventListener('change', renderTicker);
+    renderTicker();
     refreshResume();
   }
 
@@ -263,7 +282,31 @@
   // =========================================================
   // عناصر ثابتة: أرصدة الفرق وشاشة الأسعار
   // =========================================================
+  // =========================================================
+  // شريط الأسعار المتحرك أعلى الصفحة
+  // =========================================================
+  let tickerHTML = '';
+  function renderTicker() {
+    const track = $('#tickerTrack');
+    if (!track) return;
+    const items = G
+      ? G.cos.map((c) => ({ name: c.name, price: c.price, pct: c.last }))
+      : CITIES.map((name) => ({ name, price: cfg.price, pct: 0 }));
+    const one = items.map((x) => {
+      const p = Math.round(x.pct * 100);
+      const k = p > 0 ? 'up' : p < 0 ? 'down' : 'flat';
+      const arrow = k === 'up' ? '▲' : k === 'down' ? '▼' : '●';
+      return `<span class="tk"><b>${esc(x.name)}</b><i>${num(x.price)}</i><em class="${k}">${arrow} ${num(Math.abs(p))}٪</em></span>`;
+    }).join('');
+    const html = one + one;   // نسختان متتاليتان لحركة متصلة بلا انقطاع
+    if (html === tickerHTML) return;
+    tickerHTML = html;
+    track.innerHTML = html;
+    track.style.setProperty('--dur', `${items.length * 4.5}s`);
+  }
+
   function renderTeams(active = -1, bump = -1) {
+    renderTicker();
     el.teams.style.setProperty('--n', G.teams.length);
     el.teams.innerHTML = G.teams.map((t, i) => `
       <div class="team${i === active ? ' active' : ''}${i === bump ? ' bump' : ''}" style="--c:${t.color}">
@@ -276,10 +319,12 @@
   // خط صغير يبيّن مسار السعر
   function spark(hist) {
     const h = hist.slice(-8);
-    if (h.length < 2) return '<svg class="spark" viewBox="0 0 60 22" aria-hidden="true"><path d="M2 11H58"/></svg>';
+    if (h.length < 2) return '<svg class="spark flat" viewBox="0 0 64 24" aria-hidden="true"><path class="sp-line" d="M2 12H62"/></svg>';
     const lo = Math.min(...h), hi = Math.max(...h), span = hi - lo || 1;
-    const pts = h.map((v, i) => `${(2 + (i * 56) / (h.length - 1)).toFixed(1)},${(19 - ((v - lo) / span) * 16).toFixed(1)}`);
-    return `<svg class="spark" viewBox="0 0 60 22" aria-hidden="true"><path d="M${pts.join('L')}"/></svg>`;
+    const pts = h.map((v, i) => `${(2 + (i * 60) / (h.length - 1)).toFixed(1)},${(21 - ((v - lo) / span) * 18).toFixed(1)}`);
+    const kind = h[h.length - 1] > h[0] ? 'up' : h[h.length - 1] < h[0] ? 'down' : 'flat';
+    return `<svg class="spark ${kind}" viewBox="0 0 64 24" aria-hidden="true">
+      <path class="sp-area" d="M${pts.join('L')}L62,24L2,24Z"/><path class="sp-line" d="M${pts.join('L')}"/></svg>`;
   }
 
   // شارة نسبة التغيّر
@@ -289,11 +334,16 @@
     return `<span class="chg ${kind}">${ICON[kind]}${num(Math.abs(p))}٪</span>`;
   }
 
+  // آخر أسعار رُسمت على اللوحة، لتوميض السهم الذي تغيّر سعره
+  let boardSeen = null;
   function renderBoard() {
+    const seen = boardSeen;
+    boardSeen = G.cos.map((c) => c.price);
+    const flash = (c, i) => (!seen || seen[i] === c.price ? '' : c.price > seen[i] ? ' class="flash-up"' : ' class="flash-down"');
     el.board.innerHTML = `
       <h3>شاشة الأسعار</h3>
-      <ul class="prices">${G.cos.map((c) => `
-        <li>
+      <ul class="prices">${G.cos.map((c, i) => `
+        <li${flash(c, i)}>
           <span class="p-name">${esc(c.name)}</span>
           ${spark(c.hist)}
           <b class="p-price">${num(c.price)}</b>
@@ -715,6 +765,41 @@
     renderMarket(true);
   }
 
+  // مؤشر أثَر: متوسط أسعار المدن نسبةً لسعر الافتتاح × ١٠٠٠، ومسيرته عبر الجولات
+  function indexCard() {
+    const base = G.cfg.price;
+    const len = Math.min(...G.cos.map((c) => c.hist.length));
+    const series = [];
+    for (let k = 0; k < len; k++) {
+      const avg = G.cos.reduce((s2, c) => s2 + c.hist[c.hist.length - len + k], 0) / G.cos.length;
+      series.push((avg / base) * 1000);
+    }
+    const now = series[series.length - 1], prev = series.length > 1 ? series[series.length - 2] : 1000;
+    const pct = prev ? (now - prev) / prev : 0;
+    const kind = now >= prev ? 'up' : 'down';
+    const W = 300, H = 86, lo = Math.min(...series, 1000), hi = Math.max(...series, 1000), span = hi - lo || 1;
+    const x = (i) => (series.length < 2 ? W / 2 : 6 + (i * (W - 12)) / (series.length - 1));
+    const y = (v) => H - 8 - ((v - lo) / span) * (H - 16);
+    const pts = series.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`);
+    const line = series.length < 2 ? `M6,${y(now).toFixed(1)}H${W - 6}` : `M${pts.join('L')}`;
+    return `
+      <div class="index-card">
+        <div>
+          <span class="ix-label">مؤشر أثَر العام</span>
+          <div class="ix-val">${num(now)}</div>
+          <span class="ix-chg">${badge(pct)}</span>
+        </div>
+        <div class="ix-wrap ${kind}">
+          <svg class="ix-chart ${kind}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+            <path class="ix-base" d="M0,${y(1000).toFixed(1)}H${W}"/>
+            ${series.length > 1 ? `<path class="ix-area" d="${line}L${x(series.length - 1).toFixed(1)},${H}L6,${H}Z"/>` : ''}
+            <path class="ix-line" d="${line}"/>
+          </svg>
+          <i class="ix-dot" style="left:${((x(series.length - 1) / W) * 100).toFixed(2)}%; top:${((y(now) / H) * 100).toFixed(2)}%"></i>
+        </div>
+      </div>`;
+  }
+
   function renderMarket(animate) {
     stopTimer();
     renderPill();
@@ -732,6 +817,7 @@
           </div>
           <p class="market-sum"><span class="chg up">${ICON.up}${num(ups)} صاعدة</span><span class="chg down">${ICON.down}${num(m.rows.length - ups)} هابطة</span></p>
         </div>
+        ${indexCard()}
         <ul class="m-list">${m.rows.map((r, i) => `
           <li class="m-row ${r.pct > 0 ? 'up' : 'down'}" style="--d:${i * 0.22}s">
             <span class="m-name">${esc(G.cos[i].name)}</span>
@@ -755,6 +841,7 @@
         </ol>
         <button class="btn btn-primary btn-big" data-act="${last ? 'finish' : 'nextRound'}">${last ? 'أعلن النتيجة النهائية' : 'الجولة التالية'}</button>
       </div>`;
+    if (animate) playBell(); // جرس السوق
     if (animate && !reducedMotion()) {
       // صوت لكل سهم مع ظهوره: قطرة عالية للصاعد ومنخفضة للهابط
       m.rows.forEach((r, i) => S.drop(r.pct > 0 ? 640 : 300, i * 0.22, 0.2));

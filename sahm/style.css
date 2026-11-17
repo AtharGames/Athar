@@ -398,6 +398,164 @@ input::placeholder{color:var(--text-2); opacity:.6; font-weight:500;}
 .modal-card p.sheet-total{font-size:1.1rem; color:var(--text);}
 .sheet-total b{font-size:1.4rem;}
 
+/* =========================================================
+   هوية «سهمك الصاعد» الخاصة: منصة تداول وسوق أسهم
+   شريط أسعار متحرك، شبكة رسوم بيانية، شموع، لوحة أسعار داكنة، أخضر للصعود وأحمر للهبوط
+   ========================================================= */
+:root,[data-theme="light"]{
+  --up:#16A34A; --down:#DC2626; --gold:#F5B820; --gold-deep:#B7791F;
+  --gridline:rgba(10,36,99,.06); --deco:#1E6FE0; --deco-op:.10;
+  --term:#0B1B3F; --term-2:#12285A; --term-line:rgba(255,255,255,.08); --term-text:#E6F0FF; --term-dim:#8EA6D4;
+  --press:#C6D8F1; --press-accent:#0F4FB0;
+}
+[data-theme="navy"]{--gridline:rgba(255,255,255,.05); --deco:#5CC2F5; --deco-op:.12; --term:#061230; --term-2:#0B1D47; --press:rgba(0,0,0,.4); --press-accent:#4C9FD8;}
+[data-theme="blue"]{--gridline:rgba(255,255,255,.08); --deco:#FFFFFF; --deco-op:.14; --term:#0A2463; --term-2:#123581; --press:rgba(10,36,99,.32); --press-accent:#9CCBF3;}
+
+/* ---------- خلفية المنصة: ورق رسوم بيانية ومؤشر كبير ---------- */
+html{
+  background:
+    linear-gradient(var(--gridline) 1px, transparent 1px) 0 0 / 44px 44px,
+    linear-gradient(90deg, var(--gridline) 1px, transparent 1px) 0 0 / 44px 44px,
+    var(--bg-paint);
+  background-attachment:fixed; background-color:var(--bg);
+}
+body{background:transparent;}
+html,body{overflow-x:clip;}
+.market-bg{position:fixed; inset:0; z-index:0; pointer-events:none;}
+.market-bg svg{width:100%; height:100%;}
+.market-bg .mb-line{fill:none; stroke:var(--deco); stroke-width:5; stroke-linejoin:round; stroke-linecap:round; opacity:calc(var(--deco-op) * 1.6);}
+.market-bg .mb-area{fill:var(--deco); opacity:calc(var(--deco-op) * .45);}
+.topbar, main, .ticker{position:relative; z-index:1;}
+
+/* ---------- شريط الأسعار المتحرك ---------- */
+.ticker{
+  display:flex; align-items:stretch; height:38px; overflow:hidden;
+  background:var(--term); color:var(--term-text); border-bottom:2px solid var(--gold);
+  font-variant-numeric:tabular-nums;
+}
+.ticker-tag{
+  flex:none; display:grid; place-items:center; padding:0 14px;
+  background:var(--gold); color:#0A2463; font-weight:700; font-size:.9rem;
+}
+.ticker-view{flex:1; min-width:0; overflow:hidden; direction:ltr; -webkit-mask:linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); mask:linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);}
+.ticker-track{display:flex; width:max-content; height:100%; align-items:center; animation:tick var(--dur,48s) linear infinite;}
+.ticker:hover .ticker-track{animation-play-state:paused;}
+@keyframes tick{from{transform:translateX(-50%);} to{transform:translateX(0);}}
+.tk{direction:rtl; display:inline-flex; align-items:center; gap:8px; padding:0 18px; white-space:nowrap; font-size:.92rem; border-inline-end:1px solid var(--term-line);}
+.tk b{font-weight:700;}
+.tk i{font-style:normal; font-weight:700; color:#fff;}
+.tk em{font-style:normal; font-weight:700; font-size:.82rem;}
+.tk em.up{color:#4ADE80;} .tk em.down{color:#F87171;} .tk em.flat{color:var(--term-dim);}
+
+/* ---------- صورة البطل: شموع وسهم صاعد ---------- */
+.hero-chart{width:clamp(200px,38vw,280px); margin:0 auto -2px;}
+.hero-chart svg{width:100%; height:auto; display:block;}
+.chart{overflow:visible;}
+.chart .grid path{stroke:var(--text); stroke-width:1; opacity:.1; stroke-dasharray:3 5;}
+.chart .shadow{fill:var(--text); opacity:.1;}
+.chart .wick{stroke-width:2.5; stroke-linecap:round;}
+.chart .candle.up rect{fill:var(--up);} .chart .candle.up .wick{stroke:var(--up);}
+.chart .candle.dn rect{fill:var(--down);} .chart .candle.dn .wick{stroke:var(--down);}
+.chart .candle{transform-box:fill-box; transform-origin:50% 100%; animation:candleIn .55s cubic-bezier(.3,1.5,.5,1) both; animation-delay:calc(var(--i) * 110ms);}
+@keyframes candleIn{from{transform:scaleY(0); opacity:0;}}
+.chart .trend{fill:none; stroke:var(--gold); stroke-width:5; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:100; animation:drawTrend 5s ease-in-out infinite; filter:drop-shadow(0 3px 4px rgba(0,0,0,.18));}
+.chart .arrowhead{fill:var(--gold); animation:headIn 5s ease-in-out infinite;}
+.chart .tip{fill:var(--gold); transform-box:fill-box; transform-origin:center; animation:tipPulse 1.4s ease-out infinite;}
+@keyframes drawTrend{0%{stroke-dashoffset:100;} 35%,85%{stroke-dashoffset:0; opacity:1;} 100%{stroke-dashoffset:0; opacity:0;}}
+@keyframes headIn{0%,30%{opacity:0;} 36%,85%{opacity:1;} 100%{opacity:0;}}
+@keyframes tipPulse{0%{transform:scale(1); opacity:1;} 100%{transform:scale(2.6); opacity:0;}}
+.chart .coin{fill:var(--gold); stroke:var(--gold-deep); stroke-width:2;}
+.chart .coins{animation:coinsIn .8s cubic-bezier(.3,1.5,.5,1) .9s both;}
+@keyframes coinsIn{from{transform:translateY(-40px); opacity:0;}}
+
+/* ---------- أزرار مجسّمة ---------- */
+.btn{box-shadow:0 5px 0 var(--press); transition:transform .12s ease, box-shadow .12s ease, background .2s ease, filter .2s, opacity .2s;}
+.btn:hover:not(:disabled){transform:translateY(-1px);}
+.btn:active:not(:disabled){transform:translateY(5px); box-shadow:0 0 0 var(--press);}
+.btn-primary{box-shadow:0 6px 0 var(--press-accent), 0 14px 24px rgba(10,36,99,.2);}
+.btn-primary:active:not(:disabled){box-shadow:0 0 0 var(--press-accent);}
+.btn-buy{box-shadow:0 4px 0 #0E6B32;} .btn-sell{box-shadow:0 4px 0 #9B1C1C;}
+.btn-buy:active:not(:disabled),.btn-sell:active:not(:disabled){transform:translateY(4px); box-shadow:none;}
+.btn-ghost,.btn:disabled{box-shadow:none;}
+.chip{box-shadow:0 4px 0 var(--press); transition:transform .12s ease, box-shadow .12s ease, background .2s, color .2s;}
+.chip:active{transform:translateY(4px); box-shadow:none;}
+.chip[aria-pressed="true"]{box-shadow:0 4px 0 var(--press-accent);}
+.team-no{box-shadow:0 4px 0 color-mix(in srgb, var(--c) 62%, #000);}
+.opt{box-shadow:0 4px 0 var(--press);}
+.step-btn{box-shadow:0 4px 0 var(--press);}
+.step-btn:active{transform:translateY(4px); box-shadow:none;}
+
+/* بطاقات الفرق: محافظ */
+.team{box-shadow:0 4px 0 var(--press);}
+.team.active{box-shadow:0 0 0 3px var(--c), 0 6px 0 color-mix(in srgb, var(--c) 60%, #000);}
+.team-cash b,.team-wealth,.p-price,.t-price b,.m-new,.m-old,.rank-w,.final-pts{font-variant-numeric:tabular-nums;}
+
+/* ---------- لوحة الأسعار: شاشة تداول داكنة ---------- */
+.board{background:linear-gradient(180deg, var(--term-2), var(--term)); border-color:rgba(255,255,255,.08); color:var(--term-text); box-shadow:0 18px 40px rgba(10,36,99,.28);}
+.board h3{display:flex; align-items:center; gap:8px; color:#fff;}
+.board h3::before{content:""; width:9px; height:9px; border-radius:50%; background:#4ADE80; box-shadow:0 0 0 0 rgba(74,222,128,.6); animation:liveDot 1.6s ease-out infinite;}
+@keyframes liveDot{to{box-shadow:0 0 0 9px rgba(74,222,128,0);}}
+.prices li{border-bottom-color:var(--term-line); border-radius:8px; padding-inline:6px;}
+.board .p-name{color:var(--term-text);}
+.board .p-price{color:#fff;}
+.spark{width:64px; height:24px;}
+.spark .sp-line{fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;}
+.spark.up .sp-line{stroke:#4ADE80;} .spark.down .sp-line{stroke:#F87171;} .spark.flat .sp-line{stroke:var(--term-dim);}
+.spark .sp-area{stroke:none; opacity:.22;}
+.spark.up .sp-area{fill:#4ADE80;} .spark.down .sp-area{fill:#F87171;} .spark.flat .sp-area{fill:transparent;}
+.prices li.flash-up{animation:flashUp 1.2s ease;}
+.prices li.flash-down{animation:flashDown 1.2s ease;}
+@keyframes flashUp{0%,30%{background:rgba(74,222,128,.28);} 100%{background:transparent;}}
+@keyframes flashDown{0%,30%{background:rgba(248,113,113,.28);} 100%{background:transparent;}}
+
+/* ---------- شاشة السوق: مؤشر أثَر ---------- */
+.index-card{
+  display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; gap:16px;
+  background:linear-gradient(180deg, var(--term-2), var(--term)); color:var(--term-text);
+  border-radius:18px; padding:14px 18px; margin-bottom:14px; box-shadow:0 12px 30px rgba(10,36,99,.25);
+}
+.index-card .ix-label{font-size:.85rem; color:var(--term-dim); font-weight:700;}
+.index-card .ix-val{font-size:clamp(1.8rem,5vw,2.6rem); font-weight:700; line-height:1.2; color:#fff; font-variant-numeric:tabular-nums;}
+.index-card .ix-chg{display:inline-block; margin-top:2px;}
+.ix-chart{width:100%; height:86px; direction:ltr;}
+.ix-chart .ix-line{fill:none; stroke-width:3; stroke-linecap:round; stroke-linejoin:round;}
+.ix-chart.up .ix-line{stroke:#4ADE80;} .ix-chart.down .ix-line{stroke:#F87171;}
+.ix-chart .ix-area{opacity:.2;}
+.ix-chart.up .ix-area{fill:#4ADE80;} .ix-chart.down .ix-area{fill:#F87171;}
+.ix-chart .ix-base{stroke:var(--term-line); stroke-width:1.5; stroke-dasharray:4 5;}
+.ix-wrap{position:relative; direction:ltr;}
+.ix-chart .ix-line,.ix-chart .ix-base{vector-effect:non-scaling-stroke;}
+.ix-dot{position:absolute; width:12px; height:12px; margin:-6px 0 0 -6px; border-radius:50%; border:2px solid #fff;}
+.ix-wrap.up .ix-dot{background:#4ADE80; box-shadow:0 0 0 0 rgba(74,222,128,.6); animation:liveDot 1.6s ease-out infinite;}
+.ix-wrap.down .ix-dot{background:#F87171;}
+.market.anim .ix-line{stroke-dasharray:1000; animation:ixDraw 1.4s ease-out both;}
+@keyframes ixDraw{from{stroke-dashoffset:1000;}}
+
+/* ---------- الفوز: سهم صاعد بلون الفائز مع عملات ---------- */
+.trophy{width:clamp(200px,34vw,260px); height:auto; fill:initial; stroke:none; filter:none; animation:none;}
+.trophy .trend,.trophy .arrowhead,.trophy .tip{--gold-line:var(--win,var(--gold));}
+.trophy .trend{stroke:var(--win,var(--gold)); stroke-width:7;}
+.trophy .arrowhead,.trophy .tip{fill:var(--win,var(--gold));}
+
+/* ---------- أشرطة الصوت المتمايلة ---------- */
+.snd .bars{display:flex; align-items:center; gap:3px; height:20px;}
+.snd .bars i{width:3.5px; height:100%; border-radius:3px; background:var(--text); transform-origin:50% 100%; transform:scaleY(.35);}
+.snd[aria-pressed="true"] .bars i{animation:eq 1s ease-in-out infinite;}
+.snd[aria-pressed="true"] .bars i:nth-child(2){animation-delay:-.35s; animation-duration:.8s;}
+.snd[aria-pressed="true"] .bars i:nth-child(3){animation-delay:-.6s; animation-duration:1.15s;}
+.snd[aria-pressed="true"] .bars i:nth-child(4){animation-delay:-.2s; animation-duration:.9s;}
+@keyframes eq{0%,100%{transform:scaleY(.3);} 50%{transform:scaleY(1);}}
+.snd[aria-pressed="false"] .bars{position:relative; opacity:.5;}
+.snd[aria-pressed="false"] .bars i{transform:scaleY(.22);}
+.snd[aria-pressed="false"] .bars::after{content:""; position:absolute; left:-3px; right:-3px; top:50%; height:2.5px; border-radius:2px; background:var(--text); transform:rotate(-38deg);}
+
+@media (max-width:600px){
+  .ticker{height:34px;}
+  .tk{font-size:.84rem; padding:0 12px;}
+  .index-card{grid-template-columns:minmax(0,1fr); gap:6px;}
+}
+@media (prefers-reduced-motion:reduce){.ticker-track{animation:none;}}
+
 /* ---------- التجاوب ---------- */
 @media (max-width:1020px){
   .layout{grid-template-columns:minmax(0,1fr);}
