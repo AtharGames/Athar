@@ -13,6 +13,47 @@
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const reducedMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const S = window.AtharSound;
+
+  // ---------- مؤثرات اللعبة المسجّلة (sounds/): نرد، سلّم، ثعبان ----------
+  // تحترم زر الكتم المشترك، وتُفك على الجوال من أول لمسة.
+  const SFX = (() => {
+    const BASE = new URL('sounds/', (document.currentScript && document.currentScript.src) || location.href).href;
+    const NAMES = ['dice', 'ladder', 'snake'];
+    const raw = {}, bufs = {};
+    let ctx = null;
+    const decode = (n) => {
+      if (!ctx || bufs[n] || !raw[n]) return;
+      try { ctx.decodeAudioData(raw[n].slice(0), (b) => { bufs[n] = b; }, () => {}); } catch { /* تجاهل */ }
+    };
+    NAMES.forEach((n) => {
+      fetch(BASE + n + '.mp3').then((r) => (r.ok ? r.arrayBuffer() : null))
+        .then((b) => { if (b) { raw[n] = b; decode(n); } }).catch(() => {});
+    });
+    function ensure() {
+      try {
+        if (!ctx) {
+          const C = window.AudioContext || window.webkitAudioContext;
+          if (!C) return null;
+          ctx = new C(); NAMES.forEach(decode);
+        }
+        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      } catch { /* تجاهل */ }
+      return ctx;
+    }
+    ['pointerdown', 'keydown', 'touchend'].forEach((ev) => document.addEventListener(ev, ensure, { capture: true, passive: true }));
+    function play(name, vol = 1) {
+      if (!S || !S.on) return;
+      const c = ensure(), b = bufs[name];
+      if (c && b) {
+        const src = c.createBufferSource(), g = c.createGain();
+        src.buffer = b; g.gain.value = vol;
+        src.connect(g).connect(c.destination); src.start();
+      } else {
+        try { const a = new Audio(BASE + name + '.mp3'); a.volume = Math.min(1, vol); a.play().catch(() => {}); } catch { /* تجاهل */ }
+      }
+    }
+    return { play };
+  })();
   const NS = 'http://www.w3.org/2000/svg';
 
   const store = {
@@ -113,7 +154,7 @@
   const el = {
     soundBtn: $('#soundBtn'), counts: $('#counts'), teamInputs: $('#teamInputs'),
     skins: $('#skins'), layouts: $('#layouts'), skinDots: $('#skinDots'),
-    frame: $('#boardFrame'), tiles: $('#tiles'), decor: $('#decor'), pawns: $('#pawns'),
+    frame: $('#boardFrame'), fx: $('#fx'), tiles: $('#tiles'), decor: $('#decor'), pawns: $('#pawns'),
     turnPanel: $('#turnPanel'), turnChip: $('#turnChip'), turnTitle: $('#turnTitle'), turnSub: $('#turnSub'),
     dice: $('#dice'), diceResult: $('#diceResult'), rollBtn: $('#rollBtn'), nextBtn: $('#nextBtn'),
     standings: $('#standings'), manualHint: $('#manualHint'), manualForm: $('#manualForm'), manualInput: $('#manualInput'),
@@ -555,10 +596,9 @@
     const spinMs = reducedMotion() ? 0 : 950;
     el.diceResult.textContent = '…';
     showDice(n);
-    // خشخشة النرد بنقرات لسان
-    [0, 0.11, 0.24, 0.4, 0.58, 0.78].forEach((d) => S.tongue(d, 0.2));
+    // خشخشة النرد
+    SFX.play('dice');
     await sleep(spinMs);
-    S.drop(520);
     el.diceResult.textContent = `طلع لكم ${num(n)}`;
     await sleep(250);
     await walk(teams[cur], n);
@@ -576,6 +616,39 @@
     }
   }
 
+  // لحظة الصعود أو النزول: شارة ▲/▼ فوق القطعة، وتوهّج أو اهتزاز للوحة
+  function moment(team, from, to, up) {
+    const frame = el.frame, fx = el.fx;
+    if (!frame || !fx) return;
+    frame.classList.remove('boost', 'bitten'); void frame.offsetWidth;
+    frame.classList.add(up ? 'boost' : 'bitten');
+    if (reducedMotion()) return;
+    const at = (n) => { const c = center(n); return { x: c.x / 10 + '%', y: c.y / 10 + '%' }; };
+    const d = Math.abs(to - from);
+    const badge = document.createElement('div');
+    const p = at(up ? to : from);
+    badge.className = 'fx-badge ' + (up ? 'up' : 'down');
+    badge.style.setProperty('--x', p.x); badge.style.setProperty('--y', p.y);
+    // الرقم بإشارته معزول حتى لا تنقلب في الاتجاه العربي
+    badge.innerHTML = `${up ? '▲' : '▼'} <b>\u2066${up ? '+' : '−'}${num(d)}\u2069</b>`;
+    setTimeout(() => fx.append(badge), up ? SLIDE_MS * 0.55 : 0);
+    setTimeout(() => badge.remove(), 2600);
+    // شرر بلون الفريق عند وصول السلم
+    if (up) {
+      setTimeout(() => {
+        const q = at(to);
+        for (let i = 0; i < 12; i++) {
+          const sp = document.createElement('i');
+          const a = (i / 12) * Math.PI * 2, r = 40 + Math.random() * 30;
+          sp.className = 'fx-spark';
+          sp.style.cssText = `--x:${q.x};--y:${q.y};--c:${i % 2 ? team.color : '#F59E0B'};--dx:${Math.cos(a) * r}px;--dy:${Math.sin(a) * r}px`;
+          fx.append(sp);
+          setTimeout(() => sp.remove(), 1000);
+        }
+      }, SLIDE_MS);
+    }
+  }
+
   // تطبيق أثر المربع: فوز، سلم، أو ثعبان
   async function resolve(team) {
     const from = team.pos;
@@ -585,7 +658,8 @@
       const up = Boolean(ladders[from]);
       await sleep(280);
       team.pos = up ? ladders[from] : snakes[from];
-      if (up) { S.whoosh(true); S.chirp(0.3); } else { S.whoosh(false); S.sigh(0.35); }
+      SFX.play(up ? 'ladder' : 'snake');
+      moment(team, from, team.pos, up);
       placePawns(SLIDE_MS);
       await sleep(reducedMotion() ? 0 : SLIDE_MS + 80);
       save();

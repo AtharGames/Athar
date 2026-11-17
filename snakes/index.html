@@ -36,9 +36,8 @@
   </a>
 
   <div class="top-tools">
-    <button class="icon-btn" id="soundBtn" aria-pressed="true" aria-label="الصوت">
-      <svg class="ico-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
-      <svg class="ico-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
+    <button class="icon-btn snd" id="soundBtn" aria-pressed="true" aria-label="المؤثرات الصوتية">
+      <span class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
     </button>
     <!-- مبدّل الثيمات -->
     <div class="theme-switch" role="group" aria-label="ألوان الواجهة">
@@ -55,8 +54,36 @@
   <section class="screen active" id="screen-setup">
     <div class="setup">
       <div class="setup-hero">
-        <img class="hero-logo logo-main" src="../assets/athar-logo.png" alt="شعار لجنة أثَر" width="556" height="720">
-        <img class="hero-logo logo-rev" src="../assets/athar-logo-reversed.png" alt="شعار لجنة أثَر" width="556" height="720">
+        <div class="hero-art" aria-hidden="true">
+          <svg viewBox="0 0 220 170">
+            <ellipse class="shadow" cx="112" cy="161" rx="86" ry="7"/>
+            <!-- السلّم -->
+            <g class="h-ladder">
+              <path class="rail" d="M84 158L98 16M126 158L140 16"/>
+              <path class="rail-hi" d="M84 158L98 16M126 158L140 16"/>
+              <path class="rung" d="M86 136h42M88 114h42M90 92h42M92 70h42M95 48h42M97 27h41"/>
+            </g>
+            <!-- الثعبان يلتف على السلّم -->
+            <g class="h-snake">
+              <path class="body" d="M54 152C30 134 98 132 110 114S78 88 110 74S154 62 150 42"/>
+              <path class="spots" d="M54 152C30 134 98 132 110 114S78 88 110 74S154 62 150 42"/>
+              <g class="head">
+                <path class="tongue" d="M164 30l9-3m-9 3l8 5"/>
+                <ellipse cx="153" cy="33" rx="14" ry="11" fill="#2FA862"/>
+                <circle cx="149" cy="28" r="4" fill="#fff"/><circle cx="158" cy="28" r="4" fill="#fff"/>
+                <circle cx="150" cy="28.5" r="2" fill="#0A2463"/><circle cx="159" cy="28.5" r="2" fill="#0A2463"/>
+                <path d="M147 38q6 4 12 0" stroke="#1E6B2D" stroke-width="2" fill="none" stroke-linecap="round"/>
+              </g>
+            </g>
+            <!-- النرد يقفز -->
+            <g class="h-die">
+              <rect x="14" y="104" width="44" height="44" rx="10" fill="#fff" stroke="#BCC8DD" stroke-width="2"/>
+              <g fill="#0A2463"><circle cx="26" cy="116" r="4"/><circle cx="46" cy="116" r="4"/><circle cx="26" cy="126" r="4"/><circle cx="46" cy="126" r="4"/><circle cx="26" cy="136" r="4"/><circle cx="46" cy="136" r="4"/></g>
+            </g>
+            <!-- نجوم القمة -->
+            <g class="h-stars"><path d="M172 12l2.6 5.4 6 .8-4.4 4 1.1 5.9-5.3-2.9-5.3 2.9 1.1-5.9-4.4-4 6-.8z"/><path d="M196 40l1.8 3.7 4 .5-3 2.8.8 4-3.6-2-3.6 2 .8-4-3-2.8 4-.5z"/></g>
+          </svg>
+        </div>
         <h1>السلم والثعبان</h1>
         <p class="lead">ارموا النرد، اطلعوا السلالم، وانتبهوا من الثعابين… وأول فريق يوصل ١٠٠ هو البطل.</p>
       </div>
@@ -102,6 +129,7 @@
       <!-- اللوحة -->
       <div class="board-col">
         <div class="board-frame" id="boardFrame" data-skin="classic">
+          <div class="board-wrap">
           <svg id="board" viewBox="0 0 1000 1000" role="img" aria-label="لوحة السلم والثعبان">
             <defs>
               <!-- لمعة وظل لكل مربع -->
@@ -128,6 +156,9 @@
             <g id="decor" filter="url(#dropShadow)"></g>
             <g id="pawns"></g>
           </svg>
+          <!-- طبقة شارات الصعود والنزول -->
+          <div class="fx" id="fx" aria-hidden="true"></div>
+          </div>
         </div>
 
         <!-- تغيير شكل اللوحة أثناء اللعب -->
@@ -196,10 +227,19 @@
   <section class="screen" id="screen-victory">
     <canvas id="confetti" aria-hidden="true"></canvas>
     <div class="victory">
-      <svg class="trophy" viewBox="0 0 64 64" aria-hidden="true">
-        <path d="M18 8h28v14a14 14 0 0 1-28 0V8z"/>
-        <path d="M18 12H8v4a10 10 0 0 0 10 10M46 12h10v4a10 10 0 0 1-10 10" fill="none" stroke-width="4"/>
-        <path d="M28 36h8v10h-8zM20 46h24v8H20z"/>
+      <svg class="trophy" viewBox="0 0 120 130" aria-hidden="true">
+        <!-- قطعة الفريق الفائز فوق قمة السلّم -->
+        <ellipse class="t-shadow" cx="60" cy="124" rx="40" ry="4"/>
+        <g class="t-ladder">
+          <path class="rail" d="M38 122L46 52M82 122L74 52"/>
+          <path class="rung" d="M39 110h41M40 96h39M42 82h36M44 67h32"/>
+        </g>
+        <g class="t-pawn">
+          <path d="M44 50Q41 58 60 58Q79 58 76 50L68 30H52Z"/>
+          <circle cx="60" cy="22" r="12"/>
+          <circle class="shine" cx="55" cy="18" r="4"/>
+        </g>
+        <g class="t-stars"><path d="M22 20l2.4 5 5.4.7-4 3.7 1 5.3-4.8-2.6-4.8 2.6 1-5.3-4-3.7 5.4-.7z"/><path d="M98 14l2.4 5 5.4.7-4 3.7 1 5.3-4.8-2.6-4.8 2.6 1-5.3-4-3.7 5.4-.7z"/><path d="M104 52l1.6 3.3 3.6.5-2.6 2.4.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.4 3.6-.5z"/></g>
       </svg>
       <p class="kicker" id="victoryKicker"></p>
       <h1 id="winnerName"></h1>

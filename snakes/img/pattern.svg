@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <!-- نقش مائي للسلم والثعبان: نرد، سلّم، ثعبان، قطعة، نجمة -->
+  <g transform="translate(14 16) rotate(-12 14 14)"><rect x="2" y="2" width="26" height="26" rx="6"/><circle cx="9" cy="9" r="1.6"/><circle cx="15" cy="15" r="1.6"/><circle cx="21" cy="21" r="1.6"/></g>
+  <g transform="translate(150 10) rotate(10 12 24)"><path d="M4 46L10 2M18 46L24 2M5 38h14M6 28h14M8 18h14M9 9h14"/></g>
+  <g transform="translate(70 92)"><path d="M2 40c10 0 10-12 20-12s10 12 20 12 10-12 20-12"/><circle cx="64" cy="27" r="4"/></g>
+  <g transform="translate(184 120)"><circle cx="10" cy="7" r="6"/><path d="M5 13l-4 16h18l-4-16"/></g>
+  <g transform="translate(26 170) scale(1.1)"><path d="M12 2l3 6.5 7 .8-5.2 4.8 1.5 7L12 17.5 5.7 21l1.5-7L2 9.3l7-.8z"/></g>
+  <g transform="translate(110 186) rotate(14 14 14)"><rect x="2" y="2" width="26" height="26" rx="6"/><circle cx="9" cy="9" r="1.6"/><circle cx="21" cy="9" r="1.6"/><circle cx="9" cy="21" r="1.6"/><circle cx="21" cy="21" r="1.6"/></g>
+  <g transform="translate(196 196) rotate(-8 8 20)"><path d="M3 38L8 2M15 38L20 2M4 28h12M5 18h12M6 9h12"/></g>
+  <g transform="translate(124 60) scale(.8)"><path d="M12 2l3 6.5 7 .8-5.2 4.8 1.5 7L12 17.5 5.7 21l1.5-7L2 9.3l7-.8z"/></g>
+  <g transform="translate(10 96) rotate(-20 20 20)"><path d="M2 30c8 0 8-10 16-10s8 10 16 10"/><circle cx="36" cy="20" r="3"/></g>
+</svg>
