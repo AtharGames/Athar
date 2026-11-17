@@ -284,6 +284,168 @@ input[type="text"]::placeholder{color:var(--text-2); opacity:.6; font-weight:500
 @keyframes fade{from{opacity:0;}}
 @keyframes modalIn{from{opacity:0; transform:scale(.85) translateY(20px);}}
 
+/* =========================================================
+   هوية «من سيربح التيلفون» الخاصة: استوديو مسابقة كلاسيكي، والجائزة تيلفون أبو قرص
+   بنفسجي ملكي وذهبي، دوائر أرضية الاستوديو، سُلّم نقاط بشكل أشرطة إشارة
+   ========================================================= */
+:root,[data-theme="light"]{
+  --royal:#6D28D9; --royal-2:#8B5CF6; --royal-glow:rgba(139,92,246,.24); --ring:rgba(109,40,217,.09);
+  --gold:#F5B820; --gold-deep:#B7791F; --gold-ink:#0A2463;
+  --press:#C6D8F1; --press-accent:#0F4FB0; --pattern:.05;
+}
+[data-theme="navy"]{--royal-glow:rgba(167,139,250,.26); --ring:rgba(196,181,253,.10); --press:rgba(0,0,0,.4); --press-accent:#4C9FD8; --pattern:.06;}
+[data-theme="blue"]{--royal-glow:rgba(255,255,255,.2); --ring:rgba(255,255,255,.12); --press:rgba(10,36,99,.32); --press-accent:#9CCBF3; --pattern:.08;}
+
+/* ---------- الاستوديو: توهّج بنفسجي ودوائر الأرضية ونقش مائي ---------- */
+html{background:radial-gradient(70% 50% at 50% -12%, var(--royal-glow), transparent 72%), var(--bg-paint); background-attachment:fixed; background-color:var(--bg);}
+body{background:transparent;}
+html,body{overflow-x:clip;}
+body::before{
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:var(--text); opacity:var(--pattern);
+  -webkit-mask:url("img/pattern.svg") 0 0 / 250px 250px repeat;
+          mask:url("img/pattern.svg") 0 0 / 250px 250px repeat;
+}
+/* دوائر أرضية الاستوديو حول «كرسي المتسابق» */
+body::after{
+  content:""; position:fixed; left:50%; bottom:-62vmax; width:150vmax; height:150vmax; z-index:0; pointer-events:none;
+  transform:translateX(-50%); border-radius:50%;
+  background:repeating-radial-gradient(circle, transparent 0 54px, var(--ring) 54px 57px);
+  -webkit-mask:radial-gradient(circle, #000 20%, transparent 62%); mask:radial-gradient(circle, #000 20%, transparent 62%);
+  animation:floorSpin 120s linear infinite;
+}
+@keyframes floorSpin{to{transform:translateX(-50%) rotate(360deg);}}
+.topbar, main{position:relative; z-index:1;}
+
+/* ---------- الهاتف أبو قرص (البطل، الفوز، الرئيسية) ---------- */
+.phone{--phone:var(--royal); overflow:visible;}
+.phone .ph-shadow{fill:var(--text); opacity:.14;}
+.phone .ph-body{fill:var(--phone);}
+.phone .ph-dark{fill:color-mix(in srgb, var(--phone) 72%, #000);}
+.phone .ph-shine{fill:#fff; opacity:.18;}
+.phone .ph-dial{fill:var(--gold); stroke:var(--gold-deep); stroke-width:2;}
+.phone .ph-hole{fill:#FFF7DB; stroke:#C98A12; stroke-width:1.2;}
+.phone .ph-center{fill:#fff;}
+.phone .ph-stop{stroke:#fff; stroke-width:3.5; stroke-linecap:round;}
+.phone .ph-cord circle{fill:none; stroke:color-mix(in srgb, var(--phone) 72%, #000); stroke-width:3;}
+.phone .ph-waves path{fill:none; stroke:var(--gold); stroke-width:5; stroke-linecap:round; opacity:0;}
+.phone .ph-handset{transform-origin:110px 64px; animation:ringing 2.8s ease-in-out infinite;}
+.phone .ph-waves path{animation:waves 2.8s ease-out infinite;}
+.phone .ph-waves path:nth-child(2n){animation-delay:.12s;}
+@keyframes ringing{
+  0%,42%,100%{transform:none;}
+  3%{transform:translateY(-7px) rotate(-5deg);} 6%{transform:translateY(-7px) rotate(5deg);}
+  9%{transform:translateY(-7px) rotate(-5deg);} 12%{transform:translateY(-7px) rotate(5deg);}
+  15%{transform:translateY(-3px) rotate(0);}
+  24%{transform:translateY(-7px) rotate(-5deg);} 27%{transform:translateY(-7px) rotate(5deg);}
+  30%{transform:translateY(-7px) rotate(-5deg);} 33%{transform:translateY(-7px) rotate(5deg);}
+  36%{transform:translateY(-3px) rotate(0);}
+}
+@keyframes waves{0%,100%{opacity:0;} 4%,12%,25%,33%{opacity:1;} 16%,38%{opacity:0;}}
+.hero-phone{width:clamp(180px,34vw,240px); margin:0 auto -4px;}
+.hero-phone svg{width:100%; height:auto; display:block;}
+
+/* ---------- أزرار مجسّمة ---------- */
+.btn{box-shadow:0 5px 0 var(--press); transition:transform .12s ease, box-shadow .12s ease, background .2s ease, filter .2s, opacity .2s;}
+.btn:hover{transform:translateY(-1px);}
+.btn:active{transform:translateY(5px); box-shadow:0 0 0 var(--press);}
+.btn-primary{box-shadow:0 6px 0 var(--press-accent), 0 14px 24px rgba(10,36,99,.2);}
+.btn-primary:active{transform:translateY(6px); box-shadow:0 0 0 var(--press-accent);}
+.btn-ghost{box-shadow:none;}
+.btn-ghost:active{transform:scale(.97); box-shadow:none;}
+.chip{box-shadow:0 4px 0 var(--press); transition:transform .12s ease, box-shadow .12s ease, background .2s, color .2s;}
+.chip:active{transform:translateY(4px); box-shadow:none;}
+.chip[aria-pressed="true"]{box-shadow:0 4px 0 var(--press-accent);}
+.team-no{box-shadow:0 4px 0 color-mix(in srgb, var(--c) 62%, #000);}
+.step-btn{box-shadow:0 3px 0 var(--press);}
+.step-btn:active{transform:translateY(3px); box-shadow:none;}
+
+.btn-correct{box-shadow:0 7px 0 #137A50, 0 14px 26px rgba(31,169,113,.3);}
+.btn-wrong{box-shadow:0 7px 0 #B23A34, 0 14px 26px rgba(232,85,78,.3);}
+.btn-correct:active,.btn-wrong:active{transform:translateY(7px); box-shadow:none;}
+
+/* الخزينة ذهبية */
+.btn-bank{background:linear-gradient(180deg,#FCD34D,var(--gold)); color:var(--gold-ink); border:none; box-shadow:0 5px 0 var(--gold-deep), 0 12px 22px rgba(245,184,32,.3);}
+.btn-bank:hover{background:linear-gradient(180deg,#FDE68A,var(--gold));}
+.btn-bank:active{box-shadow:0 0 0 var(--gold-deep);}
+.btn-bank svg{fill:var(--gold-ink); stroke:var(--gold-ink);}
+
+/* ---------- طاولة المقدّم: مايك «على الهواء» ---------- */
+.mic{position:relative; background:linear-gradient(160deg,var(--royal-2),var(--royal));}
+.mic::after{content:""; position:absolute; inset:-5px; border-radius:20px; border:2px solid var(--royal-2); opacity:0; animation:onAir 2s ease-out infinite;}
+@keyframes onAir{0%{transform:scale(.9); opacity:.8;} 100%{transform:scale(1.25); opacity:0;}}
+.round-pill{border-color:var(--gold); box-shadow:0 3px 0 var(--gold-deep);}
+
+/* طاولات الفرق مجسّمة */
+.desk{box-shadow:0 5px 0 var(--press);}
+.desk.active{box-shadow:0 0 0 3px var(--c), 0 7px 0 color-mix(in srgb, var(--c) 60%, #000), 0 0 40px color-mix(in srgb, var(--c) 30%, transparent);}
+
+/* ---------- سُلّم النقاط: أشرطة إشارة ---------- */
+.ladder{
+  position:relative; display:flex; flex-wrap:nowrap; align-items:flex-end; gap:6px;
+  height:124px; padding:6px 2px 0; border-bottom:3px solid var(--line);
+}
+.rung{
+  flex:1 1 0; min-width:0; height:calc(30px + var(--i,0) * 10.5px);
+  display:flex; align-items:flex-start; justify-content:center; padding:6px 0 0;
+  border-radius:10px 10px 3px 3px; font-size:.8rem; white-space:nowrap; overflow:hidden;
+  transform-origin:50% 100%;
+}
+.rung.now{transform:none; box-shadow:0 0 0 3px color-mix(in srgb, var(--c) 35%, transparent), 0 0 24px color-mix(in srgb, var(--c) 55%, transparent);}
+.rung.done{background:color-mix(in srgb, var(--c) 45%, transparent);}
+/* إجابة صحيحة: الإشارة تقوى بالتتابع */
+.ladder.surge .rung.done,.ladder.surge .rung.now{animation:surge .55s cubic-bezier(.3,1.5,.5,1) both; animation-delay:calc(var(--i,0) * 70ms);}
+@keyframes surge{0%{transform:scaleY(.3); filter:brightness(1.6);} 70%{transform:scaleY(1.08); filter:brightness(1.3);} 100%{transform:none; filter:none;}}
+/* إجابة خاطئة: انقطع الخط */
+.ladder.cut .rung{animation:cut .9s steps(1,end) both; animation-delay:calc((8 - var(--i,0)) * 35ms);}
+@keyframes cut{0%{opacity:1;} 15%{opacity:.15; transform:scaleY(.25);} 30%{opacity:.8;} 45%{opacity:.1;} 60%{opacity:.7; transform:scaleY(.6);} 100%{opacity:1; transform:none;}}
+.ladder.cut::after{
+  content:"انقطع الخط"; position:absolute; inset:0; display:grid; place-items:center;
+  font-weight:700; font-size:1.3rem; color:#fff; text-shadow:0 2px 6px rgba(0,0,0,.4);
+  background:repeating-linear-gradient(0deg, rgba(232,85,78,.55) 0 3px, rgba(10,36,99,.35) 3px 6px);
+  border-radius:12px; animation:static 1.1s ease forwards;
+}
+@keyframes static{0%,70%{opacity:1;} 100%{opacity:0;}}
+
+/* ---------- وسائل المساعدة: أشرطة الإجابات المدببة ---------- */
+.life{
+  position:relative; isolation:isolate; border:none; border-radius:0;
+  padding:8px 28px; min-height:50px;
+  background:linear-gradient(90deg, var(--gold-deep), var(--gold), #FCD34D, var(--gold), var(--gold-deep));
+  clip-path:polygon(16px 0, calc(100% - 16px) 0, 100% 50%, calc(100% - 16px) 100%, 16px 100%, 0 50%);
+}
+.life::before{
+  content:""; position:absolute; inset:2.5px; z-index:-1; background:var(--solid);
+  clip-path:polygon(15px 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 15px 100%, 0 50%);
+}
+.life:hover:not(:disabled)::before{background:color-mix(in srgb, var(--royal-2) 16%, var(--solid));}
+.life:active:not(:disabled){transform:scale(.97);}
+.life:disabled{background:var(--line); opacity:.6;}
+.life em{background:var(--royal); color:#fff;}
+
+/* ---------- الفوز: تيلفون الجائزة بلون الفريق يرن ---------- */
+.trophy{width:clamp(170px,30vw,220px); height:auto; fill:initial; stroke:none; filter:drop-shadow(0 10px 18px rgba(0,0,0,.2)); animation:prizeIn .9s cubic-bezier(.3,1.5,.5,1) both;}
+.trophy.phone{--phone:var(--win,var(--royal));}
+@keyframes prizeIn{0%{transform:scale(.3) rotate(-14deg); opacity:0;} 100%{transform:none; opacity:1;}}
+
+/* ---------- أشرطة الصوت المتمايلة ---------- */
+.snd .bars{display:flex; align-items:center; gap:3px; height:20px;}
+.snd .bars i{width:3.5px; height:100%; border-radius:3px; background:var(--text); transform-origin:50% 100%; transform:scaleY(.35);}
+.snd[aria-pressed="true"] .bars i{animation:eq 1s ease-in-out infinite;}
+.snd[aria-pressed="true"] .bars i:nth-child(2){animation-delay:-.35s; animation-duration:.8s;}
+.snd[aria-pressed="true"] .bars i:nth-child(3){animation-delay:-.6s; animation-duration:1.15s;}
+.snd[aria-pressed="true"] .bars i:nth-child(4){animation-delay:-.2s; animation-duration:.9s;}
+@keyframes eq{0%,100%{transform:scaleY(.3);} 50%{transform:scaleY(1);}}
+.snd[aria-pressed="false"] .bars{position:relative; opacity:.5;}
+.snd[aria-pressed="false"] .bars i{transform:scaleY(.22);}
+.snd[aria-pressed="false"] .bars::after{content:""; position:absolute; left:-3px; right:-3px; top:50%; height:2.5px; border-radius:2px; background:var(--text); transform:rotate(-38deg);}
+
+@media (max-width:600px){
+  .ladder{gap:3px; height:108px;}
+  .rung{font-size:.62rem; height:calc(26px + var(--i,0) * 9px); border-radius:7px 7px 2px 2px;}
+  .life{padding:8px 24px;}
+}
+
 /* ---------- التجاوب ---------- */
 @media (max-width:860px){
   .panels{grid-template-columns:minmax(0,1fr);}

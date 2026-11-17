@@ -12,6 +12,24 @@
   const reducedMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const S = window.AtharSound;
 
+  // ---------- رنّة التيلفون المسجّلة (sounds/ring.mp3) ----------
+  // تحترم زر الكتم المشترك، وتُحمَّل مسبقًا حتى تشتغل فورًا مع الضغطة.
+  const RING_URL = new URL('sounds/ring.mp3', (document.currentScript && document.currentScript.src) || location.href).href;
+  let ringCtx = null, ringBuf = null, ringRaw = null;
+  fetch(RING_URL).then((r) => (r.ok ? r.arrayBuffer() : null)).then((b) => { ringRaw = b; }).catch(() => {});
+  function playRing() {
+    if (!S || !S.on) return;
+    try {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!ringCtx && C) ringCtx = new C();
+      if (ringCtx && ringCtx.state === 'suspended') ringCtx.resume().catch(() => {});
+      const go = (b) => { const src = ringCtx.createBufferSource(); src.buffer = b; src.connect(ringCtx.destination); src.start(); };
+      if (ringCtx && ringBuf) return go(ringBuf);
+      if (ringCtx && ringRaw) return ringCtx.decodeAudioData(ringRaw.slice(0), (b) => { ringBuf = b; go(b); }, () => {});
+      const a = new Audio(RING_URL); a.play().catch(() => {});
+    } catch { /* تجاهل */ }
+  }
+
   const store = {
     get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch { /* تجاهل */ } }
@@ -185,7 +203,7 @@
     cancelAnimationFrame(confettiRaf);
     render();
     show('screen-game');
-    S.whoosh(true); S.drop(520, 0.25);
+    playRing(); // رنّة التيلفون عند فتح الاستوديو
   }
 
   function render(bumpIdx = -1) {
@@ -225,6 +243,7 @@
     LADDER.forEach((v, i) => {
       const r = document.createElement('span');
       r.className = 'rung' + (i < t.ladderIndex ? ' done' : i === t.ladderIndex ? ' now' : '');
+      r.style.setProperty('--i', i);
       r.textContent = num(v);
       el.ladder.append(r);
     });
@@ -252,7 +271,29 @@
     render();
   }
 
+  // الإشارة تقوى (صح) أو ينقطع الخط (خطأ) على سُلّم الفريق
+  function ladderMoment(kind) {
+    el.ladder.classList.remove('surge', 'cut'); void el.ladder.offsetWidth;
+    el.ladder.classList.add(kind);
+    clearTimeout(ladderMoment.t);
+    ladderMoment.t = setTimeout(() => el.ladder.classList.remove(kind), 1300);
+  }
+
+  // مهلة قصيرة لرؤية لحظة السلّم قبل نافذة النتيجة، مع قفل أزرار التقييم حتى لا تنضغط مرتين
+  let answering = false;
+  const MOMENT_MS = 850;
+  function afterMoment(fn) {
+    answering = true;
+    $$('#correctBtn, #wrongBtn').forEach((b) => { b.disabled = true; });
+    setTimeout(() => {
+      answering = false;
+      $$('#correctBtn, #wrongBtn').forEach((b) => { b.disabled = false; });
+      fn();
+    }, MOMENT_MS);
+  }
+
   function handleAnswer(correct) {
+    if (answering) return;
     const t = teams[cur];
     if (correct) {
       const gained = t.currentQuestionPoints;
@@ -262,11 +303,12 @@
       t.currentQuestionPoints = LADDER[t.ladderIndex];
       S.drop(480, 0); S.drop(600, 0.09); S.drop(760, 0.18); S.chirp(0.32, 3100);
       render(cur);
-      info({
+      ladderMoment('surge');
+      afterMoment(() => info({
         title: 'إجابة صحيحة!',
         text: `إجابة ممتازة من ${t.name}! أُضيفت ${num(gained)} نقطة وصار رصيدهم ${num(t.score)} نقطة. قيمة سؤالهم القادم ارتفعت إلى ${num(t.currentQuestionPoints)} نقطة.`,
         icon: 'ok', tone: 'ok'
-      }, nextTurn);
+      }, nextTurn));
     } else {
       t.score = t.bankedScore;
       // تصفير سُلّم هذا الفريق فقط
@@ -274,11 +316,12 @@
       t.currentQuestionPoints = LADDER[0];
       S.tongue(0, 0.3); S.tongue(0.13, 0.3); S.sigh(0.3);
       render(cur);
-      info({
+      ladderMoment('cut');
+      afterMoment(() => info({
         title: 'إجابة خاطئة!',
         text: `للأسف إجابة غير صحيحة من ${t.name}. ضاعت النقاط غير المحفوظة، ورصيدهم المؤكد بالخزينة ${num(t.score)} نقطة. قيمة سؤالهم القادم رجعت إلى ${num(LADDER[0])} نقطة.`,
         icon: 'bad', tone: 'bad'
-      }, nextTurn);
+      }, nextTurn));
     }
   }
 

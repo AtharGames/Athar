@@ -60,20 +60,6 @@ a.game-card:hover .art-tarabee i:nth-child(3n){animation-delay:.06s;}
 a.game-card:hover .art-tarabee i:nth-child(3n+1){animation-delay:.12s;}
 @keyframes pop{0%{transform:scale(.6);} 100%{transform:none;}}
 
-.art-ladder{display:flex; align-items:flex-end; justify-content:center; gap:7px; padding:18px 20%;}
-.art-ladder i{flex:1; border-radius:8px 8px 3px 3px; background:var(--accent); transform-origin:bottom;}
-.art-ladder i:nth-child(1){height:22%; opacity:.45;}
-.art-ladder i:nth-child(2){height:36%; opacity:.55;}
-.art-ladder i:nth-child(3){height:50%; opacity:.65;}
-.art-ladder i:nth-child(4){height:64%; opacity:.78;}
-.art-ladder i:nth-child(5){height:80%; opacity:.9;}
-.art-ladder i:nth-child(6){height:100%; background:#E59A1C;}
-a.game-card:hover .art-ladder i{animation:grow .5s cubic-bezier(.3,1.6,.5,1) both;}
-a.game-card:hover .art-ladder i:nth-child(2){animation-delay:.05s;}
-a.game-card:hover .art-ladder i:nth-child(3){animation-delay:.1s;}
-a.game-card:hover .art-ladder i:nth-child(4){animation-delay:.15s;}
-a.game-card:hover .art-ladder i:nth-child(5){animation-delay:.2s;}
-a.game-card:hover .art-ladder i:nth-child(6){animation-delay:.25s;}
 @keyframes grow{0%{transform:scaleY(.3);}}
 
 /* ديوان: علامة الكتاب المفتوح بألوان هويته */
@@ -93,6 +79,30 @@ a.game-card:hover .art-diwan svg{animation:pop .5s cubic-bezier(.3,1.6,.5,1) bot
 .art-sahm .hd{fill:#1FA971; stroke:#1FA971; stroke-width:3;}
 .art-sahm .pt{fill:var(--solid); stroke:var(--text); stroke-width:2.5;}
 a.game-card:hover .art-sahm svg{animation:pop .5s cubic-bezier(.3,1.6,.5,1) both;}
+
+/* من سيربح التيلفون: هاتف أبو قرص على أرضية استوديو بنفسجية */
+.art-phone{
+  background:
+    repeating-radial-gradient(circle at 50% 120%, transparent 0 22px, rgba(255,255,255,.08) 22px 24px),
+    radial-gradient(80% 70% at 50% 0%, #8B5CF6, transparent 70%),
+    linear-gradient(160deg,#2E1065,#4C1D95);
+}
+.art-phone .phone{width:54%; height:auto; overflow:visible; margin-top:5%;}
+.art-phone .ph-shadow{fill:#000; opacity:.3;}
+.art-phone .ph-body{fill:#7C3AED;}
+.art-phone .ph-dark{fill:#4C1D95;}
+.art-phone .ph-shine{fill:#fff; opacity:.2;}
+.art-phone .ph-dial{fill:#F5B820; stroke:#B7791F; stroke-width:2;}
+.art-phone .ph-hole{fill:#FFF7DB; stroke:#C98A12; stroke-width:1.2;}
+.art-phone .ph-center{fill:#fff;}
+.art-phone .ph-stop{stroke:#fff; stroke-width:3.5; stroke-linecap:round;}
+.art-phone .ph-cord circle{fill:none; stroke:#C4B5FD; stroke-width:3;}
+.art-phone .ph-waves path{fill:none; stroke:#F5B820; stroke-width:5; stroke-linecap:round; opacity:0;}
+.art-phone .ph-handset{transform-origin:110px 64px;}
+a.game-card:hover .art-phone .ph-handset{animation:phRing .9s ease-in-out;}
+a.game-card:hover .art-phone .ph-waves path{animation:phWaves .9s ease-out;}
+@keyframes phRing{0%,100%{transform:none;} 10%,30%,50%,70%{transform:translateY(-7px) rotate(-5deg);} 20%,40%,60%,80%{transform:translateY(-7px) rotate(5deg);}}
+@keyframes phWaves{0%,100%{opacity:0;} 15%,75%{opacity:1;}}
 
 .art-snakes svg{width:100%; height:100%; display:block;}
 /* لوحة كلاسيكية خلف صورة البطل */

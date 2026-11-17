@@ -36,9 +36,8 @@
   </a>
 
   <div class="top-tools">
-    <button class="icon-btn" id="soundBtn" aria-pressed="true" aria-label="الصوت">
-      <svg class="ico-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
-      <svg class="ico-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
+    <button class="icon-btn snd" id="soundBtn" aria-pressed="true" aria-label="المؤثرات الصوتية">
+      <span class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
     </button>
     <!-- مبدّل الثيمات -->
     <div class="theme-switch" role="group" aria-label="ألوان الواجهة">
@@ -55,8 +54,21 @@
   <section class="screen active" id="screen-setup">
     <div class="setup">
       <div class="setup-hero">
-        <img class="hero-logo logo-main" src="../assets/athar-logo.png" alt="شعار لجنة أثَر" width="556" height="720">
-        <img class="hero-logo logo-rev" src="../assets/athar-logo-reversed.png" alt="شعار لجنة أثَر" width="556" height="720">
+        <div class="hero-phone">
+        <svg class="phone hero-svg" viewBox="0 0 220 180" aria-hidden="true">
+          <ellipse class="ph-shadow" cx="112" cy="171" rx="82" ry="6"/>
+          <g class="ph-waves"><path d="M40 40q-13 18 0 36"/><path d="M27 31q-19 27 0 54"/><path d="M180 40q13 18 0 36"/><path d="M193 31q19 27 0 54"/></g>
+          <g class="ph-cord"><circle cx="40" cy="152" r="6"/><circle cx="32" cy="158" r="6"/><circle cx="24" cy="164" r="6"/><circle cx="17" cy="171" r="6"/></g>
+          <path class="ph-body" d="M44 160L62 96Q66 84 80 84H140Q154 84 158 96L176 160Q178 168 168 168H52Q42 168 44 160Z"/>
+          <path class="ph-shine" d="M72 94Q74 90 80 90H102L94 116H66Z"/>
+          <rect class="ph-dark" x="66" y="74" width="16" height="14" rx="4"/><rect class="ph-dark" x="138" y="74" width="16" height="14" rx="4"/>
+          <circle class="ph-dial" cx="110" cy="128" r="31"/>
+          <circle class="ph-hole" cx="122.0" cy="110.8" r="4.6"/><circle class="ph-hole" cx="112.9" cy="107.2" r="4.6"/><circle class="ph-hole" cx="103.2" cy="108.1" r="4.6"/><circle class="ph-hole" cx="94.9" cy="113.4" r="4.6"/><circle class="ph-hole" cx="89.9" cy="121.9" r="4.6"/><circle class="ph-hole" cx="89.3" cy="131.6" r="4.6"/><circle class="ph-hole" cx="93.2" cy="140.6" r="4.6"/><circle class="ph-hole" cx="100.8" cy="146.9" r="4.6"/><circle class="ph-hole" cx="110.4" cy="149.0" r="4.6"/><circle class="ph-hole" cx="119.9" cy="146.5" r="4.6"/>
+          <circle class="ph-center" cx="110" cy="128" r="10"/>
+          <path class="ph-stop" d="M128 146l7 7"/>
+          <g class="ph-handset"><path class="ph-dark" d="M48 66Q46 46 66 46H154Q174 46 172 66L168 76Q164 82 156 78L150 64H70L64 78Q56 82 52 76Z"/><path class="ph-shine" d="M66 52H120Q118 56 114 57H64Q62 54 66 52Z"/></g>
+        </svg>
+        </div>
         <h1 data-bind="title"></h1>
         <p class="lead">مسابقة أسئلة شفهية يقدّمها <strong data-bind="host"></strong>. سمِّ المسابقة، سجّل الفرق، وافتح الاستوديو.</p>
       </div>
@@ -171,11 +183,19 @@
   <section class="screen" id="screen-victory">
     <canvas id="confetti" aria-hidden="true"></canvas>
     <div class="victory">
-      <svg class="trophy" viewBox="0 0 64 64" aria-hidden="true">
-        <path d="M18 8h28v14a14 14 0 0 1-28 0V8z"/>
-        <path d="M18 12H8v4a10 10 0 0 0 10 10M46 12h10v4a10 10 0 0 1-10 10" fill="none" stroke-width="4"/>
-        <path d="M28 36h8v10h-8zM20 46h24v8H20z"/>
-      </svg>
+      <svg class="phone trophy" viewBox="0 0 220 180" aria-hidden="true">
+          <ellipse class="ph-shadow" cx="112" cy="171" rx="82" ry="6"/>
+          <g class="ph-waves"><path d="M40 40q-13 18 0 36"/><path d="M27 31q-19 27 0 54"/><path d="M180 40q13 18 0 36"/><path d="M193 31q19 27 0 54"/></g>
+          <g class="ph-cord"><circle cx="40" cy="152" r="6"/><circle cx="32" cy="158" r="6"/><circle cx="24" cy="164" r="6"/><circle cx="17" cy="171" r="6"/></g>
+          <path class="ph-body" d="M44 160L62 96Q66 84 80 84H140Q154 84 158 96L176 160Q178 168 168 168H52Q42 168 44 160Z"/>
+          <path class="ph-shine" d="M72 94Q74 90 80 90H102L94 116H66Z"/>
+          <rect class="ph-dark" x="66" y="74" width="16" height="14" rx="4"/><rect class="ph-dark" x="138" y="74" width="16" height="14" rx="4"/>
+          <circle class="ph-dial" cx="110" cy="128" r="31"/>
+          <circle class="ph-hole" cx="122.0" cy="110.8" r="4.6"/><circle class="ph-hole" cx="112.9" cy="107.2" r="4.6"/><circle class="ph-hole" cx="103.2" cy="108.1" r="4.6"/><circle class="ph-hole" cx="94.9" cy="113.4" r="4.6"/><circle class="ph-hole" cx="89.9" cy="121.9" r="4.6"/><circle class="ph-hole" cx="89.3" cy="131.6" r="4.6"/><circle class="ph-hole" cx="93.2" cy="140.6" r="4.6"/><circle class="ph-hole" cx="100.8" cy="146.9" r="4.6"/><circle class="ph-hole" cx="110.4" cy="149.0" r="4.6"/><circle class="ph-hole" cx="119.9" cy="146.5" r="4.6"/>
+          <circle class="ph-center" cx="110" cy="128" r="10"/>
+          <path class="ph-stop" d="M128 146l7 7"/>
+          <g class="ph-handset"><path class="ph-dark" d="M48 66Q46 46 66 46H154Q174 46 172 66L168 76Q164 82 156 78L150 64H70L64 78Q56 82 52 76Z"/><path class="ph-shine" d="M66 52H120Q118 56 114 57H64Q62 54 66 52Z"/></g>
+        </svg>
       <p class="kicker" id="victoryKicker"></p>
       <h1 id="winnerName"></h1>
       <p class="lead" id="winnerText"></p>
