@@ -1,5 +1,5 @@
 /* =========================================================
-   القضية | أدوات مشتركة بين شاشة المشرف وصفحة الجوال
+   مسرح جريمة | أدوات مشتركة بين شاشة المشرف وصفحة الجوال
    ========================================================= */
 window.Q = (() => {
   'use strict';
@@ -72,16 +72,35 @@ window.Q = (() => {
   // صوت احتياطي إذا لم يتوفر ملف الأصوات
   const S = window.AtharSound || new Proxy({ on: true, toggle: () => true }, { get: (t, p) => (p in t ? t[p] : () => {}) });
 
-  // الثيمات وزر الصوت
+  // الثيمات: ثلاث أجواء للجريمة + ثلاث هوية أثَر، وزر الصوت
+  const THEMES = ['noir', 'tape', 'file', 'light', 'navy', 'blue'];
+  const DARK = ['noir', 'tape', 'navy', 'blue'];
+  function setTheme(t) {
+    if (!THEMES.includes(t)) t = 'noir';
+    const d = document.documentElement;
+    d.dataset.theme = t;
+    d.classList.toggle('theme-dark', DARK.includes(t));
+    try {
+      localStorage.setItem('athar-crime-theme', t);
+      // ثيمات أثَر تتزامن مع باقي الألعاب
+      if (['light', 'navy', 'blue'].includes(t)) localStorage.setItem('athar-theme', t);
+    } catch { /* تجاهل */ }
+    $$('[data-set-theme]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.setTheme === t)));
+  }
   function initChrome() {
-    const THEMES = ['light', 'navy', 'blue'];
-    const setTheme = (t) => {
-      if (!THEMES.includes(t)) t = 'light';
-      document.documentElement.dataset.theme = t;
-      try { localStorage.setItem('athar-theme', t); } catch { /* تجاهل */ }
-      $$('.theme-dot').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.setTheme === t)));
-    };
-    $$('.theme-dot').forEach((b) => b.addEventListener('click', () => { setTheme(b.dataset.setTheme); S.tongue(0, 0.2); }));
+    const btn = $('#themeBtn'), pop = $('#themePop');
+    const close = () => { if (!pop) return; pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+    if (btn && pop) {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        pop.hidden = !pop.hidden;
+        btn.setAttribute('aria-expanded', String(!pop.hidden));
+        S.tongue(0, 0.18);
+      });
+      document.addEventListener('click', (e) => { if (!pop.hidden && !e.target.closest('.theme-pick')) close(); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !pop.hidden) { close(); btn.focus(); } });
+    }
+    $$('[data-set-theme]').forEach((b) => b.addEventListener('click', () => { setTheme(b.dataset.setTheme); S.tongue(0, 0.2); }));
     setTheme(document.documentElement.dataset.theme);
     const sb = $('#soundBtn');
     if (sb) {

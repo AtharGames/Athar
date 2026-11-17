@@ -1,19 +1,19 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="light">
+<html lang="ar" dir="rtl" data-theme="noir">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>القضية | أثَر</title>
+<title>مسرح جريمة | أثَر</title>
 <meta name="description" content="مسابقة تحقيق جماعية من لجنة أثَر: اكشفوا القاتل والمقتول والأداة والمكان والوقت بالبطاقات والأسئلة.">
-<!-- تطبيق الثيم المحفوظ قبل الرسم لتفادي الوميض -->
+<!-- تطبيق الثيم المحفوظ قبل الرسم لتفادي الوميض (أجواء الجريمة افتراضيًا) -->
 <script>
 (function(){
-  var t=null;
-  try{ t=localStorage.getItem('athar-theme'); }catch(e){}
-  if(['light','navy','blue'].indexOf(t)<0){
-    t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'navy':'light';
-  }
-  document.documentElement.setAttribute('data-theme',t);
+  var t=null, ok=['noir','tape','file','light','navy','blue'];
+  try{ t=localStorage.getItem('athar-crime-theme'); }catch(e){}
+  if(ok.indexOf(t)<0) t='noir';
+  var d=document.documentElement;
+  d.setAttribute('data-theme',t);
+  if(['noir','tape','navy','blue'].indexOf(t)>=0) d.classList.add('theme-dark');
 })();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -30,24 +30,34 @@
     <img class="logo logo-main" src="../assets/athar-mark.png" alt="" width="52" height="60">
     <img class="logo logo-rev" src="../assets/athar-mark-reversed.png" alt="" width="52" height="60">
     <span class="brand-text">
-      <strong>القضية</strong>
+      <strong>مسرح جريمة</strong>
       <small>مسابقة تحقيق من أثَر</small>
     </span>
   </a>
 
   <div class="top-tools">
-    <button class="icon-btn file-btn" id="fileBtn" aria-label="ملف القضية السري (للمشرف)" title="ملف القضية السري" hidden>
+    <button class="icon-btn file-btn" id="fileBtn" aria-label="الملف السري (للمشرف)" title="الملف السري" hidden>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2h8.5A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/><rect class="lock" x="9.5" y="11.5" width="5" height="4.5" rx="1"/><path class="lock-arc" d="M10.6 11.5v-1a1.4 1.4 0 0 1 2.8 0v1" fill="none" stroke-width="1.4"/></svg>
     </button>
     <button class="icon-btn" id="soundBtn" aria-pressed="true" aria-label="الصوت">
       <svg class="ico-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
       <svg class="ico-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
     </button>
-    <!-- مبدّل الثيمات -->
-    <div class="theme-switch" role="group" aria-label="ألوان الواجهة">
-      <button class="theme-dot" data-set-theme="light" aria-label="الثيم الفاتح" aria-pressed="false"></button>
-      <button class="theme-dot" data-set-theme="navy" aria-label="الثيم الكحلي" aria-pressed="false"></button>
-      <button class="theme-dot" data-set-theme="blue" aria-label="ثيم أزرق أثَر" aria-pressed="false"></button>
+    <!-- مبدّل الألوان والأجواء -->
+    <div class="theme-pick">
+      <button class="icon-btn" id="themeBtn" aria-haspopup="true" aria-expanded="false" aria-controls="themePop" aria-label="الألوان والأجواء">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 0 0 0 18c1.1 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-4-4-7.2-9-7.2zM6.5 12a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm3-4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm3 4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>
+      </button>
+      <div class="theme-pop" id="themePop" role="group" aria-label="الألوان والأجواء" hidden>
+        <p class="pop-label">أجواء الجريمة</p>
+        <button class="theme-opt" data-set-theme="noir" aria-pressed="false"><span class="swatch sw-noir"></span>ليل الجريمة</button>
+        <button class="theme-opt" data-set-theme="tape" aria-pressed="false"><span class="swatch sw-tape"></span>شريط الشرطة</button>
+        <button class="theme-opt" data-set-theme="file" aria-pressed="false"><span class="swatch sw-file"></span>ملف التحقيق</button>
+        <p class="pop-label">هوية أثَر</p>
+        <button class="theme-opt" data-set-theme="light" aria-pressed="false"><span class="swatch sw-light"></span>الفاتح</button>
+        <button class="theme-opt" data-set-theme="navy" aria-pressed="false"><span class="swatch sw-navy"></span>الكحلي</button>
+        <button class="theme-opt" data-set-theme="blue" aria-pressed="false"><span class="swatch sw-blue"></span>أزرق أثَر</button>
+      </div>
     </div>
   </div>
 </header>
@@ -58,13 +68,39 @@
   <section class="screen active" id="screen-setup">
     <div class="setup">
       <div class="setup-hero">
-        <div class="hero-art" aria-hidden="true">
-          <img class="hero-logo logo-main" src="../assets/athar-logo.png" alt="" width="556" height="720">
-          <img class="hero-logo logo-rev" src="../assets/athar-logo-reversed.png" alt="" width="556" height="720">
-          <svg class="hero-lens" viewBox="0 0 64 64"><circle cx="26" cy="26" r="17"/><path d="M38.5 38.5L56 56"/></svg>
-        </div>
-        <h1>القضية</h1>
-        <p class="lead">جريمة غامضة وخمسة أسئلة: <strong>مَن القاتل؟ ومَن المقتول؟ وبأي أداة؟ ووين؟ ومتى؟</strong> كل بطاقة توصلكم تستبعد احتمالًا، والأسئلة تجيب لكم بطاقات خصومكم.</p>
+        <!-- مشهد الجريمة: رسم الطباشير وأرقام الأدلة وشريط الشرطة -->
+        <svg class="scene" viewBox="0 0 320 190" aria-hidden="true">
+          <defs>
+            <filter id="chalk" x="-15%" y="-15%" width="130%" height="130%">
+              <feMorphology in="SourceGraphic" operator="dilate" radius="2" result="big"/>
+              <feComposite in="big" in2="SourceGraphic" operator="out"/>
+            </filter>
+          </defs>
+          <rect class="ground" x="6" y="22" width="308" height="164" rx="22"/>
+          <path class="blood" d="M66 84c-9-2-17 4-15 12s14 9 20 5c5 4 14 2 14-5 0-6-9-6-11-9-1-3-4-2-8-3z"/>
+          <circle class="blood" cx="96" cy="110" r="3.2"/><circle class="blood" cx="104" cy="118" r="2"/><circle class="blood" cx="57" cy="108" r="2.4"/>
+          <g class="body" filter="url(#chalk)">
+            <circle cx="88" cy="78" r="15"/>
+            <path d="M102 88 L170 100" stroke-width="26"/>
+            <path d="M110 84 L136 54 L166 44" stroke-width="11"/>
+            <path d="M114 98 L108 130 L130 152" stroke-width="11"/>
+            <path d="M168 96 L212 84 L252 98" stroke-width="13"/>
+            <path d="M168 104 L206 128 L240 150" stroke-width="13"/>
+          </g>
+          <g class="mk" transform="translate(40 140)"><path d="M0 24 L9 0 H19 L28 24 Z"/><text x="14" y="19">١</text></g>
+          <g class="mk" transform="translate(186 50)"><path d="M0 24 L9 0 H19 L28 24 Z"/><text x="14" y="19">٢</text></g>
+          <g class="mk" transform="translate(262 120)"><path d="M0 24 L9 0 H19 L28 24 Z"/><text x="14" y="19">٣</text></g>
+          <g class="print" transform="translate(276 40) rotate(18)">
+            <path d="M0 10a10 12 0 0 1 20 0v8M4 10a6 8 0 0 1 12 0v10M8 11a2 3 0 0 1 4 0v12" fill="none" stroke-width="1.6" stroke-linecap="round"/>
+          </g>
+          <g class="tape-band" transform="rotate(-7 160 18)">
+            <rect x="-30" y="6" width="380" height="24"/>
+            <text x="160" y="23">مسرح جريمة ● لا تقترب ● مسرح جريمة ● لا تقترب ● مسرح جريمة</text>
+          </g>
+        </svg>
+        <h1>مسرح جريمة</h1>
+        <p class="lead">جريمة غامضة وخمسة أسئلة: <strong>مَن القاتل؟ ومَن المقتول؟ وبأي أداة؟ ووين؟ ومتى؟</strong> كل بطاقة توصلكم تستبعد احتمالًا، وكل جواب صح يجيب لكم ورقة من خصومكم.</p>
+        <p class="by"><img class="logo-main" src="../assets/athar-logo.png" alt="" width="556" height="720"><img class="logo-rev" src="../assets/athar-logo-reversed.png" alt="" width="556" height="720"><span>من ألعاب لجنة أثَر</span></p>
       </div>
 
       <!-- متابعة لعبة محفوظة -->
@@ -102,12 +138,23 @@
       </div>
 
       <div class="card">
-        <div class="card-head"><h2>فقرة الأسئلة</h2></div>
-        <div class="seg" id="qSource" role="group" aria-label="مصدر الأسئلة">
-          <button data-q="bank" aria-pressed="true">من بنك أثَر</button>
-          <button data-q="host" aria-pressed="false">المشرف يسأل بنفسه</button>
+        <div class="card-head"><h2>كيف تنكسب الأوراق؟</h2></div>
+        <div class="seg seg3" id="qSource" role="group" aria-label="مصدر الأسئلة">
+          <button data-q="diwan" aria-pressed="true">أسئلة ديوان</button>
+          <button data-q="host" aria-pressed="false">المشرف يسأل</button>
+          <button data-q="none" aria-pressed="false">بلا أسئلة</button>
         </div>
-        <div class="row-field">
+        <p class="muted q-note" id="qNote"></p>
+
+        <div class="q-filters" id="qFilters">
+          <div class="filter-head"><span>الدواوين</span><button class="btn btn-sm btn-ghost" id="dwAll">اختر الكل</button></div>
+          <div class="dw-chips" id="dwChips"></div>
+          <div class="filter-head"><span>المستوى</span></div>
+          <div class="lv-chips" id="lvChips"></div>
+          <p class="muted" id="qCount"></p>
+        </div>
+
+        <div class="row-field" id="roundsRow">
           <span>عدد الأسئلة لكل فريق</span>
           <div class="stepper">
             <button class="step-btn" id="roundsMinus" aria-label="أقل">−</button>
@@ -118,7 +165,7 @@
       </div>
 
       <details class="card lists">
-        <summary>عناصر القضية <span class="muted">(عدّلها كما تحب)</span></summary>
+        <summary>عناصر الجريمة <span class="muted">(عدّلها كما تحب)</span></summary>
         <p class="muted">سطر لكل عنصر. يُختار من كل قائمة عشوائيًا <b id="needN">٥</b> عناصر (عدد الفرق + ١).</p>
         <div class="list-grid" id="listGrid"></div>
         <button class="btn btn-ghost" id="listsReset">رجّع القوائم الأصلية</button>
@@ -127,17 +174,17 @@
       <details class="card rules">
         <summary>قواعد اللعب باختصار</summary>
         <ul>
-          <li>في القضية <strong>قاتل ومقتول وأداة ومكان ووقت</strong>، والمشرف وحده يقدر يطّلع على الحل من «الملف السري».</li>
-          <li><strong>التوزيع:</strong> كل فريق ياخذ بطاقة من كل نوع. أي بطاقة عندكم تعني أنها <strong>مو</strong> من القضية.</li>
-          <li><strong>الأسئلة:</strong> الدور يلف على الفرق، واللي يجاوب صح يختار خصم وياخذ منه ورقة عشوائية.</li>
-          <li><strong>التصويت:</strong> في النهاية كل فريق يقدّم اتهامه: القاتل وتفاصيل القضية.</li>
+          <li>في الجريمة <strong>قاتل ومقتول وأداة ومكان ووقت</strong>، والمشرف وحده يقدر يطّلع على الحل من «الملف السري».</li>
+          <li><strong>التوزيع:</strong> كل فريق ياخذ بطاقة من كل نوع. أي بطاقة عندكم تعني أنها <strong>مو</strong> من الجريمة.</li>
+          <li><strong>الأسئلة:</strong> الدور يلف على الفرق، واللي يجاوب صح يختار خصم وياخذ منه ورقة عشوائية. وفي وضع «بلا أسئلة» المشرف يقرر مين ياخذ ورقة ومتى.</li>
+          <li><strong>التصويت:</strong> في النهاية كل فريق يقدّم اتهامه: القاتل وتفاصيل الجريمة.</li>
           <li>اللي يعرف <strong>القاتل</strong> يفوز، وإذا عرفه أكثر من فريق يفوز الأكثر تفاصيل صحيحة، وإذا تعادلوا فسؤال حسم.</li>
-          <li>إذا أخطأ الكل في القاتل يُعاد التصويت (أو جولة أسئلة إضافية) حتى يطلع فائز واحد.</li>
+          <li>إذا أخطأ الكل في القاتل تبقى الاتهامات مخفية، ويُعاد التصويت (أو نجمع أوراق أكثر) حتى يطلع فائز واحد.</li>
         </ul>
       </details>
 
       <p class="form-error" id="setupError" role="alert" hidden></p>
-      <button class="btn btn-primary btn-big" id="startBtn">جهّز القضية</button>
+      <button class="btn btn-primary btn-big" id="startBtn">افتح مسرح الجريمة</button>
       <a class="home-link" href="../">← كل ألعاب أثَر</a>
     </div>
   </section>
@@ -146,17 +193,18 @@
   <section class="screen" id="screen-prep">
     <div class="narrow center">
       <div class="seal" aria-hidden="true">
-        <svg viewBox="0 0 64 64"><path d="M8 18a4 4 0 0 1 4-4h14l5 5h21a4 4 0 0 1 4 4v25a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4z"/><circle class="seal-dot" cx="44" cy="44" r="10"/></svg>
+        <svg viewBox="0 0 64 64"><path d="M8 18a4 4 0 0 1 4-4h14l5 5h21a4 4 0 0 1 4 4v25a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4z"/></svg>
+        <span class="stamp">سري للغاية</span>
       </div>
-      <p class="kicker">القضية جاهزة ومختومة</p>
+      <p class="kicker">الجريمة وقعت… والملف مختوم</p>
       <h1 class="big-title">ملف القضية</h1>
-      <p class="lead">اطّلع على الحل قبل البدء إذا تبي، وتقدر تخلط قضية جديدة أو تحدد الحل بنفسك من الملف السري.</p>
+      <p class="lead">اطّلع على الحل قبل البدء إذا تبي، وتقدر تخلط جريمة جديدة أو تحدد الحل بنفسك من الملف السري.</p>
       <div class="board board-mini" id="prepBoard"></div>
       <div class="stack">
         <button class="btn btn-primary btn-big" id="prepNext"></button>
         <div class="two">
           <button class="btn" id="prepFile">الملف السري للمشرف</button>
-          <button class="btn" id="prepShuffle">اخلط قضية جديدة</button>
+          <button class="btn" id="prepShuffle">اخلط جريمة جديدة</button>
         </div>
         <button class="btn btn-ghost" id="prepBack">رجوع للإعدادات</button>
       </div>
@@ -168,7 +216,7 @@
     <div class="wide">
       <div class="screen-head">
         <p class="kicker">جوال لكل فريق</p>
-        <h1 class="big-title">انضمام الفرق</h1>
+        <h1 class="big-title">انضمام المحققين</h1>
         <p class="lead">كل فريق يصوّر رمزه بكاميرا الجوال، أو يفتح الرابط ويكتب الرمز. البطاقات السرية توصل لكل فريق على جواله مباشرة.</p>
       </div>
       <div class="join-grid" id="joinGrid"></div>
@@ -185,11 +233,11 @@
     <div class="narrow">
       <div class="screen-head">
         <p class="kicker">شاشة واحدة</p>
-        <h1 class="big-title">توزيع البطاقات السرية</h1>
-        <p class="lead">كل فريق يشوف بطاقاته الخمس بدون ما يشوفها غيره، ويسجّلها عنده بالورقة. البطاقة اللي عندك: مو من القضية.</p>
+        <h1 class="big-title">توزيع الأدلة السرية</h1>
+        <p class="lead">كل فريق يشوف بطاقاته الخمس بدون ما يشوفها غيره، ويسجّلها عنده بالورقة. البطاقة اللي عندك: مو من الجريمة.</p>
       </div>
       <div class="deal-grid" id="dealGrid"></div>
-      <button class="btn btn-primary btn-big" id="dealStart">ابدأ فقرة الأسئلة</button>
+      <button class="btn btn-primary btn-big" id="dealStart">ابدأ التحقيق</button>
     </div>
   </section>
 
@@ -204,7 +252,7 @@
 
       <div class="play-grid">
         <div class="panel board-panel">
-          <div class="panel-head"><h2>لوحة القضية</h2><span class="muted">واحد من كل عمود هو الحل</span></div>
+          <div class="panel-head"><h2>لوحة الجريمة</h2><span class="muted">واحد من كل عمود هو الحل</span></div>
           <div class="board" id="board"></div>
         </div>
 
@@ -262,17 +310,13 @@
   <section class="screen" id="screen-victory">
     <canvas id="confetti" aria-hidden="true"></canvas>
     <div class="victory">
-      <svg class="trophy" viewBox="0 0 64 64" aria-hidden="true">
-        <path d="M18 8h28v14a14 14 0 0 1-28 0V8z"/>
-        <path d="M18 12H8v4a10 10 0 0 0 10 10M46 12h10v4a10 10 0 0 1-10 10" fill="none" stroke-width="4"/>
-        <path d="M28 36h8v10h-8zM20 46h24v8H20z"/>
-      </svg>
-      <p class="kicker">انحلّت القضية!</p>
+      <div class="win-stamp" aria-hidden="true"><span class="stamp big">القضية مغلقة</span></div>
+      <p class="kicker">انحلّت الجريمة!</p>
       <h1 id="winnerName"></h1>
       <p class="lead" id="winnerText"></p>
       <div class="solution" id="solution"></div>
       <div class="final" id="finalBoard"></div>
-      <button class="btn btn-primary btn-big" id="newGameBtn">قضية جديدة</button>
+      <button class="btn btn-primary btn-big" id="newGameBtn">جريمة جديدة</button>
     </div>
   </section>
 
@@ -282,9 +326,9 @@
 <div class="modal" id="fileModal" hidden>
   <div class="modal-card file-card" role="dialog" aria-modal="true" aria-labelledby="fileTitle">
     <div class="file-gate" id="fileGate">
-      <div class="modal-icon warn" aria-hidden="true">!</div>
+      <span class="stamp">سري للغاية</span>
       <h3 id="fileTitle">الملف السري للمشرف</h3>
-      <p>فيه حل القضية وبطاقات كل فريق. تأكد إن الشاشة مو معروضة قدام الفرق.</p>
+      <p>فيه حل الجريمة وبطاقات كل فريق. تأكد إن الشاشة مو معروضة قدام الفرق.</p>
       <div class="modal-actions">
         <button class="btn btn-primary" id="fileOpen">افتح الملف</button>
         <button class="btn" data-close>إلغاء</button>
@@ -349,7 +393,7 @@
     <p id="confirmText"></p>
     <div class="modal-actions">
       <button class="btn btn-primary" id="confirmYes"></button>
-      <button class="btn" id="confirmNo">إلغاء</button>
+      <button class="btn" id="confirmNo">لا، هوّنت</button>
     </div>
   </div>
 </div>
@@ -358,7 +402,7 @@
 <div class="print-sheet" id="printSheet" aria-hidden="true"></div>
 
 <script src="../assets/athar-sound.js" defer></script>
-<script src="../sahm/questions.js" defer></script>
+<script src="../diwan/data.js" defer></script>
 <script src="lib/qrcode.js" defer></script>
 <script src="net.js" defer></script>
 <script src="shared.js" defer></script>

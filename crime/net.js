@@ -1,5 +1,5 @@
 /* =========================================================
-   القضية | طبقة الاتصال بين شاشة المشرف وجوالات الفرق
+   مسرح جريمة | طبقة الاتصال بين شاشة المشرف وجوالات الفرق
    - الوضع الافتراضي: خدمة ntfy.sh المجانية (بلا حساب ولا إعداد)
      كل قناة «موضوع» عشوائي لا يعرفه إلا من معه الرمز.
    - وضع الاختبار ?net=local : نفس المتصفح عبر BroadcastChannel
@@ -10,7 +10,7 @@
 window.QadiyaNet = (() => {
   'use strict';
   const BASE = 'https://ntfy.sh';
-  const PREFIX = 'athar-qadiya-';
+  const PREFIX = 'athar-crime-';
   const LOCAL = new URLSearchParams(location.search).get('net') === 'local';
 
   const topicOf = (name) => PREFIX + name;
@@ -84,7 +84,7 @@ window.QadiyaNet = (() => {
   // =========================================================
   // وضع الاختبار المحلي: نفس المتصفح، تبويبات متعددة
   // =========================================================
-  const LKEY = 'qadiya-net:';
+  const LKEY = 'crime-net:';
   function localPublish(topic, body) {
     let list = [];
     try { list = JSON.parse(localStorage.getItem(LKEY + topic) || '[]'); } catch { /* تجاهل */ }

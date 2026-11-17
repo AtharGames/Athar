@@ -1,6 +1,6 @@
 /* =========================================================
-   القضية | التنسيقات (شاشة المشرف + صفحة الجوال)
-   الهوية المشتركة في ../assets/athar.css
+   مسرح جريمة | التنسيقات (شاشة المشرف + صفحة الجوال)
+   الهوية المشتركة في ../assets/athar.css، وأجواء الجريمة الثلاثة هنا
    ========================================================= */
 
 /* ---------- أساسيات ---------- */
@@ -24,6 +24,93 @@ button:disabled{cursor:not-allowed;}
 .muted{color:var(--text-2); font-size:.88rem;}
 .center{text-align:center;}
 a{color:var(--accent);}
+
+/* =========================================================
+   أجواء الجريمة: ثلاثة ثيمات إضافية خاصة بهذه اللعبة
+   ========================================================= */
+:root{--blood:#C8102E; --tape:#F2C230; --tape-ink:#141414; --chalk:#F4F1EA;}
+/* ليل الجريمة: سواد وإضاءة حمراء خافتة */
+[data-theme="noir"]{
+  --bg:#0C0E12;
+  --bg-paint:
+    radial-gradient(700px 420px at 85% -10%, rgba(200,16,46,.22), transparent 65%),
+    radial-gradient(600px 400px at 0% 105%, rgba(242,194,48,.07), transparent 60%),
+    radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(0,0,0,.55) 100%),
+    #0C0E12;
+  --text:#EEE8DC; --text-2:#B8AE9E;
+  --accent:#C8102E; --accent-hover:#E0233F; --on-accent:#FFFFFF;
+  --hl:#F2C230; --hl-2:#F2C230;
+  --surface:rgba(255,255,255,.045); --surface-2:rgba(255,255,255,.09);
+  --solid:#15181E; --line:rgba(238,232,220,.13);
+  --cell:rgba(255,255,255,.07); --cell-label:rgba(238,232,220,.4);
+  --shadow:0 12px 34px rgba(0,0,0,.55); --scrim:rgba(0,0,0,.82);
+  --chalk:#F4F1EA;
+}
+/* شريط الشرطة: فحمي مع أصفر الشريط */
+[data-theme="tape"]{
+  --bg:#16171A;
+  --bg-paint:
+    radial-gradient(700px 420px at 90% -10%, rgba(242,194,48,.16), transparent 62%),
+    radial-gradient(700px 420px at -10% 110%, rgba(200,16,46,.14), transparent 60%),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,.012) 0 14px, transparent 14px 28px),
+    #16171A;
+  --text:#F7F3E8; --text-2:#CFC6B0;
+  --accent:#F2C230; --accent-hover:#FFD84D; --on-accent:#141414;
+  --hl:#C8102E; --hl-2:#F2C230;
+  --surface:rgba(255,255,255,.05); --surface-2:rgba(255,255,255,.1);
+  --solid:#202226; --line:rgba(247,243,232,.14);
+  --cell:rgba(255,255,255,.08); --cell-label:rgba(247,243,232,.42);
+  --shadow:0 12px 34px rgba(0,0,0,.5); --scrim:rgba(0,0,0,.8);
+  --chalk:#F7F3E8;
+}
+/* ملف التحقيق: ورق مانيلا وحبر أحمر داكن */
+[data-theme="file"]{
+  --bg:#E8DCC2;
+  --bg-paint:
+    radial-gradient(800px 500px at 90% -10%, rgba(255,255,255,.55), transparent 60%),
+    radial-gradient(700px 500px at 0% 110%, rgba(142,27,27,.12), transparent 60%),
+    repeating-linear-gradient(0deg, rgba(43,29,18,.025) 0 2px, transparent 2px 6px),
+    #E8DCC2;
+  --text:#2B1D12; --text-2:#6B5340;
+  --accent:#8E1B1B; --accent-hover:#6E1212; --on-accent:#FFF6E8;
+  --hl:#B8860B; --hl-2:#8E1B1B;
+  --surface:rgba(255,250,238,.45); --surface-2:rgba(255,250,238,.75);
+  --solid:#F6EEDC; --line:rgba(43,29,18,.18);
+  --cell:rgba(43,29,18,.07); --cell-label:rgba(43,29,18,.45);
+  --shadow:0 10px 26px rgba(60,38,18,.16); --scrim:rgba(30,18,8,.6);
+  --chalk:#2B1D12; --blood:#8E1B1B;
+}
+[data-theme="light"]{--chalk:#0A2463;}
+[data-theme="navy"],[data-theme="blue"]{--chalk:#FFFFFF;}
+/* الشعار المعكوس في الأجواء الداكنة */
+[data-theme="noir"] .logo-main,[data-theme="tape"] .logo-main{display:none;}
+[data-theme="noir"] .logo-rev,[data-theme="tape"] .logo-rev{display:block;}
+.btn-primary{box-shadow:0 8px 22px color-mix(in srgb, var(--accent) 35%, transparent);}
+
+/* ---------- مبدّل الألوان والأجواء ---------- */
+.theme-pick{position:relative;}
+.icon-btn#themeBtn[aria-expanded="true"]{background:var(--surface-2); box-shadow:0 0 0 3px var(--accent);}
+.theme-pop{
+  position:absolute; top:calc(100% + 10px); inset-inline-end:0; z-index:40; width:220px;
+  background:var(--solid); border:1px solid var(--line); border-radius:18px; padding:10px;
+  box-shadow:0 20px 50px rgba(0,0,0,.35); display:flex; flex-direction:column; gap:4px;
+  animation:pop .25s cubic-bezier(.3,1.4,.5,1) both;
+}
+.pop-label{font-size:.78rem; color:var(--text-2); font-weight:700; padding:6px 8px 2px;}
+.theme-opt{
+  display:flex; align-items:center; gap:10px; width:100%; padding:7px 8px; border-radius:12px;
+  border:0; background:transparent; font-weight:700; text-align:start;
+}
+.theme-opt:hover{background:var(--surface-2);}
+.theme-opt[aria-pressed="true"]{background:color-mix(in srgb, var(--accent) 16%, transparent);}
+.swatch{width:26px; height:26px; border-radius:50%; flex:none; border:2px solid var(--line);}
+.theme-opt[aria-pressed="true"] .swatch{box-shadow:0 0 0 2px var(--solid), 0 0 0 4px var(--accent);}
+.sw-noir{background:linear-gradient(135deg,#0C0E12 50%,#C8102E 50%);}
+.sw-tape{background:repeating-linear-gradient(135deg,#F2C230 0 5px,#141414 5px 10px);}
+.sw-file{background:linear-gradient(135deg,#E8DCC2 50%,#8E1B1B 50%);}
+.sw-light{background:linear-gradient(135deg,#FFFFFF 50%,#5CC2F5 50%);}
+.sw-navy{background:linear-gradient(135deg,#0A2463 50%,#8FD0FA 50%);}
+.sw-blue{background:linear-gradient(135deg,#1E6FE0,#3B98EA);}
 
 /* ---------- الشريط العلوي ---------- */
 .topbar{
@@ -322,7 +409,7 @@ select option{background:var(--solid); color:var(--text);}
 .log li{padding:6px 10px; border-radius:10px; background:var(--solid); border:1px solid var(--line); font-size:.95rem;}
 .log li:first-child{animation:screenIn .4s ease both;}
 .log b, .lost b, .banner b{color:var(--c);}
-[data-theme="navy"] .log b, [data-theme="blue"] .log b, [data-theme="navy"] .lost b, [data-theme="blue"] .lost b, [data-theme="navy"] .banner b, [data-theme="blue"] .banner b{color:var(--text); text-decoration:underline; text-decoration-color:var(--c); text-decoration-thickness:3px; text-underline-offset:4px;}
+.theme-dark .log b, .theme-dark .lost b, .theme-dark .banner b{color:var(--text); text-decoration:underline; text-decoration-color:var(--c); text-decoration-thickness:3px; text-underline-offset:4px;}
 
 /* ---------- التصويت ---------- */
 .vote-grid{display:flex; flex-direction:column; gap:10px; margin-bottom:16px;}
@@ -370,7 +457,7 @@ select option{background:var(--solid); color:var(--text);}
 .victory{max-width:760px; margin:0 auto; text-align:center; display:flex; flex-direction:column; gap:12px;}
 .trophy{width:96px; height:96px; margin:0 auto; fill:var(--win,#E59A1C); stroke:var(--win,#E59A1C); animation:floaty 3s ease-in-out infinite;}
 #winnerName{font-size:clamp(2.2rem,8vw,3.6rem); line-height:1.25; color:var(--win); overflow-wrap:anywhere;}
-[data-theme="navy"] #winnerName, [data-theme="blue"] #winnerName{color:var(--text); text-shadow:0 4px 0 var(--win);}
+.theme-dark #winnerName{color:var(--text); text-shadow:0 4px 0 var(--win);}
 .solution{background:var(--surface); border:1px solid var(--line); border-radius:22px; padding:16px;}
 .solution h2{margin-bottom:10px; font-size:1.1rem;}
 .final{display:flex; flex-direction:column; gap:8px;}
@@ -452,8 +539,8 @@ select option{background:var(--solid); color:var(--text);}
 .nb-key{display:inline-block; padding:0 8px; border-radius:8px; font-weight:700; margin-inline:2px;}
 .nb-key.x{background:color-mix(in srgb, var(--bad) 18%, transparent); color:var(--bad);}
 .nb-key.q{background:color-mix(in srgb, #E59A1C 22%, transparent); color:#B4740C;}
-[data-theme="navy"] .nb-key.q, [data-theme="blue"] .nb-key.q{color:#FFD58A;}
-[data-theme="navy"] .nb-key.x, [data-theme="blue"] .nb-key.x{color:#FFB3AF;}
+.theme-dark .nb-key.q{color:#FFD58A;}
+.theme-dark .nb-key.x{color:#FFB3AF;}
 .notebook{display:flex; flex-direction:column; gap:10px;}
 .nb-col{background:var(--solid); border:1px solid var(--line); border-radius:16px; overflow:hidden;}
 .nb-items{display:grid; grid-template-columns:repeat(auto-fill,minmax(98px,1fr)); gap:6px; padding:8px;}
@@ -510,3 +597,82 @@ select option{background:var(--solid); color:var(--text);}
   *,*::before,*::after{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important;}
 }
 .hide-note{margin-top:8px; text-align:center; font-size:.8rem;}
+
+
+/* =========================================================
+   علامات مسرح الجريمة
+   ========================================================= */
+/* شريط تحذير أسفل الشريط العلوي */
+.topbar::after{
+  content:""; position:absolute; inset-inline:0; bottom:-5px; height:5px; pointer-events:none;
+  background:repeating-linear-gradient(-45deg, var(--tape) 0 12px, var(--tape-ink) 12px 24px);
+}
+/* مشهد البداية */
+.scene{width:min(100%,460px); height:auto; display:block; margin:0 auto;}
+.scene.small{width:min(100%,320px);}
+.scene .ground{fill:var(--surface); stroke:var(--line); stroke-width:1.5;}
+.scene .body circle{fill:var(--chalk);}
+.scene .body path{stroke:var(--chalk); fill:none; stroke-linecap:round; stroke-linejoin:round;}
+.scene .body{opacity:.92;}
+.scene .blood{fill:var(--blood);}
+.scene .mk path{fill:var(--tape); stroke:var(--tape-ink); stroke-width:1.5; stroke-linejoin:round;}
+.scene .mk text{fill:var(--tape-ink); font-size:14px; font-weight:700; text-anchor:middle; font-family:inherit;}
+.scene .print path{stroke:var(--text-2); opacity:.6;}
+.scene .tape-band rect{fill:var(--tape); stroke:var(--tape-ink); stroke-width:2;}
+.scene .tape-band text{fill:var(--tape-ink); font-size:12.5px; font-weight:700; text-anchor:middle; font-family:inherit; direction:rtl; letter-spacing:.3px;}
+.scene .mk > *{animation:mk 3.2s ease-in-out infinite;}
+@keyframes mk{50%{transform:translateY(-3px);}}
+.by{display:flex; align-items:center; justify-content:center; gap:8px; margin-top:8px; color:var(--text-2); font-weight:700; font-size:.88rem;}
+.by img{height:38px; width:auto;}
+
+/* ختم أحمر */
+.stamp{
+  display:inline-block; padding:4px 14px; border:3px solid var(--blood); border-radius:8px;
+  color:var(--blood); font-weight:700; letter-spacing:1px; transform:rotate(-8deg);
+  mix-blend-mode:normal; opacity:.92; background:transparent;
+  box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--blood) 25%, transparent);
+}
+.theme-dark .stamp{--blood:#FF3D5A;}
+.stamp.big{font-size:clamp(1.3rem,4vw,1.8rem); padding:6px 22px; border-width:4px;}
+.seal{position:relative;}
+.seal .stamp{position:absolute; bottom:-6px; inset-inline-start:50%; transform:translateX(50%) rotate(-10deg); white-space:nowrap; background:var(--bg); font-size:.85rem;}
+.file-gate .stamp{align-self:center; font-size:1.1rem;}
+.win-stamp{display:flex; justify-content:center; padding:6px 0 0;}
+.win-stamp .stamp{animation:stampIn .6s cubic-bezier(.3,1.6,.5,1) .2s both;}
+@keyframes stampIn{from{transform:scale(2.4) rotate(-20deg); opacity:0;} to{transform:rotate(-8deg); opacity:.92;}}
+
+/* بطاقة الدليل: علامة رقم الدليل الصفراء */
+.cards-grid{counter-reset:ev;}
+.ev-card{counter-increment:ev;}
+.ev-card::after{
+  content:counter(ev, arabic-indic); position:absolute; top:10px; inset-inline-start:8px;
+  width:26px; height:20px; display:grid; place-items:end center; padding-bottom:1px;
+  background:var(--tape); color:var(--tape-ink); font-size:.75rem; font-weight:700;
+  clip-path:polygon(28% 0,72% 0,100% 100%,0 100%);
+}
+.ev-card::before{background:repeating-linear-gradient(-45deg, var(--tape) 0 8px, var(--tape-ink) 8px 16px); height:6px;}
+.board .col-head{border-top:3px solid var(--accent);}
+
+/* أسئلة ديوان */
+.seg3{grid-template-columns:repeat(3,1fr);}
+.seg3 button{font-size:.92rem; padding:0 6px;}
+.q-note{margin-top:10px; line-height:1.7;}
+.q-filters{margin-top:12px; display:flex; flex-direction:column; gap:8px;}
+.filter-head{display:flex; align-items:center; justify-content:space-between; font-weight:700; font-size:.92rem;}
+.dw-chips,.lv-chips{display:flex; flex-wrap:wrap; gap:6px;}
+.dw-chips .pchip,.lv-chips .pchip{min-height:36px; padding:4px 12px; font-size:.88rem;}
+#qCount{font-weight:700;}
+#qCount.warn{color:var(--bad);}
+.q-meta{font-size:.82rem; color:var(--text-2); font-weight:700; margin-bottom:4px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.lv{padding:1px 10px; border-radius:999px; font-size:.75rem; color:#fff;}
+.lv0{background:#1FA971;} .lv1{background:#E59A1C;} .lv2{background:#E8554E;}
+.q-src{margin-top:8px; font-size:.8rem;}
+
+/* اتهامات مختومة */
+.accuse.sealed{text-align:center;}
+.sealed-box{
+  min-height:120px; display:grid; place-items:center; border-radius:14px;
+  background:repeating-linear-gradient(-45deg, var(--surface-2) 0 10px, transparent 10px 20px);
+  border:1px dashed var(--line);
+}
+.sealed-box .stamp{font-size:1.1rem;}

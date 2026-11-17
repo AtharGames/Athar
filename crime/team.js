@@ -1,5 +1,5 @@
 /* =========================================================
-   القضية | صفحة الفريق على الجوال
+   مسرح جريمة | صفحة الفريق على الجوال
    تستقبل: الحالة العامة (pub) + حالة الفريق السرية (me)
    ترسل للمشرف: hello / pick / vote
    ========================================================= */
@@ -7,7 +7,7 @@
   'use strict';
   const { $, $$, num, esc, ICONS, CATS, CK, CATMAP, catOf, nameOf, store, uid, cardHTML, S, initChrome, toast, pick } = window.Q;
   const NET = window.QadiyaNet;
-  const CODE_KEY = 'athar-qadiya-code';
+  const CODE_KEY = 'athar-crime-code';
 
   let code = '', room = '', key = '';
   let pub = null, me = null, pubSeq = 0, meSeq = 0;
@@ -42,7 +42,7 @@
     code = c; room = c.slice(0, 5); key = c.slice(5);
     store.set(CODE_KEY, code);
     if (location.hash.slice(1) !== code) history.replaceState(null, '', `${location.pathname}${location.search}#${code}`);
-    notes = store.get(`athar-qadiya-notes-${code}`, {}) || {};
+    notes = store.get(`athar-crime-notes-${code}`, {}) || {};
     pub = null; me = null; pubSeq = 0; meSeq = 0; seen = null; seenLost = null;
     subs.forEach((s) => s.close());
     conn = { p: false, m: false };
@@ -122,7 +122,7 @@
     if (e.k === 'hint') return `<li>${c(e.a)} خذوا تلميحًا من الملف</li>`;
     if (e.k === 'miss') return `<li class="muted">${c(e.a)} ما وفّقوا في السؤال</li>`;
     if (e.k === 'revote') return '<li class="muted">ولا فريق عرف القاتل… إعادة التصويت</li>';
-    if (e.k === 'extra') return '<li class="muted">جولة أسئلة إضافية</li>';
+    if (e.k === 'extra') return '<li class="muted">نجمع أوراق أكثر قبل التصويت</li>';
     return '';
   }
 
@@ -138,14 +138,15 @@
       case 'prep': case 'lobby': case 'deal':
         return banner('انضممتوا ✓ بطاقاتكم تحت. انتظروا المشرف يبدأ التحقيق.');
       case 'play':
+        if (tu.st === 'idle') return banner('المشرف يوزّع الأوراق… استعدوا، يمكن تكون لكم');
         if (tu.st === 'ask') return mine ? banner('دوركم! السؤال عليكم، ركّزوا', true) : banner(`الدور على ${who}، السؤال ${num(tu.r)} من ${num(tu.R)}`);
-        if (tu.st === 'pick') return mine ? banner('كفو! جوابكم صح… اختاروا الخصم تحت', true) : banner(`${who} جاوبوا صح ويختارون خصم…`);
+        if (tu.st === 'pick') return mine ? banner('كفو! لكم ورقة… اختاروا الخصم تحت', true) : banner(`${who} لهم ورقة ويختارون خصم…`);
         if (tu.st === 'card') return banner(mine ? 'وصلتكم ورقة جديدة! شوفوا دفتر المحقق' : `${who} خذوا ورقة`, mine);
         return banner('خلصت فقرة الأسئلة… جهّزوا اتهامكم');
       case 'vote':
         return me.vr === pub.vr ? banner('وصل اتهامكم ✓ انتظروا لحظة الحقيقة على الشاشة') : banner('وقت التصويت! من القاتل؟', true);
       case 'reveal':
-        return pub.rv && !pub.rv.ok ? banner('أفا! ولا فريق عرف القاتل… انتظروا المشرف') : banner('لحظة الحقيقة… شوفوا الشاشة!', true);
+        return pub.rv && !pub.rv.ok ? banner('أفا! ولا فريق عرف القاتل… القاتل لسّه طليق، انتظروا المشرف') : banner('لحظة الحقيقة… شوفوا الشاشة!', true);
       case 'tie':
         return banner('تعادل! سؤال الحسم على الشاشة', true);
       case 'over':
@@ -255,14 +256,14 @@
     const id = b.dataset.id;
     notes[id] = notes[id] === 'x' ? 'q' : notes[id] === 'q' ? '' : 'x';
     if (!notes[id]) delete notes[id];
-    store.set(`athar-qadiya-notes-${code}`, notes);
+    store.set(`athar-crime-notes-${code}`, notes);
     S.tongue(0, 0.15);
     renderNotebook();
   });
 
   // ---------- البطاقات الجديدة ----------
   function checkNewCards() {
-    const skey = `athar-qadiya-seen-${code}-${me.id}`;
+    const skey = `athar-crime-seen-${code}-${me.id}`;
     if (!seen) { seen = store.get(skey, null); seenLost = store.get(skey + '-lost', []); }
     const ids = me.kn.map((x) => x[0]);
     if (!seen) {

@@ -1,16 +1,18 @@
 /* =========================================================
-   القضية | شاشة المشرف
+   مسرح جريمة | شاشة المشرف
    مراحل اللعبة: setup → prep → (lobby | deal) → play → vote → reveal → (tie) → over
    ========================================================= */
 (() => {
   'use strict';
   const { $, $$, num, esc, COLORS, ICONS, CATS, CK, CATMAP, catOf, nameOf, store, rand, pick, shuffle, uid, fill, cardHTML, S, initChrome, toast, confetti } = window.Q;
   const NET = window.QadiyaNet;
-  // بنك أسئلة أثَر (من سهمك الصاعد): الخيار الأول هو الصحيح
-  const BANK = (window.SAHM_QUESTIONS || []).filter((q) => q && q.q && Array.isArray(q.a) && q.a.length >= 2);
+  // بنك أسئلة ديوان: [الديوان، القسم، المستوى، النص، الخيارات، رقم الإجابة، العزو، الرقم]
+  const DW = window.DIWAN_DATA || { diwans: [], questions: [] };
+  const QS = (DW.questions || []).filter((q) => Array.isArray(q) && q[3] && Array.isArray(q[4]) && q[4].length >= 2);
+  const LEVELS = ['سهل', 'متوسط', 'صعب'];
 
-  const SKEY = 'athar-qadiya-settings';
-  const GKEY = 'athar-qadiya-game';
+  const SKEY = 'athar-crime-settings';
+  const GKEY = 'athar-crime-game';
   const ORD = ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس'];
   const DETAILS = ['victim', 'weapon', 'place', 'time'];
 
@@ -24,7 +26,7 @@
   };
   const defSettings = () => ({
     mode: 'local', count: 4, names: ORD.map((o) => `الفريق ${o}`),
-    qSource: 'bank', rounds: 3, lists: JSON.parse(JSON.stringify(DEFAULT_LISTS))
+    qSource: 'diwan', dw: DW.diwans.map((_, i) => i), lv: [0, 1, 2], rounds: 3, lists: JSON.parse(JSON.stringify(DEFAULT_LISTS))
   });
 
   // العبارات العفوية
@@ -33,7 +35,7 @@
     ok: ['كفو يا {t}!', 'يا سلام عليكم يا {t}!', 'ضربة معلّم يا {t}!', 'ما شاء الله عليكم يا {t}!', 'عداكم العيب يا {t}!'],
     bad: ['أفا! الجواب غلط', 'راحت عليكم يا {t}!', 'معليش يا {t}، الجايات أكثر', 'يا {t} ركّزوا شوي!'],
     take: ['سرقة عيني عينك! {t} خذوا ورقة من {o}', 'يا ساتر! {t} شالوا ورقة من {o}', '{o}، ودّعوا ورقة من أوراقكم… خذوها {t}'],
-    win: ['الفااائز ويستاهل', 'مبروك يا أبطال!', 'كفو والله، تستاهلون!', 'هذي الهيبة!']
+    win: ['الفااائز ويستاهل!', 'مبروك يا أبطال!', 'كفو والله، تستاهلون!', 'هذي الهيبة!']
   };
 
   let set = loadSettings();
@@ -43,6 +45,7 @@
   const el = {
     fileBtn: $('#fileBtn'), counts: $('#counts'), teamInputs: $('#teamInputs'), listGrid: $('#listGrid'),
     needN: $('#needN'), roundsOut: $('#roundsOut'), setupError: $('#setupError'),
+    qNote: $('#qNote'), qFilters: $('#qFilters'), roundsRow: $('#roundsRow'), dwChips: $('#dwChips'), lvChips: $('#lvChips'), qCount: $('#qCount'), dwAll: $('#dwAll'),
     resumeCard: $('#resumeCard'), resumeText: $('#resumeText'),
     prepBoard: $('#prepBoard'), prepNext: $('#prepNext'),
     joinGrid: $('#joinGrid'), netNote: $('#netNote'), dealGrid: $('#dealGrid'),
@@ -52,7 +55,7 @@
     revealTitle: $('#revealTitle'), accuseGrid: $('#accuseGrid'), verdict: $('#verdict'), revealActions: $('#revealActions'),
     tieLead: $('#tieLead'), tieQ: $('#tieQ'), tieTeams: $('#tieTeams'),
     winnerName: $('#winnerName'), winnerText: $('#winnerText'), solution: $('#solution'), finalBoard: $('#finalBoard'),
-    confetti: $('#confetti'), trophy: $('.trophy')
+    confetti: $('#confetti')
   };
 
   // =========================================================
@@ -65,7 +68,11 @@
     s.count = Math.min(6, Math.max(2, +s.count || 4));
     if (!Array.isArray(s.names)) s.names = d.names;
     while (s.names.length < 6) s.names.push(`الفريق ${ORD[s.names.length]}`);
-    if (!['bank', 'host'].includes(s.qSource)) s.qSource = 'bank';
+    if (!['diwan', 'host', 'none'].includes(s.qSource)) s.qSource = 'diwan';
+    s.dw = (Array.isArray(s.dw) ? s.dw : []).filter((i) => Number.isInteger(i) && i >= 0 && i < DW.diwans.length);
+    s.lv = (Array.isArray(s.lv) ? s.lv : []).filter((i) => [0, 1, 2].includes(i));
+    if (!s.dw.length) s.dw = DW.diwans.map((_, i) => i);
+    if (!s.lv.length) s.lv = [0, 1, 2];
     s.rounds = Math.min(6, Math.max(1, +s.rounds || 3));
     CK.forEach((k) => { if (!Array.isArray(s.lists?.[k])) s.lists[k] = [...DEFAULT_LISTS[k]]; });
     return s;
@@ -77,6 +84,7 @@
     $$('.mode').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === set.mode)));
     $$('#qSource button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.q === set.qSource)));
     el.roundsOut.textContent = num(set.rounds);
+    renderQSetup();
     el.needN.textContent = num(set.count + 1);
 
     el.counts.innerHTML = '';
@@ -121,6 +129,26 @@
       const ph = { prep: 'القضية جاهزة', lobby: 'انضمام الفرق', deal: 'توزيع البطاقات', play: 'فقرة الأسئلة', vote: 'التصويت', reveal: 'لحظة الحقيقة', tie: 'سؤال الحسم' }[G.phase] || '';
       el.resumeText.textContent = `${G.teams.map((t) => t.name).join('، ')}، وصلتوا: ${ph}`;
     } else el.resumeCard.hidden = true;
+  }
+
+  // أسئلة ديوان: الدواوين والمستويات
+  const qPool = () => QS.map((_, i) => i).filter((i) => set.dw.includes(QS[i][0]) && set.lv.includes(QS[i][2]));
+  function renderQSetup() {
+    const notes = {
+      diwan: 'السؤال يطلع على الشاشة من بنك ديوان، والمشرف يحكم: صح أو غلط.',
+      host: 'المشرف يطرح أسئلته بنفسه، واللعبة تدير الدور والأوراق.',
+      none: 'بلا أسئلة: المشرف يقرر مين ياخذ ورقة ومتى (مثلًا بعد تحدٍّ أو فقرة)، ويروح للتصويت متى ما بغى.'
+    };
+    el.qNote.textContent = notes[set.qSource];
+    el.qFilters.hidden = set.qSource !== 'diwan';
+    el.roundsRow.hidden = set.qSource === 'none';
+    if (set.qSource !== 'diwan') return;
+    el.dwChips.innerHTML = DW.diwans.map((d, i) => `<button class="pchip" data-dw="${i}" aria-pressed="${set.dw.includes(i)}">${esc(d.title)}</button>`).join('');
+    el.lvChips.innerHTML = LEVELS.map((l, i) => `<button class="pchip" data-lv="${i}" aria-pressed="${set.lv.includes(i)}">${l}</button>`).join('');
+    const n = qPool().length;
+    el.qCount.textContent = n ? `${num(n)} سؤالًا متاحًا` : 'ما فيه أسئلة بهذا الاختيار… اختر ديوانًا ومستوى';
+    el.qCount.classList.toggle('warn', !n);
+    el.dwAll.textContent = set.dw.length === DW.diwans.length ? 'ألغِ الكل' : 'اختر الكل';
   }
 
   function countLists() {
@@ -171,13 +199,15 @@
         return setupError(`قائمة «${c.name}» تحتاج ${num(T + 1)} عناصر على الأقل (عدد الفرق + ١). افتح «عناصر القضية» وزِد عليها.`);
       }
     }
+    const pool = set.qSource === 'diwan' ? qPool() : [];
+    if (set.qSource === 'diwan' && QS.length && !pool.length) return setupError('ما فيه أسئلة بالدواوين والمستويات اللي اخترتها. اختر ديوانًا ومستوى واحد على الأقل.');
     setupError('');
-    const qSource = BANK.length ? set.qSource : 'host';
+    const qSource = set.qSource === 'diwan' && !QS.length ? 'host' : set.qSource;
     G = {
       v: 1, id: uid(6), mode: set.mode, qSource, rounds: set.rounds,
       teams: set.names.slice(0, T).map((n, i) => ({ name: n.trim() || `الفريق ${ORD[i]}`, color: COLORS[i], hand: [], known: [], lost: [], seen: false, on: false })),
       items: pickItems(T), sol: {}, phase: 'prep', turn: null, log: [], votes: [], voteRound: 1, wrong: [], reveal: null, winner: -1,
-      q: { order: shuffle(BANK.map((_, i) => i)), pos: 0, opts: null, shown: false },
+      q: { order: shuffle(pool), pos: 0, opts: null, shown: false },
       net: set.mode === 'phones' ? { room: uid(5), keys: Array.from({ length: T }, () => uid(4)), seq: 0, since: 'all', seen: [] } : null
     };
     deal();
@@ -313,7 +343,7 @@
     openSecret({
       team: i,
       bodyTitle: `بطاقات ${t.name}`,
-      bodyText: 'كل بطاقة هنا مو من القضية. سجّلوها عندكم ولا تعلّمون أحد.',
+      bodyText: 'كل بطاقة هنا مو من الجريمة. سجّلوها عندكم ولا تعلّمون أحد.',
       render: (box) => { box.innerHTML = knownHTML(i); },
       onDone: after
     });
@@ -332,29 +362,32 @@
   // =========================================================
   function startPlay() {
     G.phase = 'play';
-    G.turn = { t: 0, n: 0, total: G.rounds * G.teams.length, step: 'ask', tok: '', card: '', from: -1 };
+    const free = isFree();
+    G.turn = { t: free ? -1 : 0, n: 0, total: G.rounds * G.teams.length, step: free ? 'idle' : 'ask', tok: '', card: '', from: -1 };
     prepareQuestion();
     S.whoosh();
-    toast(fill(pick(SAY.turn), { t: tName(0) }), G.teams[0].color);
+    if (!free) toast(fill(pick(SAY.turn), { t: tName(0) }), G.teams[0].color);
     commit();
   }
 
   function prepareQuestion() {
     G.q.shown = false;
-    if (G.qSource !== 'bank' || !BANK.length) { G.q.opts = null; return; }
-    const q = BANK[G.q.order[G.q.pos % G.q.order.length]];
-    G.q.opts = shuffle(q.a.map((_, i) => i));
+    if (G.qSource !== 'diwan' || !G.q.order.length) { G.q.opts = null; return; }
+    G.q.opts = shuffle(curQ()[4].map((_, i) => i));
   }
-  const curQ = () => BANK[G.q.order[G.q.pos % G.q.order.length]];
+  const curQ = () => QS[G.q.order[G.q.pos % G.q.order.length]];
 
   function qHTML(withReveal = true) {
-    if (G.qSource !== 'bank' || !G.q.opts) {
+    if (G.qSource !== 'diwan' || !G.q.opts) {
       return '<div class="q-box host-q"><span class="ev-ico">?</span><p>المشرف يطرح سؤاله الآن</p></div>';
     }
     const q = curQ();
+    const dw = DW.diwans[q[0]];
     return `<div class="q-box">
-      <p class="q-text">${esc(q.q)}</p>
-      <ol class="opts">${G.q.opts.map((oi, n) => `<li class="${G.q.shown && oi === 0 ? 'right' : ''}"><span>${'أبجد'[n] || num(n + 1)}</span>${esc(q.a[oi])}</li>`).join('')}</ol>
+      <p class="q-meta">${esc(dw ? dw.title : '')}${dw && dw.sections[q[1]] ? `، ${esc(dw.sections[q[1]].name)}` : ''} <span class="lv lv${q[2]}">${LEVELS[q[2]] || ''}</span></p>
+      <p class="q-text">${esc(q[3])}</p>
+      <ol class="opts">${G.q.opts.map((oi, n) => `<li class="${G.q.shown && oi === q[5] ? 'right' : ''}"><span>${'أبجد'[n] || num(n + 1)}</span>${esc(q[4][oi])}</li>`).join('')}</ol>
+      ${G.q.shown && q[6] ? `<p class="q-src muted">المصدر: ${esc(q[6])}</p>` : ''}
       ${withReveal ? `<div class="q-tools">
         <button class="btn btn-sm" data-act="qReveal">${G.q.shown ? 'أخفِ الإجابة' : 'اكشف الإجابة'}</button>
         <button class="btn btn-sm btn-ghost" data-act="qSkip">غيّر السؤال</button>
@@ -368,17 +401,26 @@
   // البطاقات اللي ما يعرفها الفريق ومو من الحل (للتلميح)
   const hintPool = (t) => CK.flatMap((k) => G.items[k].map((_, i) => `${k}:${i}`)).filter((id) => !isSol(id) && !knows(t, id));
 
+  const isFree = () => G.qSource === 'none';
+
   function renderPlay() {
-    const tr = G.turn, t = G.teams[tr.t];
-    el.roundPill.innerHTML = tr.step === 'end' ? 'خلصت فقرة الأسئلة' : `السؤال ${num(round())} من ${num(roundsTotal())} لكل فريق`;
+    const tr = G.turn, t = G.teams[tr.t] || { name: '', color: 'var(--accent)' };
+    const free = isFree(), idle = tr.step === 'idle';
+    el.roundPill.innerHTML = free ? 'المشرف يوزّع الأوراق' : tr.step === 'end' ? 'خلصت فقرة الأسئلة' : `السؤال ${num(round())} من ${num(roundsTotal())} لكل فريق`;
     el.turnChip.style.setProperty('--c', t.color);
-    el.turnChip.innerHTML = tr.step === 'end' ? '<b>جاهزين للتصويت</b>' : `<span class="dot"></span>الدور على: <b>${esc(t.name)}</b>`;
+    el.turnChip.hidden = idle;
+    el.turnChip.innerHTML = tr.step === 'end' ? '<b>جاهزين للتصويت</b>' : `<span class="dot"></span>${free ? 'الورقة لـ' : 'الدور على: '}<b>${esc(t.name)}</b>`;
     el.board.innerHTML = boardHTML();
 
     // لوحة الدور
     const P = el.turnPanel;
-    P.style.setProperty('--c', t.color);
-    if (tr.step === 'ask') {
+    P.style.setProperty('--c', idle ? 'var(--accent)' : t.color);
+    if (idle) {
+      P.innerHTML = `<h3 class="tp-title">مين ياخذ ورقة؟</h3>
+        <p class="muted center">اختر الفريق اللي يستاهل ورقة (فاز بتحدٍّ أو فقرة)، ويختار هو الخصم اللي ياخذ منه.</p>
+        <div class="opp-grid">${G.teams.map((o, i) => `<button class="opp" style="--c:${o.color}" data-act="give" data-i="${i}"><b>${esc(o.name)}</b><small>يعرفون ${num(o.known.length)} بطاقات</small></button>`).join('')}</div>
+        <button class="btn btn-primary" data-act="vote">خلاص، للتصويت</button>`;
+    } else if (tr.step === 'ask') {
       P.innerHTML = `<div class="tp-head"><span class="team-badge">${esc(t.name)}</span><span class="muted">السؤال عليكم</span></div>
         ${qHTML()}
         <div class="eval">
@@ -387,7 +429,7 @@
         </div>`;
     } else if (tr.step === 'pick') {
       const opps = opponentsFor(tr.t);
-      P.innerHTML = `<div class="tp-head"><span class="team-badge">${esc(t.name)}</span><span class="muted">جوابكم صح</span></div>
+      P.innerHTML = `<div class="tp-head"><span class="team-badge">${esc(t.name)}</span><span class="muted">${free ? "لكم ورقة" : "جوابكم صح"}</span></div>
         <h3 class="tp-title">اختاروا الخصم اللي تاخذون منه ورقة</h3>
         <p class="muted">${G.mode === 'phones' ? 'يختارونه من جوالهم، أو اختر عنهم هنا.' : 'الورقة تطلع عشوائية من أوراقه، وتشوفونها بس أنتم.'}</p>
         <div class="opp-grid">${G.teams.map((o, i) => i === tr.t ? '' : `<button class="opp" style="--c:${o.color}" data-act="opp" data-i="${i}" ${opps.includes(i) ? '' : 'disabled'}>
@@ -400,19 +442,19 @@
         ${G.mode === 'phones'
           ? `<p class="muted">وصلت الورقة على جوال ${esc(t.name)}</p><button class="btn btn-ghost btn-sm" data-act="showCard">ما وصلت؟ اعرضها هنا</button>`
           : `<button class="btn" data-act="showCard">اعرض الورقة لـ${esc(t.name)}</button>`}
-        <button class="btn btn-primary btn-big" data-act="next">الدور اللي بعده</button>`;
+        <button class="btn btn-primary btn-big" data-act="next">${free ? 'تمام، نكمّل' : 'الدور اللي بعده'}</button>`;
     } else {
       P.innerHTML = `<div class="tp-done"><h3 class="tp-title">خلصت فقرة الأسئلة!</h3>
         <p class="muted">كل فريق يراجع بطاقاته ويجهّز اتهامه.</p>
         <button class="btn btn-primary btn-big" data-act="vote">يلا للتصويت</button></div>`;
     }
-    $('#toVoteBtn').hidden = tr.step === 'end';
+    $('#toVoteBtn').hidden = tr.step === 'end' || idle;
 
     // شريط الفرق
     el.teamsStrip.innerHTML = '';
     G.teams.forEach((x, i) => {
       const d = document.createElement('div');
-      d.className = 'tchip' + (i === tr.t && tr.step !== 'end' ? ' active' : '');
+      d.className = 'tchip' + (i === tr.t && tr.step !== 'end' && !idle ? ' active' : '');
       d.style.setProperty('--c', x.color);
       d.innerHTML = `<span class="team-no">${num(i + 1)}</span>
         <span class="tchip-text"><b>${esc(x.name)}</b><small>${num(x.hand.length)} أوراق بيدهم، يعرفون ${num(x.known.length)}</small></span>
@@ -430,18 +472,33 @@
     if (e.k === 'hint') return `<li>${c(e.a)} خذوا تلميحًا من الملف</li>`;
     if (e.k === 'miss') return `<li class="muted">${c(e.a)} ما وفّقوا في السؤال</li>`;
     if (e.k === 'revote') return `<li class="muted">ولا فريق عرف القاتل… إعادة التصويت</li>`;
-    if (e.k === 'extra') return `<li class="muted">جولة أسئلة إضافية</li>`;
+    if (e.k === 'extra') return `<li class="muted">${isFree() ? 'رجعنا نجمع أوراق أكثر' : 'جولة أسئلة إضافية'}</li>`;
     return '';
+  }
+
+  // وضع بلا أسئلة: المشرف يعطي الفريق ورقة
+  function give(i) {
+    if (G.phase !== 'play' || G.turn.step !== 'idle') return;
+    G.turn.t = i;
+    S.chirp();
+    toast(`${tName(i)} ياخذون ورقة!`, G.teams[i].color);
+    grant();
   }
 
   function answerOk() {
     const tr = G.turn;
     S.chirp(); S.chirp(0.12, 3500);
     toast(fill(pick(SAY.ok), { t: tName(tr.t) }), G.teams[tr.t].color);
+    grant();
+  }
+
+  // الفريق صاحب الدور ياخذ ورقة: من خصم، أو تلميح إذا ما عند أحد جديد
+  function grant() {
+    const tr = G.turn;
     if (opponentsFor(tr.t).length) {
       tr.step = 'pick'; tr.tok = uid(4);
     } else if (!giveHint(tr.t, true)) {
-      toast(`${tName(tr.t)} يعرفون كل البطاقات! القضية محلولة عندهم`);
+      toast(`${tName(tr.t)} يعرفون كل البطاقات! الجريمة محلولة عندهم`);
       return nextTurn();
     }
     commit();
@@ -494,6 +551,11 @@
 
   function nextTurn() {
     const tr = G.turn;
+    if (isFree()) {
+      tr.step = 'idle'; tr.t = -1; tr.card = ''; tr.from = -1; tr.tok = '';
+      S.tongue(0, 0.22);
+      return commit();
+    }
     tr.n++; tr.card = ''; tr.from = -1; tr.tok = '';
     G.q.pos++; prepareQuestion();
     if (tr.n >= tr.total) {
@@ -519,7 +581,7 @@
 
   function renderVote() {
     el.voteKicker.textContent = G.voteRound > 1 ? `إعادة التصويت، المحاولة ${num(G.voteRound)}` : 'التصويت النهائي';
-    const wrong = G.wrong.length ? ` المستبعدون من القتلة: ${G.wrong.map((i) => G.items.killer[i]).join('، ')}.` : '';
+    const wrong = '';
     el.voteLead.textContent = (G.mode === 'phones'
       ? 'كل فريق يرسل اتهامه من جواله: القاتل والمقتول والأداة والمكان والوقت.'
       : 'كل فريق يسجّل اتهامه بسرّية: القاتل والمقتول والأداة والمكان والوقت.') + wrong;
@@ -578,9 +640,8 @@
     });
     const cands = res.filter((r) => r.killer);
     if (!cands.length) {
-      const guessed = [...new Set(G.votes.filter(Boolean).map((v) => v.killer))];
-      G.wrong = [...new Set([...G.wrong, ...guessed])];
-      G.reveal = { ok: false, res, newWrong: guessed, anim: true };
+      // ولا فريق عرف القاتل: ما نكشف أي اتهام ولا نشطب أحد
+      G.reveal = { ok: false, res, anim: true };
     } else {
       const best = Math.max(...cands.map((r) => r.det));
       G.reveal = { ok: true, res, best, ties: cands.filter((r) => r.det === best).map((r) => r.i), anim: true };
@@ -596,7 +657,7 @@
   function renderReveal() {
     const R = G.reveal, anim = R.anim;
     R.anim = false; saveSoon();
-    el.revealTitle.textContent = R.ok ? 'اتهامات الفرق' : 'مَن اتهمتوا بالقتل؟';
+    el.revealTitle.textContent = R.ok ? 'اتهامات الفرق' : 'الاتهامات مختومة…';
     el.accuseGrid.innerHTML = '';
     G.teams.forEach((t, i) => {
       const v = G.votes[i], r = R.res[i];
@@ -604,12 +665,19 @@
       d.className = 'accuse' + (anim ? ' anim' : '') + (R.ok && r.killer ? ' good' : '');
       d.style.setProperty('--c', t.color);
       d.style.animationDelay = `${0.25 * i}s`;
-      d.innerHTML = `<div class="accuse-head"><b>${esc(t.name)}</b>${R.ok ? `<span>${r.killer ? `عرفوا القاتل، و${num(r.det)} من ٤ تفاصيل` : r.none ? 'ما صوّتوا' : 'أخطأوا القاتل'}</span>` : ''}</div>
-        ${v ? `<ul>${CATS.filter((c) => R.ok || c.k === 'killer').map((c) => {
-          const right = v[c.k] === G.sol[c.k];
-          const mark = R.ok ? (right ? 'right' : 'wrong') : (c.k === 'killer' ? 'wrong' : '');
+      if (!R.ok) {
+        // الاتهامات تبقى مختومة حتى لا يستفيد أحد منها
+        d.classList.add('sealed');
+        d.innerHTML = `<div class="accuse-head"><b>${esc(t.name)}</b><span>${v ? 'اتهام مختوم' : 'ما صوّتوا'}</span></div>
+          <div class="sealed-box"><span class="stamp">مختوم</span></div>`;
+        el.accuseGrid.append(d);
+        return;
+      }
+      d.innerHTML = `<div class="accuse-head"><b>${esc(t.name)}</b><span>${r.killer ? `عرفوا القاتل، و${num(r.det)} من ٤ تفاصيل` : r.none ? 'ما صوّتوا' : 'أخطأوا القاتل'}</span></div>
+        ${v ? `<ul>${CATS.map((c) => {
+          const mark = v[c.k] === G.sol[c.k] ? 'right' : 'wrong';
           return `<li class="${mark}"><span class="ev-ico">${ICONS[c.k]}</span><small>${c.name}</small><b>${esc(G.items[c.k][v[c.k]])}</b></li>`;
-        }).join('')}</ul>${R.ok ? '' : '<p class="muted hide-note">باقي التفاصيل مخفية لين ينكشف القاتل</p>'}` : '<p class="muted">ما وصل اتهامهم</p>'}`;
+        }).join('')}</ul>` : '<p class="muted">ما وصل اتهامهم</p>'}`;
       el.accuseGrid.append(d);
     });
 
@@ -620,10 +688,10 @@
     A.innerHTML = '';
     if (!R.ok) {
       V.innerHTML = `<h2>أفا! ولا فريق عرف القاتل</h2>
-        <p>طلعوا من قائمة القتلة: <b>${R.newWrong.map((k) => esc(G.items.killer[k])).join('، ') || '—'}</b></p>
-        <p class="muted">نعيد التصويت، أو نلعب جولة أسئلة إضافية تجيب أوراق أكثر.</p>`;
+        <p>القاتل لسّه طليق… والاتهامات تبقى مختومة ما يشوفها أحد.</p>
+        <p class="muted">نعيد التصويت، أو ${isFree() ? 'نرجع نوزّع أوراق أكثر' : 'نلعب جولة أسئلة إضافية تجيب أوراق أكثر'}.</p>`;
       A.innerHTML = `<button class="btn btn-primary btn-big" data-act="revote">أعيدوا التصويت</button>
-        <button class="btn" data-act="extra">جولة أسئلة إضافية ثم تصويت</button>`;
+        <button class="btn" data-act="extra">${isFree() ? 'نوزّع أوراق أكثر ثم تصويت' : 'جولة أسئلة إضافية ثم تصويت'}</button>`;
       if (anim) setTimeout(() => S.sigh(), 900 + 250 * G.teams.length);
     } else {
       V.innerHTML = `<h2>الحل الصحيح</h2>
@@ -641,10 +709,13 @@
     G.log.push({ k: extra ? 'extra' : 'revote' });
     if (extra) {
       G.phase = 'play';
-      G.turn.total += G.teams.length;
-      G.turn.step = 'ask';
-      G.turn.t = G.turn.n % G.teams.length;
-      prepareQuestion();
+      if (isFree()) { G.turn.step = 'idle'; G.turn.t = -1; }
+      else {
+        G.turn.total += G.teams.length;
+        G.turn.step = 'ask';
+        G.turn.t = G.turn.n % G.teams.length;
+        prepareQuestion();
+      }
     } else {
       G.phase = 'vote';
       G.votes = G.teams.map(() => null);
@@ -677,10 +748,9 @@
 
   function renderVictory() {
     const w = G.teams[G.winner], R = G.reveal;
-    el.trophy.style.setProperty('--win', w.color);
     el.winnerName.style.setProperty('--win', w.color);
     el.winnerName.textContent = w.name;
-    el.winnerText.textContent = `${pick(SAY.win)}! عرفوا القاتل «${G.items.killer[G.sol.killer]}» و${num(R.res[G.winner].det)} من ٤ تفاصيل.`;
+    el.winnerText.textContent = `${pick(SAY.win)} عرفوا القاتل «${G.items.killer[G.sol.killer]}» و${num(R.res[G.winner].det)} من ٤ تفاصيل.`;
     el.solution.innerHTML = `<h2>ملف القضية</h2><div class="cards-grid sol">${CK.map((k) => cardHTML(G.items, solId(k))).join('')}</div>`;
     const order = [...R.res].sort((a, b) => (b.i === G.winner) - (a.i === G.winner) || b.killer - a.killer || b.det - a.det);
     el.finalBoard.innerHTML = order.map((r, n) => `<div class="final-row${r.i === G.winner ? ' win' : ''}" style="--c:${G.teams[r.i].color}; animation-delay:${0.12 * n + 0.3}s">
@@ -732,7 +802,7 @@
     if (G.mode === 'local') { closeModal(fileModal); showCard(i, id); }
   });
   $('#filePrint').addEventListener('click', () => {
-    $('#printSheet').innerHTML = `<h1>القضية — الملف السري للمشرف</h1>
+    $('#printSheet').innerHTML = `<h1>مسرح جريمة — الملف السري للمشرف</h1>
       <h2>الحل</h2><p>${CATS.map((c) => `${c.name}: <b>${esc(G.items[c.k][G.sol[c.k]])}</b>`).join('، ')}</p>
       <h2>بطاقات الفرق</h2>${G.teams.map((t) => `<p><b>${esc(t.name)}:</b> ${t.known.map(([id]) => esc(cardName(id))).join('، ')}</p>`).join('')}`;
     window.print();
@@ -878,7 +948,7 @@
       tu: tr ? { t: tr.t, st: tr.step, r: round(), R: roundsTotal(), tok: tr.step === 'pick' ? tr.tok : '', op: tr.step === 'pick' ? opponentsFor(tr.t) : [] } : null,
       lg: G.log.slice(-5),
       vr: G.voteRound, vd: G.votes.map(Boolean), wk: G.wrong,
-      rv: G.phase === 'reveal' && G.reveal ? { ok: G.reveal.ok, nw: G.reveal.newWrong || [] } : null,
+      rv: G.phase === 'reveal' && G.reveal ? { ok: G.reveal.ok } : null,
       res: showRes ? { sol: G.sol, w: G.winner, ties: G.reveal ? G.reveal.ties || [] : [] } : null
     };
   }
@@ -904,6 +974,22 @@
   // =========================================================
   $$('.mode').forEach((b) => b.addEventListener('click', () => { set.mode = b.dataset.mode; saveSettings(); S.tongue(0, 0.2); renderSetup(); }));
   $$('#qSource button').forEach((b) => b.addEventListener('click', () => { set.qSource = b.dataset.q; saveSettings(); S.tongue(0, 0.2); renderSetup(); }));
+  el.dwChips.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-dw]'); if (!b) return;
+    const i = +b.dataset.dw;
+    set.dw = set.dw.includes(i) ? set.dw.filter((x) => x !== i) : [...set.dw, i];
+    saveSettings(); S.tongue(0, 0.18); renderQSetup();
+  });
+  el.lvChips.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-lv]'); if (!b) return;
+    const i = +b.dataset.lv;
+    set.lv = set.lv.includes(i) ? set.lv.filter((x) => x !== i) : [...set.lv, i];
+    saveSettings(); S.tongue(0, 0.18); renderQSetup();
+  });
+  el.dwAll.addEventListener('click', () => {
+    set.dw = set.dw.length === DW.diwans.length ? [] : DW.diwans.map((_, i) => i);
+    saveSettings(); S.drop(500); renderQSetup();
+  });
   $('#roundsMinus').addEventListener('click', () => { set.rounds = Math.max(1, set.rounds - 1); saveSettings(); S.drop(420); renderSetup(); });
   $('#roundsPlus').addEventListener('click', () => { set.rounds = Math.min(6, set.rounds + 1); saveSettings(); S.drop(560); renderSetup(); });
   $('#listsReset').addEventListener('click', () => { set.lists = JSON.parse(JSON.stringify(DEFAULT_LISTS)); saveSettings(); $$('.list-box textarea').forEach((t) => t.blur()); renderSetup(); toast('رجعت القوائم الأصلية'); });
@@ -921,7 +1007,7 @@
     commit();
   });
   $('#prepFile').addEventListener('click', openFile);
-  $('#prepShuffle').addEventListener('click', () => { G.items = pickItems(G.teams.length); deal(); S.whoosh(); toast('قضية جديدة مختومة'); commit(); });
+  $('#prepShuffle').addEventListener('click', () => { G.items = pickItems(G.teams.length); deal(); S.whoosh(); toast('جريمة جديدة مختومة'); commit(); });
   $('#prepBack').addEventListener('click', () => { G = null; store.del(GKEY); go(); });
   el.fileBtn.addEventListener('click', openFile);
 
@@ -947,6 +1033,7 @@
       case 'ok': answerOk(); break;
       case 'bad': answerBad(); break;
       case 'opp': doPick(i); break;
+      case 'give': give(i); break;
       case 'showCard': showCard(G.turn.t, G.turn.card); break;
       case 'next': nextTurn(); break;
       case 'vote':
@@ -975,5 +1062,5 @@
   initChrome();
   renderSetup();
   show('screen-setup');
-  if (!BANK.length) $('#qSource button[data-q="bank"]').disabled = true;
+  if (!QS.length) $('#qSource button[data-q="diwan"]').disabled = true;
 })();
