@@ -10,7 +10,7 @@
    ========================================================= */
 (() => {
   'use strict';
-  const { $, $$, S, store, ar, esc, secs, ordinal, colorOf, queueOf, initChrome, show, toast, confirmBox } = window.BuzzUI;
+  const { diff, $, $$, S, store, ar, esc, secs, ordinal, colorOf, queueOf, initChrome, show, toast, confirmBox } = window.BuzzUI;
   const NET = window.BuzzNet;
   const HOST_KEY = 'athar-buzzer-host';
   const STALE = 12 * 60 * 60 * 1000; // غرفة أقدم من ١٢ ساعة تُعتبر منتهية
@@ -129,7 +129,13 @@
 
     // أصوات وصول الضغطات
     if (lastRound !== s.r) { lastRound = s.r; lastLen = 0; seenRows.clear(); }
-    if (q.length > lastLen) { if (lastLen === 0) { S.chirp(0, 3200); S.drop(520, 0.12); } else S.drop(420); }
+    if (q.length > lastLen) {
+      if (lastLen === 0) {
+        S.chirp(0, 3200); S.drop(520, 0.12);
+        // وميض ذهبي على المسرح لأول ضغطة
+        el.stage.classList.remove('flash'); void el.stage.offsetWidth; el.stage.classList.add('flash');
+      } else S.drop(420);
+    }
     lastLen = q.length;
 
     el.roundPill.textContent = `السؤال ${ar(s.n || s.r)}`;
@@ -159,7 +165,7 @@
         return `<li class="q-row${i < k ? ' done' : ''}${i === k ? ' now' : ''}${fresh ? ' in' : ''}" style="--c:${colorOf(x.pid)}">
           <span class="q-rank">${ar(i + 1)}</span>
           <span class="q-name">${esc(x.name)}</span>
-          <span class="q-time">${i === 0 ? 'الأسرع' : '+' + secs(x.t - q[0].t) + ' ث'}</span>
+          <span class="q-time">${i === 0 ? 'الأسرع' : diff(x.t - q[0].t)}</span>
         </li>`;
       }).join('');
       q.forEach((x) => seenRows.add(x.pid));
@@ -314,7 +320,7 @@
   initChrome();
   NET.onStatus((on) => {
     el.netDot.dataset.on = String(on);
-    el.netText.textContent = on ? (NET.local ? 'تجربة محلية' : 'متصل') : 'غير متصل';
+    el.netText.textContent = on ? (NET.local ? 'تجربة محلية' : 'مباشر') : 'غير متصل';
   });
 
   $$('#introModes .mode, #roomModes .mode').forEach((b) => b.addEventListener('click', () => { S.tongue(0, 0.2); setMode(b.dataset.mode); }));

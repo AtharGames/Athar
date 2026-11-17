@@ -36,10 +36,9 @@
     </span>
   </a>
   <div class="top-tools">
-    <span class="net" id="netDot" data-on="false" title="حالة الاتصال"><i></i><b id="netText">جارٍ الاتصال</b></span>
-    <button class="icon-btn" id="soundBtn" aria-pressed="true" aria-label="الصوت">
-      <svg class="ico-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
-      <svg class="ico-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
+    <span class="net" id="netDot" data-on="false" title="حالة الاتصال"><i></i><b id="netText">يتصل…</b></span>
+    <button class="icon-btn snd" id="soundBtn" aria-pressed="true" aria-label="المؤثرات الصوتية">
+      <span class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
     </button>
     <!-- مبدّل الثيمات -->
     <div class="theme-switch" role="group" aria-label="ألوان الواجهة">
@@ -56,8 +55,23 @@
   <section class="screen active" id="screen-join">
     <form class="setup join" id="joinForm" autocomplete="off" novalidate>
       <div class="setup-hero">
-        <img class="hero-logo logo-main" src="../assets/athar-logo.png" alt="شعار لجنة أثَر" width="556" height="720">
-        <img class="hero-logo logo-rev" src="../assets/athar-logo-reversed.png" alt="شعار لجنة أثَر" width="556" height="720">
+        <div class="hero-buzzer" aria-hidden="true">
+          <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+          <svg viewBox="0 0 200 160">
+            <defs>
+              <linearGradient id="hbDome" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9BDCFB"/><stop offset=".5" stop-color="#3B98EA"/><stop offset="1" stop-color="#1E6FE0"/></linearGradient>
+              <linearGradient id="hbBase" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1547A8"/><stop offset="1" stop-color="#0A2463"/></linearGradient>
+            </defs>
+            <g class="spark"><path d="M100 38V20M64 48L53 35M136 48l11-13"/></g>
+            <ellipse cx="100" cy="146" rx="70" ry="8" class="shadow"/>
+            <path class="base" d="M28 112h144v16a10 10 0 0 1-10 10H38a10 10 0 0 1-10-10z" fill="url(#hbBase)"/>
+            <ellipse cx="100" cy="112" rx="72" ry="12" fill="#1E6FE0" class="rim"/>
+            <g class="dome"><path d="M46 111a54 54 0 0 1 108 0z" fill="url(#hbDome)"/>
+            <ellipse cx="100" cy="111" rx="54" ry="7" fill="#0A2463" opacity=".35"/>
+            <path d="M64 94a38 38 0 0 1 24-28" stroke="#fff" stroke-width="7" stroke-linecap="round" fill="none" opacity=".6"/></g>
+            <path class="bolt" d="M104 117l-11 12h7l-4 8 12-13h-7z"/>
+          </svg>
+        </div>
         <h1>جرس أثَر</h1>
         <p class="lead">اكتب رمز الغرفة اللي على الشاشة، واسمك، وجهّز إصبعك.</p>
       </div>
@@ -87,11 +101,13 @@
         <p id="statusText"></p>
       </div>
 
+      <canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
       <button class="bell" id="bell" type="button" aria-label="اضغط الجرس">
         <span class="bell-ring" aria-hidden="true"></span>
         <span class="bell-face">
-          <span class="bell-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0-6 6v3.6L4.3 16a1 1 0 0 0 .9 1.5h13.6a1 1 0 0 0 .9-1.5L18 12.6V9a6 6 0 0 0-6-6z"/><path d="M9.5 19.5a2.6 2.6 0 0 0 5 0z"/></svg></span>
+          <span class="bell-ico"><svg class="i-bell" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0-6 6v3.6L4.3 16a1 1 0 0 0 .9 1.5h13.6a1 1 0 0 0 .9-1.5L18 12.6V9a6 6 0 0 0-6-6z"/><path d="M9.5 19.5a2.6 2.6 0 0 0 5 0z"/></svg><svg class="i-bolt" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2L4 14h6.5l-1.5 8L19 9.5h-6.5L13.5 2z"/></svg><svg class="i-lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10.5" rx="2.4"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></span>
           <span class="bell-label" id="bellLabel">اضغط</span>
+          <span class="bell-sub" id="bellSub"></span>
         </span>
       </button>
 

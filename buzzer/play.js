@@ -5,7 +5,7 @@
    ========================================================= */
 (() => {
   'use strict';
-  const { $, S, store, ar, toLatin, esc, secs, ordinal, queueOf, initChrome, show, toast, confirmBox } = window.BuzzUI;
+  const { diff, $, S, confetti, store, ar, toLatin, esc, secs, ordinal, queueOf, initChrome, show, toast, confirmBox } = window.BuzzUI;
   const NET = window.BuzzNet;
   const ME_KEY = 'athar-buzzer-me';
 
@@ -13,7 +13,7 @@
     netDot: $('#netDot'), meName: $('#meName'), meRoom: $('#meRoom'),
     form: $('#joinForm'), code: $('#codeInput'), name: $('#nameInput'), joinBtn: $('#joinBtn'), error: $('#joinError'),
     wrap: $('#bellWrap'), title: $('#statusTitle'), text: $('#statusText'),
-    bell: $('#bell'), label: $('#bellLabel'), mini: $('#miniQueue'), leave: $('#leaveBtn')
+    bell: $('#bell'), label: $('#bellLabel'), sub: $('#bellSub'), confetti: $('#confetti'), mini: $('#miniQueue'), leave: $('#leaveBtn')
   };
 
   let me = null;          // { room, name, pid }
@@ -100,11 +100,12 @@
   }
 
   // ---------- الحالة والرسم ----------
-  function setState(state, title, text, label) {
+  function setState(state, title, text, label, sub = '') {
     el.wrap.dataset.state = state;
     el.title.textContent = title;
     el.text.textContent = text;
     el.label.textContent = label;
+    el.sub.textContent = sub;
     el.bell.setAttribute('aria-disabled', String(state !== 'ready'));
   }
 
@@ -128,7 +129,7 @@
         'جاوب!');
     } else if (idx > k) {
       state = 'rank';
-      setState(state, `أنت ${ordinal(idx)}`, `بفارق ${secs(q[idx].t - q[0].t)} ثانية عن الأول`, ar(idx + 1));
+      setState(state, `أنت ${ordinal(idx)}`, `بفارق ${secs(q[idx].t - q[0].t)} ثانية عن الأول`, ar(idx + 1), diff(q[idx].t - q[0].t));
     } else if (idx >= 0 || excluded) {
       state = 'done';
       setState(state, 'خلصت محاولتك', 'انتظر السؤال الجاي', 'انتظر');
@@ -143,13 +144,16 @@
       setState(state, `سبقك ${q[0].name}`, 'الجرس انقفل على البقية', 'مقفول');
     } else {
       state = 'ready';
-      setState(state, 'اضغط الجرس!', q.length ? `سبقك ${q[0].name}، اضغط واحجز دورك` : 'أول من يضغط هو اللي يجاوب', 'اضغط');
+      setState(state, 'اضغط الجرس!', q.length ? `سبقك ${q[0].name}، اضغط واحجز دورك` : 'اضغط فور سماع السؤال', 'اضغط');
     }
 
     // تنبيه عند تغيّر الحال
     const key = state + ':' + s.r + ':' + k;
     if (key !== lastKey) {
-      if (state === 'first') { S.chirp(0, 3300); vibrate([90, 60, 90]); }
+      if (state === 'first') {
+        S.chirp(0, 3300); vibrate([90, 60, 90]);
+        if (k === 0) confetti(el.confetti, { y: 0.48 }); // قصاصات للأسرع فقط
+      }
       else if (state === 'ready' && lastState && lastState !== 'ready') { S.whoosh(true); vibrate(30); }
       else if ((state === 'locked' || state === 'done') && lastState === 'ready') S.sigh();
       else if (state === 'blocked') vibrate(120);
@@ -164,7 +168,7 @@
     const row = (x, i) => `<li class="${i === idx ? 'me ' : ''}${i === k ? 'now ' : ''}${i < k ? 'done' : ''}">
       <span class="q-rank">${ar(i + 1)}</span>
       <span class="q-name">${esc(x.name)}${i === idx ? ' (أنت)' : ''}</span>
-      <span class="q-time">${i === 0 ? 'الأسرع' : '+' + secs(x.t - q[0].t) + ' ث'}</span>
+      <span class="q-time">${i === 0 ? 'الأسرع' : diff(x.t - q[0].t)}</span>
     </li>`;
     let html = q.slice(0, 3).map(row).join('');
     if (idx > 2) html += row(q[idx], idx);

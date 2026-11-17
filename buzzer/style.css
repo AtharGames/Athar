@@ -418,6 +418,201 @@ body.play .net{padding:8px;}
 .toast.in{animation:toastIn .3s ease both;}
 @keyframes toastIn{from{opacity:0; transform:translateY(14px);}}
 
+/* =========================================================
+   هوية «جرس أثَر» الخاصة: أجواء استوديو مسابقات فوق ألوان أثَر
+   ذهبي للأسرع والسرعة، وأحمر لقفل الجرس، وأزرار مجسّمة
+   ========================================================= */
+:root,[data-theme="light"]{
+  --gold:#F59E0B; --gold-2:#FCD34D; --gold-ink:#0A2463; --gold-text:#B45309;
+  --red:#EF4444; --red-deep:#B91C1C;
+  --slate:#475569; --slate-deep:#1E293B;
+  --edge:#C6D8F1; --edge-accent:#0F4FB0;
+  --spot:rgba(92,194,245,.42); --pattern:.05; --bezel:#E4EFFD;
+}
+[data-theme="navy"]{
+  --gold-text:#F59E0B; --edge:rgba(0,0,0,.38); --edge-accent:#4C9FD8;
+  --spot:rgba(143,208,250,.28); --pattern:.06; --bezel:#0F2F7A;
+}
+[data-theme="blue"]{
+  --gold-text:#FFFFFF; --edge:rgba(10,36,99,.3); --edge-accent:#9CCBF3;
+  --spot:rgba(255,255,255,.32); --pattern:.07; --bezel:rgba(255,255,255,.22);
+}
+
+/* ---------- إضاءة المسرح والنقش المائي ---------- */
+html{
+  background:radial-gradient(75% 52% at 50% -14%, var(--spot), transparent 72%), var(--bg-paint);
+  background-attachment:fixed; background-color:var(--bg);
+}
+body{background:transparent;}
+body::before{
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:var(--text); opacity:var(--pattern);
+  -webkit-mask:url("img/pattern.svg") 0 0 / 260px 260px repeat;
+          mask:url("img/pattern.svg") 0 0 / 260px 260px repeat;
+}
+/* حزمتا ضوء خفيفتان من أعلى المسرح */
+body::after{
+  content:""; position:fixed; inset:0 0 auto 0; height:70vh; z-index:0; pointer-events:none;
+  background:
+    conic-gradient(from 160deg at 18% -10%, transparent 0 8deg, var(--spot) 14deg, transparent 22deg),
+    conic-gradient(from 178deg at 82% -10%, transparent 0 8deg, var(--spot) 14deg, transparent 22deg);
+  opacity:.45; -webkit-mask:linear-gradient(#000, transparent); mask:linear-gradient(#000, transparent);
+}
+.topbar, main{position:relative; z-index:1;}
+/* حلقات النبض والتوهج ما تسبب تمرير أفقي */
+html,body{overflow-x:clip;}
+.bell-wrap{overflow-x:clip; overflow-y:visible; padding-inline:4px;}
+
+/* ---------- صورة الزر فوق العنوان ---------- */
+.hero-buzzer{
+  position:relative; width:clamp(150px,30vw,210px); aspect-ratio:200/160; margin:0 auto 2px;
+  display:grid; place-items:center;
+}
+.hero-buzzer svg{position:relative; width:100%; height:100%; overflow:visible;}
+.hero-buzzer .ring{
+  position:absolute; inset-inline:24%; top:22%; aspect-ratio:1; border-radius:50%;
+  border:2px solid var(--hl); opacity:0; animation:heroRing 3s ease-out infinite;
+}
+.hero-buzzer .ring:nth-child(2){animation-delay:1s;}
+.hero-buzzer .ring:nth-child(3){animation-delay:2s;}
+@keyframes heroRing{0%{transform:scale(.7); opacity:.75;} 100%{transform:scale(1.9); opacity:0;}}
+.hero-buzzer .shadow{fill:var(--text); opacity:.14;}
+.hero-buzzer .base{stroke:rgba(255,255,255,.28); stroke-width:1.5;}
+.hero-buzzer .bolt{fill:var(--gold);}
+.hero-buzzer .spark path{fill:none; stroke:var(--gold); stroke-width:6; stroke-linecap:round; animation:spark 1.8s ease-in-out infinite;}
+.hero-buzzer .dome{transform-origin:100px 111px; animation:press 3s ease-in-out infinite;}
+@keyframes press{0%,78%,100%{transform:none;} 84%{transform:scaleY(.86);} 90%{transform:none;}}
+@keyframes spark{0%,76%,100%{opacity:0;} 84%,92%{opacity:1;}}
+.setup-hero h1{margin-top:-2px;}
+
+/* ---------- أزرار مجسّمة تنزل عند الضغط ---------- */
+.btn{box-shadow:0 4px 0 var(--edge);}
+.btn:hover{transform:translateY(-1px);}
+.btn:active{transform:translateY(4px); box-shadow:0 0 0 var(--edge);}
+.btn-primary{box-shadow:0 5px 0 var(--edge-accent), 0 14px 26px rgba(10,36,99,.22);}
+.btn-primary:active{transform:translateY(5px); box-shadow:0 0 0 var(--edge-accent), 0 4px 10px rgba(10,36,99,.2);}
+.btn-ghost{box-shadow:none;}
+.btn-ghost:active{transform:scale(.97); box-shadow:none;}
+.btn-danger{box-shadow:0 5px 0 var(--red-deep);}
+.btn:disabled,.btn:disabled:active{transform:none; box-shadow:0 2px 0 var(--edge);}
+.btn-wrong{box-shadow:0 4px 0 var(--red-deep); border-color:var(--red);}
+.btn-wrong svg{stroke:var(--red);}
+.btn-wrong:active{box-shadow:0 0 0 var(--red-deep);}
+#armBtn[aria-pressed="false"]{background:var(--red); box-shadow:0 4px 0 var(--red-deep);}
+
+.mode{box-shadow:0 5px 0 var(--edge); transition:transform .12s ease, box-shadow .12s ease, border-color .2s, background .2s;}
+.mode:hover{transform:translateY(-1px);}
+.mode:active{transform:translateY(5px); box-shadow:0 0 0 var(--edge);}
+.mode[aria-pressed="true"]{box-shadow:0 5px 0 var(--edge-accent);}
+.mode[aria-pressed="true"]:active{box-shadow:0 0 0 var(--edge-accent);}
+.p-btn{box-shadow:0 3px 0 var(--edge);}
+.p-btn:active{transform:translateY(3px); box-shadow:none;}
+.p-btn.on{background:var(--red); box-shadow:0 3px 0 var(--red-deep);}
+
+/* ---------- شارة البث المباشر ---------- */
+.net{gap:7px; font-weight:700;}
+.net i{position:relative; background:var(--cell-label);}
+.net b{font-weight:700;}
+.net[data-on="true"]{border-color:rgba(239,68,68,.45);}
+.net[data-on="true"] i{background:var(--red); box-shadow:none;}
+.net[data-on="true"] i::after{
+  content:""; position:absolute; inset:0; border-radius:50%; background:var(--red);
+  animation:live 1.5s ease-out infinite;
+}
+@keyframes live{0%{transform:scale(1); opacity:.8;} 100%{transform:scale(2.8); opacity:0;}}
+[data-theme="blue"] .net[data-on="true"]{border-color:rgba(255,255,255,.5);}
+
+/* ---------- أشرطة الصوت المتمايلة ---------- */
+.snd .bars{display:flex; align-items:center; gap:3px; height:20px;}
+.snd .bars i{width:3.5px; height:100%; border-radius:3px; background:var(--text); transform-origin:50% 100%; transform:scaleY(.35);}
+.snd[aria-pressed="true"] .bars i{animation:eq 1s ease-in-out infinite;}
+.snd[aria-pressed="true"] .bars i:nth-child(2){animation-delay:-.35s; animation-duration:.8s;}
+.snd[aria-pressed="true"] .bars i:nth-child(3){animation-delay:-.6s; animation-duration:1.15s;}
+.snd[aria-pressed="true"] .bars i:nth-child(4){animation-delay:-.2s; animation-duration:.9s;}
+@keyframes eq{0%,100%{transform:scaleY(.3);} 50%{transform:scaleY(1);}}
+.snd[aria-pressed="false"] .bars{position:relative; opacity:.5;}
+.snd[aria-pressed="false"] .bars i{transform:scaleY(.22);}
+.snd[aria-pressed="false"] .bars::after{
+  content:""; position:absolute; left:-3px; right:-3px; top:50%; height:2.5px; border-radius:2px;
+  background:var(--text); transform:rotate(-38deg);
+}
+
+/* ---------- شاشة المقدّم: الذهبي للأسرع والأحمر للقفل ---------- */
+.kicker{background:var(--gold); color:var(--gold-ink); box-shadow:0 4px 0 #B45309;}
+.stage[data-state="buzzed"]{border-color:var(--gold); box-shadow:0 0 0 4px rgba(245,158,11,.22), 0 0 60px rgba(245,158,11,.18), var(--shadow);}
+.stage.flash{animation:stageFlash .7s ease;}
+@keyframes stageFlash{0%,40%{background:rgba(245,158,11,.28);} 100%{background:var(--surface);}}
+.winner h2{text-shadow:0 4px 0 rgba(245,158,11,.25);}
+.q-row.now{box-shadow:0 0 0 3px var(--gold);}
+.q-row.now .q-rank{background:var(--gold); color:var(--gold-ink);}
+.q-time{direction:rtl;}
+
+.pulse .i-lock,.pulse .i-bolt{display:none;}
+.pulse svg{fill:var(--on-accent); color:var(--on-accent);}
+.stage[data-state="closed"] .pulse{background:var(--red);}
+.stage[data-state="closed"] .pulse .i-bell{display:none;}
+.stage[data-state="closed"] .pulse .i-lock{display:block; fill:#fff; color:#fff;}
+.stage[data-state="closed"]{border-color:rgba(239,68,68,.55);}
+
+/* ---------- جرس المتسابق ---------- */
+.bell{--glow:transparent;}
+.bell::before{
+  content:""; position:absolute; inset:-12px; border-radius:50%;
+  background:var(--bezel); border:1px solid var(--line);
+  box-shadow:inset 0 6px 14px rgba(10,36,99,.14), 0 0 70px var(--glow);
+  transition:box-shadow .3s ease;
+}
+.bell-face{
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255,255,255,.55), transparent 42%),
+    radial-gradient(circle at 50% 120%, rgba(0,0,0,.22), transparent 55%),
+    var(--face);
+}
+.bell-ico{display:grid; place-items:center;}
+.bell-ico svg{display:none; color:var(--ink);}
+.bell-ico .i-bell{display:block;}
+.bell-sub{font-weight:700; font-size:clamp(1rem,4.6vw,1.35rem); line-height:1.2; direction:rtl; opacity:.95;}
+.bell-sub:empty{display:none;}
+
+/* جاهز: سماوي متوهج بنبض هادئ */
+[data-state="ready"] .bell{--face:#2EA8F2; --ink:#fff; --edge:#0F4FB0; --glow:rgba(92,194,245,.55);}
+[data-state="ready"] .bell::before{animation:glow 2s ease-in-out infinite;}
+@keyframes glow{50%{box-shadow:inset 0 6px 14px rgba(10,36,99,.14), 0 0 100px var(--glow);}}
+[data-theme="blue"] [data-state="ready"] .bell{--face:#5CC2F5; --ink:#0A2463; --edge:#0A2463;}
+
+/* الأسرع: ذهبي ببرق ووميض */
+[data-state="first"] .bell{--face:var(--gold); --ink:var(--gold-ink); --edge:#B45309; --glow:rgba(245,158,11,.7);}
+[data-state="first"] .bell-ring{border-color:var(--gold);}
+[data-state="first"] .bell-ico .i-bell{display:none;}
+[data-state="first"] .bell-ico .i-bolt{display:block;}
+[data-state="first"] .bell-face{animation:flash .9s ease-out 1;}
+@keyframes flash{0%,30%,60%{filter:brightness(1.5) saturate(1.2);} 15%,45%,100%{filter:none;}}
+[data-state="first"] .bell-status h1{color:var(--gold-text);}
+
+/* متأخر في الطابور: رمادي داكن بفارق التوقيت */
+[data-state="rank"] .bell{--face:var(--slate); --ink:#fff; --edge:var(--slate-deep); --glow:transparent;}
+[data-state="rank"] .bell-ico{display:none;}
+[data-state="rank"] .bell-label{font-size:clamp(3rem,18vw,5rem); line-height:1;}
+
+/* مقفل: أحمر باهت بقفل */
+[data-state="locked"] .bell{--face:#F08A8A; --ink:#fff; --edge:var(--red-deep);}
+[data-state="locked"] .bell-face{opacity:.85;}
+[data-state="blocked"] .bell{--face:var(--red); --ink:#fff; --edge:var(--red-deep);}
+[data-state="locked"] .bell-ico .i-bell,[data-state="blocked"] .bell-ico .i-bell,
+[data-state="wait"] .bell-ico .i-bell,[data-state="done"] .bell-ico .i-bell{display:none;}
+[data-state="locked"] .bell-ico .i-lock,[data-state="blocked"] .bell-ico .i-lock,
+[data-state="wait"] .bell-ico .i-lock,[data-state="done"] .bell-ico .i-lock{display:block;}
+[data-state="wait"] .bell,[data-state="done"] .bell{--face:#7A8AA3; --ink:#fff; --edge:#3D4B63;}
+[data-theme="light"] [data-state="wait"] .bell-face,
+[data-theme="light"] [data-state="locked"] .bell-face,
+[data-theme="light"] [data-state="done"] .bell-face{background:
+    radial-gradient(circle at 34% 24%, rgba(255,255,255,.5), transparent 42%),
+    radial-gradient(circle at 50% 120%, rgba(0,0,0,.2), transparent 55%), var(--face);}
+.mini-queue li.now .q-rank{background:var(--gold); color:var(--gold-ink);}
+
+/* قصاصات الفوز */
+.confetti{position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:40;}
+
 /* ---------- التجاوب ---------- */
 @media (max-width:980px){
   .room-grid{grid-template-columns:1fr;}

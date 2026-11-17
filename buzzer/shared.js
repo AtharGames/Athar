@@ -20,6 +20,8 @@ window.BuzzUI = (() => {
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   // أجزاء من الثانية: ١٫٢٣٤
   const secs = (ms) => ar((Math.max(0, ms) / 1000).toFixed(3)).replace('.', '٫');
+  // فارق زمني بإشارة +، معزول حتى لا تنقلب الإشارة في الاتجاه العربي: ‎+٠٫١٨٠ ث
+  const diff = (ms) => `\u2066+${secs(ms)}\u2069 ث`;
   const ORD = ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس', 'السابع', 'الثامن', 'التاسع', 'العاشر'];
   const ordinal = (i) => ORD[i] || `رقم ${ar(i + 1)}`;
 
@@ -92,5 +94,35 @@ window.BuzzUI = (() => {
     });
   }
 
-  return { $, $$, S, store, ar, toLatin, esc, secs, ordinal, colorOf, queueOf, initChrome, show, toast, confirmBox };
+  // ---------- قصاصات احتفالية خفيفة ----------
+  function confetti(canvas, { x = 0.5, y = 0.45, count = 110 } = {}) {
+    if (!canvas || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    const c = canvas.getContext('2d');
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const cols = ['#F59E0B', '#FCD34D', '#5CC2F5', '#1E6FE0', '#FFFFFF', '#0A2463'];
+    const ps = Array.from({ length: count }, () => {
+      const a = Math.random() * Math.PI * 2, v = 5 + Math.random() * 9;
+      return { x: W * x, y: H * y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 6, w: 6 + Math.random() * 6, h: 4 + Math.random() * 5,
+        r: Math.random() * 6, vr: (Math.random() - .5) * .4, col: cols[(Math.random() * cols.length) | 0] };
+    });
+    const t0 = performance.now(), DUR = 1900;
+    const tick = (t) => {
+      const k = (t - t0) / DUR;
+      c.clearRect(0, 0, W, H);
+      if (k >= 1) return;
+      ps.forEach((p) => {
+        p.vy += 0.32; p.vx *= 0.985; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+        c.save(); c.globalAlpha = 1 - k * k; c.translate(p.x, p.y); c.rotate(p.r);
+        c.fillStyle = p.col; c.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.r * 2)));
+        c.restore();
+      });
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  return { confetti, diff, $, $$, S, store, ar, toLatin, esc, secs, ordinal, colorOf, queueOf, initChrome, show, toast, confirmBox };
 })();
