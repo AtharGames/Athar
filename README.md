@@ -24,7 +24,8 @@ telephone/                      مسابقة من سيربح التيلفون
 snakes/                         لعبة السلم والثعبان
 diwan/                          بنك أسئلة ديوان (data.js مولّد من ملفات الأسئلة الأصلية)
 sahm/                           مسابقة سهمك الصاعد (questions.js بنك الأسئلة)
-crime/                          مسابقة مسرح جريمة (team.html صفحة الفريق بالجوال، net.js الاتصال عبر ntfy.sh، الأسئلة من ../diwan/data.js)
+crime/                          مسابقة مسرح جريمة (team.html صفحة الفريق بالجوال، net.js الاتصال: Firebase إذا وُجدت firebase-config.js وإلا ntfy.sh، الأسئلة من ../diwan/data.js)
+database.rules.json, firebase.json   قواعد Firebase Realtime Database لمسرح جريمة (firebase deploy --only database)
 ```
 
 ## قواعد ثابتة لكل الألعاب

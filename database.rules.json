@@ -1,0 +1,18 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "crime": {
+      "$topic": {
+        ".read": "$topic.matches(/^[A-Z0-9]{5}-([A-Z0-9]{4}|p|u)$/)",
+        ".write": "$topic.matches(/^[A-Z0-9]{5}-([A-Z0-9]{4}|p|u)$/)",
+        ".validate": "$topic.endsWith('-u') || newData.hasChildren(['d', 't'])",
+        "d": { ".validate": "newData.isString() && newData.val().length < 6000" },
+        "t": { ".validate": "newData.isNumber()" },
+        "$msg": {
+          ".validate": "$topic.endsWith('-u') && newData.hasChildren(['d', 't']) && newData.child('d').isString() && newData.child('d').val().length < 2000 && newData.child('t').isNumber()"
+        }
+      }
+    }
+  }
+}

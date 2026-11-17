@@ -192,6 +192,17 @@
     });
   }
 
+  // إنهاء اللعبة الحالية: نقفل الاتصال ونحذف قنواتها من قاعدة البيانات
+  function endGame() {
+    if (G && G.net) {
+      const r = G.net.room;
+      NET.drop([`${r}-p`, `${r}-u`, ...G.net.keys.map((k) => `${r}-${k}`)]);
+    }
+    if (hostSub) { hostSub.close(); hostSub = null; }
+    hostRoom = ''; hostNetOn = false;
+    G = null; store.del(GKEY);
+  }
+
   function createGame() {
     const T = set.count;
     for (const c of CATS) {
@@ -203,6 +214,7 @@
     if (set.qSource === 'diwan' && QS.length && !pool.length) return setupError('ما فيه أسئلة بالدواوين والمستويات اللي اخترتها. اختر ديوانًا ومستوى واحد على الأقل.');
     setupError('');
     const qSource = set.qSource === 'diwan' && !QS.length ? 'host' : set.qSource;
+    if (G) endGame();
     G = {
       v: 1, id: uid(6), mode: set.mode, qSource, rounds: set.rounds,
       teams: set.names.slice(0, T).map((n, i) => ({ name: n.trim() || `الفريق ${ORD[i]}`, color: COLORS[i], hand: [], known: [], lost: [], seen: false, on: false })),
@@ -308,7 +320,7 @@
       el.joinGrid.append(c);
     });
     el.netNote.innerHTML = `أو من أي جوال افتحوا: <a href="${esc(joinBase())}" target="_blank" rel="noopener" dir="ltr">${esc(joinBase().replace(/^https?:\/\//, ''))}</a> واكتبوا رمز الفريق.
-      <span class="net-dot ${hostNetOn ? 'on' : ''}"></span><span class="muted">${hostNetOn ? 'الاتصال شغّال' : 'جاري الاتصال…'}</span>`;
+      <span class="net-dot ${hostNetOn ? 'on' : ''}"></span><span class="muted">${hostNetOn ? `الاتصال شغّال عبر ${esc(NET.label)}` : `جاري الاتصال بـ${esc(NET.label)}…`}</span>`;
   }
 
   function copyText(s) {
@@ -999,7 +1011,7 @@
     } else createGame();
   });
   $('#resumeBtn').addEventListener('click', () => { S.tongue(0, 0.2); go(); });
-  $('#discardBtn').addEventListener('click', () => ask('نحذف التحقيق المحفوظ؟', 'اللعبة الحالية بتروح عليكم.', 'إيه، احذفه', () => { G = null; store.del(GKEY); renderSetup(); }));
+  $('#discardBtn').addEventListener('click', () => ask('نحذف التحقيق المحفوظ؟', 'اللعبة الحالية بتروح عليكم.', 'إيه، احذفه', () => { endGame(); renderSetup(); }));
 
   $('#prepNext').addEventListener('click', () => {
     S.tongue(0, 0.22);
@@ -1008,7 +1020,7 @@
   });
   $('#prepFile').addEventListener('click', openFile);
   $('#prepShuffle').addEventListener('click', () => { G.items = pickItems(G.teams.length); deal(); S.whoosh(); toast('جريمة جديدة مختومة'); commit(); });
-  $('#prepBack').addEventListener('click', () => { G = null; store.del(GKEY); go(); });
+  $('#prepBack').addEventListener('click', () => { endGame(); go(); });
   el.fileBtn.addEventListener('click', openFile);
 
   $('#lobbyStart').addEventListener('click', () => {
@@ -1054,7 +1066,7 @@
     if (missing) ask('باقي فرق ما صوّتت', `${num(missing)} من الفرق ما وصل اتهامهم. نكشف الحين؟ اللي ما صوّت ما يفوز.`, 'إيه، اكشف', reveal);
     else reveal();
   });
-  $('#newGameBtn').addEventListener('click', () => { G = null; store.del(GKEY); S.tongue(0, 0.2); go(); });
+  $('#newGameBtn').addEventListener('click', () => { endGame(); S.tongue(0, 0.2); go(); });
 
   // =========================================================
   // تشغيل
