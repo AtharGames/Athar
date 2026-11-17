@@ -27,13 +27,13 @@ button{font:inherit; cursor:pointer;}
 main{flex:1; width:min(100%,1040px); margin:0 auto; padding:clamp(16px,4vw,40px);}
 
 /* ---------- خلفية كرتونية ---------- */
-:root,[data-theme="light"]{--fb-op:.8; --blob-1:#FFE3A3; --blob-2:#CDEBFF; --blob-3:#FFD3D0; --hill-1:#D6EBFF; --hill-2:#E8F3FF;}
-[data-theme="navy"]{--fb-op:.6; --blob-1:rgba(245,184,32,.22); --blob-2:rgba(92,194,245,.24); --blob-3:rgba(232,85,78,.2); --hill-1:#123581; --hill-2:#0F2C6E;}
-[data-theme="blue"]{--fb-op:.7; --blob-1:rgba(255,227,163,.4); --blob-2:rgba(255,255,255,.28); --blob-3:rgba(255,211,208,.35); --hill-1:#2A62D6; --hill-2:#3474DD;}
+:root,[data-theme="light"]{--fb-op:.62; --blob-1:#FFE3A3; --blob-2:#CDEBFF; --blob-3:#FFD3D0; --hill-1:#D6EBFF; --hill-2:#E8F3FF;}
+[data-theme="navy"]{--fb-op:.48; --blob-1:rgba(245,184,32,.22); --blob-2:rgba(92,194,245,.24); --blob-3:rgba(232,85,78,.2); --hill-1:#123581; --hill-2:#0F2C6E;}
+[data-theme="blue"]{--fb-op:.55; --blob-1:rgba(255,227,163,.4); --blob-2:rgba(255,255,255,.28); --blob-3:rgba(255,211,208,.35); --hill-1:#2A62D6; --hill-2:#3474DD;}
 html,body{overflow-x:clip;}
 .fun-bg{position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden;}
 .topbar, main, footer{position:relative; z-index:1;}
-.fun-bg .blob{position:absolute; border-radius:50%; filter:blur(10px);}
+.fun-bg .blob{position:absolute; border-radius:50%; filter:blur(10px); opacity:.5;}
 .fun-bg .b1{width:44vmax; height:44vmax; left:-14vmax; top:-14vmax; background:var(--blob-1);}
 .fun-bg .b2{width:50vmax; height:50vmax; right:-18vmax; top:18vh; background:var(--blob-2);}
 .fun-bg .b3{width:36vmax; height:36vmax; left:22vw; bottom:-20vmax; background:var(--blob-3);}
@@ -46,7 +46,7 @@ html,body{overflow-x:clip;}
 .fun-bg .h1{fill:var(--hill-1);} .fun-bg .h2{fill:var(--hill-2);}
 /* على الجوال: رموز أصغر وأبهت حتى لا تزاحم البطاقات */
 @media (max-width:640px){
-  .fun-bg .fb{--fb-op:.4; width:calc(var(--s) * .7); height:calc(var(--s) * .7); margin:calc(var(--s) * -.35) 0 0 calc(var(--s) * -.35);}
+  .fun-bg .fb{--fb-op:.32; width:calc(var(--s) * .7); height:calc(var(--s) * .7); margin:calc(var(--s) * -.35) 0 0 calc(var(--s) * -.35);}
 }
 @media (prefers-reduced-motion:reduce){.fun-bg .fb{animation:none;}}
 
@@ -74,7 +74,7 @@ a.game-card:active{transform:translateY(-2px) scale(.99);}
 /* ترابيع: لوحة بلاط ثلاثية الأبعاد ومكعبات بشكل + تنزل عليها */
 .art-tarabee{
   --tile-top:#DCE8FA; --tile-seam:#C3D5F2; --tile-l:#B7CBEB; --tile-r:#A4BBE2;
-  background:radial-gradient(70% 80% at 50% 40%, #FFFFFF, #E6F0FD 70%);
+  background:radial-gradient(70% 80% at 50% 40%, #FFFFFF, #DDEBFF 75%);
   overflow:hidden;
 }
 .art-tarabee .iso{width:74%; height:auto; overflow:visible; margin-top:4%;}
@@ -84,7 +84,18 @@ a.game-card:active{transform:translateY(-2px) scale(.99);}
 .art-tarabee .cube .c-top{fill:color-mix(in srgb, var(--c) 72%, #fff);}
 .art-tarabee .cube .c-l{fill:var(--c);}
 .art-tarabee .cube .c-r{fill:color-mix(in srgb, var(--c) 70%, #000);}
-.art-tarabee .cube .c-shine{fill:#fff; opacity:.35;}
+.art-tarabee .cube .c-shine{fill:#fff; opacity:.6; stroke:none;}
+.art-tarabee .t-top,.art-tarabee .t-l,.art-tarabee .t-r,
+.art-tarabee .c-top,.art-tarabee .c-l,.art-tarabee .c-r{stroke:#0A2463; stroke-width:2.2; stroke-linejoin:round;}
+.art-tarabee .t-top{fill:#EAF3FF;} .art-tarabee .t-l{fill:#9FC0EE;} .art-tarabee .t-r{fill:#7FA8E4;}
+.art-tarabee .cube .c-top{fill:color-mix(in srgb, var(--c) 55%, #fff);}
+.art-tarabee .cube .c-r{fill:color-mix(in srgb, var(--c) 80%, #0A2463);}
+.art-tarabee .iso-shadow{opacity:.18;}
+.art-tarabee .tr-star{fill:#F5B820; stroke:#0A2463; stroke-width:1.6; stroke-linejoin:round; transform-box:fill-box; transform-origin:center;}
+.art-tarabee .tr-eye{fill:#fff; stroke:#0A2463; stroke-width:1.4;} .art-tarabee .tr-pupil{fill:#0A2463;}
+.art-tarabee .tr-smile{fill:none; stroke:#0A2463; stroke-width:1.8; stroke-linecap:round;}
+a.game-card:hover .art-tarabee .tr-star{animation:trTwinkle .8s ease-in-out .3s both;}
+@keyframes trTwinkle{0%{transform:scale(0);} 60%{transform:scale(1.4);} 100%{transform:scale(1);}}
 a.game-card:hover .art-tarabee .cube.drop{animation:trDrop .6s cubic-bezier(.3,1.5,.5,1) both; animation-delay:var(--d);}
 a.game-card:hover .art-tarabee .cube.still{transform-box:fill-box; transform-origin:center; animation:trFlip .6s ease-in-out .5s both;}
 @keyframes trDrop{from{transform:translateY(-46px); opacity:0;}}
