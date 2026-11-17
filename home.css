@@ -71,31 +71,26 @@ a.game-card:hover .art-tarabee i:nth-child(3n+1){animation-delay:.12s;}
 a.game-card:hover .art-diwan svg{animation:pop .5s cubic-bezier(.3,1.6,.5,1) both;}
 
 /* سهمك الصاعد: مؤشر ينزل ثم يصعد */
-/* سهمك الصاعد: شاشة تداول داكنة بشموع وسهم صاعد وشريط أسعار */
-.art-sahm{
-  position:relative; overflow:hidden; place-items:end center;
-  background:
-    linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px) 0 0 / 18px 18px,
-    linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px) 0 0 / 18px 18px,
-    linear-gradient(160deg,#0B1B3F,#12285A);
-}
-.art-sahm .as-tick{
-  position:absolute; top:0; left:0; right:0; padding:3px 10px; white-space:nowrap; overflow:hidden;
-  background:rgba(0,0,0,.35); border-bottom:2px solid #F5B820; color:#E6F0FF; font-size:.72rem; font-weight:700;
-}
-.art-sahm .chart{width:62%; height:auto; overflow:visible; margin-bottom:2%;}
-.art-sahm .grid path{stroke:#fff; stroke-width:1; opacity:.12; stroke-dasharray:3 5;}
-.art-sahm .shadow{fill:#000; opacity:.25;}
-.art-sahm .wick{stroke-width:2.5; stroke-linecap:round;}
-.art-sahm .candle.up rect{fill:#22C55E;} .art-sahm .candle.up .wick{stroke:#22C55E;}
-.art-sahm .candle.dn rect{fill:#EF4444;} .art-sahm .candle.dn .wick{stroke:#EF4444;}
-.art-sahm .trend{fill:none; stroke:#F5B820; stroke-width:5; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:100; stroke-dashoffset:0;}
-.art-sahm .arrowhead,.art-sahm .tip{fill:#F5B820;}
-.art-sahm .candle{transform-box:fill-box; transform-origin:50% 100%;}
-a.game-card:hover .art-sahm .candle{animation:sahmCandle .5s cubic-bezier(.3,1.5,.5,1) both; animation-delay:calc(var(--i) * 70ms);}
-a.game-card:hover .art-sahm .trend{animation:sahmTrend .9s ease-out both;}
-@keyframes sahmCandle{from{transform:scaleY(0);}}
-@keyframes sahmTrend{from{stroke-dashoffset:100;}}
+/* سهمك الصاعد: رسم كرتوني بأعمدة وسهم سمين صاعد وعملات */
+.art-sahm{--ink:#0A2463;}
+[data-theme="navy"] .art-sahm,[data-theme="blue"] .art-sahm{--ink:#061230;}
+.art-sahm svg{width:86%; height:84%; overflow:visible;}
+.art-sahm .grid{fill:none; stroke:var(--line); stroke-width:1.5; stroke-dasharray:4 4;}
+.art-sahm .bars rect{stroke:var(--ink); stroke-width:2.5;}
+.art-sahm .b-red{fill:#EF4444;} .art-sahm .b-gold{fill:#F5B820;} .art-sahm .b-green{fill:#22C55E;}
+.art-sahm .shine{fill:none; stroke:#fff; stroke-width:2.5; stroke-linecap:round; opacity:.55;}
+.art-sahm .a-out{fill:none; stroke:var(--ink); stroke-width:11; stroke-linecap:round; stroke-linejoin:round;}
+.art-sahm .a-in{fill:none; stroke:#22C55E; stroke-width:6; stroke-linecap:round; stroke-linejoin:round;}
+.art-sahm .a-head{fill:#22C55E; stroke:var(--ink); stroke-width:2.5; stroke-linejoin:round;}
+.art-sahm .coins ellipse{fill:#F5B820; stroke:var(--ink); stroke-width:2;}
+.art-sahm .spark path{fill:#F5B820; stroke:var(--ink); stroke-width:1; transform-box:fill-box; transform-origin:center;}
+.art-sahm .bars g{transform-box:fill-box; transform-origin:50% 100%;}
+a.game-card:hover .art-sahm .bars g{animation:sahmBar .5s cubic-bezier(.3,1.7,.5,1) both; animation-delay:calc(var(--i) * 80ms);}
+a.game-card:hover .art-sahm .arrow{animation:sahmArrow .6s cubic-bezier(.3,1.7,.5,1) .25s both;}
+a.game-card:hover .art-sahm .spark path{animation:sahmTwinkle .8s ease-in-out .4s both;}
+@keyframes sahmBar{from{transform:scaleY(.2);}}
+@keyframes sahmArrow{from{transform:translate(-8px,8px); opacity:.3;}}
+@keyframes sahmTwinkle{0%{transform:scale(0);} 60%{transform:scale(1.4);} 100%{transform:scale(1);}}
 
 /* من سيربح التيلفون: هاتف أبو قرص على أرضية استوديو بنفسجية */
 .art-phone{
