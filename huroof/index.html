@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>إنسان حيوان جماد | شاشة المقدّم</title>
+<meta name="description" content="لعبة حرف إنسان حيوان جماد بلاد: المقدّم يفتح غرفة، والمشاركون يكتبون من جوالاتهم، وأول من يسلّم يوقف الباقين، والتصحيح والنقاط عند المقدّم.">
+<meta name="theme-color" content="#0A2463">
+<!-- تطبيق الثيم المحفوظ قبل الرسم لتفادي الوميض -->
+<script>
+(function(){
+  var t=null;
+  try{ t=localStorage.getItem('athar-theme'); }catch(e){}
+  if(['light','navy','blue'].indexOf(t)<0){
+    t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'navy':'light';
+  }
+  document.documentElement.setAttribute('data-theme',t);
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/athar.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="host">
+
+<!-- ============ الشريط العلوي ============ -->
+<header class="topbar">
+  <a class="brand" href="../" aria-label="الرجوع إلى ألعاب أثَر">
+    <img class="logo logo-main" src="../assets/athar-mark.png" alt="" width="52" height="60">
+    <img class="logo logo-rev" src="../assets/athar-mark-reversed.png" alt="" width="52" height="60">
+    <span class="brand-text">
+      <strong>إنسان حيوان جماد</strong>
+      <small>شاشة المقدّم</small>
+    </span>
+  </a>
+  <div class="top-tools">
+    <span class="net" id="netDot" data-on="false" title="حالة الاتصال"><i></i><b id="netText">يتصل…</b></span>
+    <button class="icon-btn snd" id="soundBtn" aria-pressed="true" aria-label="المؤثرات الصوتية">
+      <span class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    </button>
+    <!-- مبدّل الثيمات -->
+    <div class="theme-switch" role="group" aria-label="ألوان الواجهة">
+      <button class="theme-dot" data-set-theme="light" aria-label="الثيم الفاتح" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="navy" aria-label="الثيم الكحلي" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="blue" aria-label="ثيم أزرق أثَر" aria-pressed="false"></button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ ١) البداية والإعدادات ============ -->
+  <section class="screen active" id="screen-intro">
+    <div class="setup">
+      <div class="setup-hero">
+        <!-- صورة البطل: ورقة الجدول وقلم يكتب ودائرة حرف تتقلب -->
+        <div class="hero-sheet" aria-hidden="true">
+          <svg viewBox="0 0 260 170">
+            <g class="paper">
+              <rect x="14" y="10" width="232" height="150" rx="10"/>
+              <path class="rule" d="M14 52h232M14 78h232M14 104h232M14 130h232"/>
+              <path class="margin" d="M214 10v150"/>
+              <path class="cols" d="M170 28v132M126 28v132M82 28v132"/>
+              <path class="head" d="M14 28h232"/>
+              <g class="heads"><rect x="176" y="16" width="30" height="6" rx="3"/><rect x="134" y="16" width="28" height="6" rx="3"/><rect x="90" y="16" width="28" height="6" rx="3"/><rect x="40" y="16" width="34" height="6" rx="3"/></g>
+              <path class="ink i1" d="M200 45c-6-6-14 3-20-1s-6-5-10 0"/>
+              <path class="ink i2" d="M160 45c-5-5-11 4-16 0s-8-4-12 1"/>
+              <path class="ink i3" d="M116 45c-5-6-12 3-18 0s-6-4-10 1"/>
+              <path class="ink i4" d="M70 71c-6-5-12 4-19 0s-8-4-13 1"/>
+            </g>
+            <g class="pencil">
+              <path class="p-body" d="M62 92l78-46 9 15-78 46z"/>
+              <path class="p-band" d="M140 46l6-4 9 15-6 4z"/>
+              <path class="p-eraser" d="M146 42l9-5a4 4 0 0 1 5 2l5 8a4 4 0 0 1-2 5l-9 5z"/>
+              <path class="p-wood" d="M62 92l9 15-17 2z"/>
+              <path class="p-tip" d="M58 101l-4 8 6-1z"/>
+            </g>
+          </svg>
+          <span class="hero-letter" id="heroLetter">ح</span>
+        </div>
+        <h1>إنسان حيوان جماد</h1>
+        <p class="lead">حرف واحد، وخانات تعبّونها من جوالاتكم. أول واحد يسلّم يوقف الكل، والمقدّم يصحّح ويحسب النقاط.</p>
+      </div>
+
+      <!-- رجوع لغرفة مفتوحة -->
+      <div class="card resume" id="resumeCard" hidden>
+        <div>
+          <strong>عندك غرفة مفتوحة</strong>
+          <p class="muted">رمزها <b class="code-inline" id="resumeCode"></b>، والمشاركون لسّا فيها.</p>
+        </div>
+        <button class="btn btn-primary" id="resumeBtn">ارجع لها</button>
+      </div>
+
+      <!-- لوحة الإعدادات (تنتقل لنافذة التعديل داخل الغرفة) -->
+      <div class="settings-home" id="settingsHome">
+        <div class="settings" id="settings">
+
+          <div class="card">
+            <div class="card-head"><h2>خانات الورقة</h2><span class="muted" id="catsHint">الافتراضي، وتقدر تعدّلها</span></div>
+            <div class="cats" id="catsList"></div>
+            <form class="cat-add" id="catForm" autocomplete="off">
+              <input type="text" id="catInput" maxlength="16" placeholder="أضف خانة… مثل نبات">
+              <button class="btn btn-small" type="submit">أضف</button>
+            </form>
+            <div class="suggest" id="suggest" aria-label="اقتراحات"></div>
+            <button class="link-btn" id="catsReset" type="button">رجّع الافتراضي</button>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>الجولات والوقت</h2></div>
+            <div class="opt">
+              <span class="opt-label">عدد الجولات</span>
+              <div class="seg" id="segR" role="group" aria-label="عدد الجولات">
+                <button data-v="3">٣</button><button data-v="5">٥</button><button data-v="7">٧</button><button data-v="10">١٠</button><button data-v="0">مفتوح</button>
+              </div>
+            </div>
+            <div class="opt">
+              <span class="opt-label">وقت الجولة <small>إذا خلص، توقف الجولة تلقائيًا</small></span>
+              <div class="seg" id="segT" role="group" aria-label="وقت الجولة">
+                <button data-v="0">بدون</button><button data-v="60">دقيقة</button><button data-v="90">١:٣٠</button><button data-v="120">دقيقتين</button><button data-v="180">٣ د</button>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="allInput">
+              <span class="track" aria-hidden="true"></span>
+              <span>لازم يعبّي كل الخانات قبل ما يقدر يسلّم</span>
+            </label>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>النقاط</h2><span class="muted">لكل خانة صحيحة</span></div>
+            <div class="points">
+              <div class="pt">
+                <span class="pt-mark ok">✓</span>
+                <span class="pt-text"><strong>إجابة وحيدة</strong><small>ما كتبها غيره</small></span>
+                <div class="stepper" data-key="pu"><button type="button" data-d="-5" aria-label="أقل">−</button><b id="puVal"></b><button type="button" data-d="5" aria-label="أكثر">+</button></div>
+              </div>
+              <div class="pt">
+                <span class="pt-mark dup">✓</span>
+                <span class="pt-text"><strong>إجابة مكررة</strong><small>كتبها أكثر من واحد</small></span>
+                <div class="stepper" data-key="pd"><button type="button" data-d="-5" aria-label="أقل">−</button><b id="pdVal"></b><button type="button" data-d="5" aria-label="أكثر">+</button></div>
+              </div>
+              <div class="pt">
+                <span class="pt-mark bad">✗</span>
+                <span class="pt-text"><strong>خطأ أو فاضية</strong><small>ما تبدأ بالحرف أو غير صحيحة</small></span>
+                <b class="pt-zero">٠</b>
+              </div>
+            </div>
+          </div>
+
+          <details class="card letters-card">
+            <summary><span>الحروف المسموحة</span><span class="muted" id="lettersHint"></span></summary>
+            <p class="muted">اضغط الحرف لاستبعاده من السحب أو إرجاعه.</p>
+            <div class="letters" id="lettersPick"></div>
+          </details>
+
+        </div>
+      </div>
+
+      <details class="card rules">
+        <summary>كيف تمشي اللعبة؟</summary>
+        <ul>
+          <li>افتح الغرفة، والمشاركون يدخلون من الجوال بالرمز أو بمسح QR.</li>
+          <li>اسحب حرفًا عشوائيًا أو اختره بنفسك، ثم ابدأ الجولة.</li>
+          <li>كل مشارك يعبّي الخانات بكلمات تبدأ بالحرف (و«ال» التعريف ما تُحسب).</li>
+          <li><strong>أول واحد يضغط «سلّمت» يوقف الكل</strong>، وتنقفل أوراقهم على اللي كتبوه.</li>
+          <li>تصحّح أنت: التصحيح الآلي يقترح (صح، مكرر، خطأ) وتقدر تغيّر أي خانة بلمسة.</li>
+          <li>تعتمد النتيجة، فيطلع المجموع في ورقة كل مشارك، وبعد آخر جولة يُعلن الفائز.</li>
+        </ul>
+      </details>
+
+      <button class="btn btn-primary btn-big" id="createBtn">افتح غرفة جديدة</button>
+      <a class="home-link" href="play.html" id="joinLink">أنا مشارك وعندي رمز ←</a>
+      <a class="home-link" href="../">← كل ألعاب أثَر</a>
+    </div>
+  </section>
+
+  <!-- ============ ٢) الغرفة ============ -->
+  <section class="screen" id="screen-room">
+    <div class="room" id="room" data-ph="lobby">
+
+      <!-- بطاقة الدخول: الرمز + QR -->
+      <div class="joinbar" id="joinbar">
+        <div class="qr" id="qr" aria-hidden="true"></div>
+        <div class="join-info">
+          <span class="muted">ادخلوا من الجوال على</span>
+          <strong class="join-url" id="joinUrl" dir="ltr"></strong>
+          <span class="muted">واكتبوا رمز الغرفة</span>
+          <div class="code" id="roomCode" dir="ltr" aria-label="رمز الغرفة"></div>
+        </div>
+        <div class="join-actions">
+          <button class="btn btn-small" id="copyBtn">نسخ رابط الدخول</button>
+          <button class="btn btn-small" id="settingsBtn">الإعدادات</button>
+          <button class="btn btn-small btn-ghost" id="endBtn">إنهاء الغرفة</button>
+        </div>
+      </div>
+
+      <div class="room-grid">
+        <div class="stage-col">
+          <div class="stage" id="stage">
+            <div class="stage-head">
+              <span class="pill" id="roundPill"></span>
+              <span class="pill timer-pill" id="timerPill" hidden></span>
+            </div>
+
+            <!-- اختيار الحرف (قبل كل جولة) -->
+            <div class="panel" id="ph-pick">
+              <div class="pick">
+                <div class="letter-tile" id="bigLetter">؟</div>
+                <div class="pick-side">
+                  <h2 id="pickTitle">اسحب حرف الجولة</h2>
+                  <p class="muted" id="pickText"></p>
+                  <div class="pick-actions">
+                    <button class="btn btn-primary btn-roll" id="rollBtn">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      اسحب حرفًا
+                    </button>
+                    <button class="btn btn-go" id="startBtn" disabled>ابدأ الجولة</button>
+                  </div>
+                </div>
+              </div>
+              <details class="pick-manual">
+                <summary>أو اختر الحرف بنفسك</summary>
+                <div class="letters" id="lettersManual"></div>
+              </details>
+            </div>
+
+            <!-- الجولة شغّالة -->
+            <div class="panel" id="ph-play">
+              <div class="play-top">
+                <div class="letter-tile live" id="playLetter"></div>
+                <div class="play-info">
+                  <h2>يكتبون الحين…</h2>
+                  <p class="muted" id="playText">أول من يسلّم يوقف الكل.</p>
+                  <div class="timebar" id="timebar" hidden><i id="timefill"></i></div>
+                </div>
+              </div>
+              <ul class="progress" id="progress"></ul>
+              <button class="btn btn-ghost btn-stop" id="forceStopBtn">أوقف الجولة الحين</button>
+            </div>
+
+            <!-- قف! -->
+            <div class="panel" id="ph-stop">
+              <div class="stop-banner">
+                <div class="stop-hand" aria-hidden="true">
+                  <svg viewBox="0 0 64 64"><path d="M22 34V14a4 4 0 0 1 8 0v16-20a4 4 0 0 1 8 0v20-16a4 4 0 0 1 8 0v18-10a4 4 0 0 1 8 0v18c0 12-8 20-19 20-7 0-12-3-16-9l-8-12a4 4 0 0 1 6-5z"/></svg>
+                </div>
+                <h2 class="stop-word">قف!</h2>
+                <p class="stop-who" id="stopWho"></p>
+                <p class="muted" id="stopText">نجمع الأوراق…</p>
+              </div>
+            </div>
+
+            <!-- التصحيح -->
+            <div class="panel" id="ph-grade">
+              <div class="grade-head">
+                <div class="letter-tile small" id="gradeLetter"></div>
+                <div>
+                  <h2>صحّح الأوراق</h2>
+                  <p class="muted">اضغط أي خانة لتغيير تصحيحها: صح ← مكرر ← خطأ.</p>
+                </div>
+              </div>
+              <div class="legend">
+                <span><i class="m ok">✓</i> صح <b id="lgOk"></b></span>
+                <span><i class="m dup">✓</i> مكرر <b id="lgDup"></b></span>
+                <span><i class="m bad">✗</i> خطأ ٠</span>
+              </div>
+              <div class="table-wrap"><table class="sheet grade" id="gradeTable"></table></div>
+              <button class="btn btn-primary btn-big" id="approveBtn">اعتمد وأعلن النتيجة</button>
+            </div>
+
+            <!-- نتيجة الجولة -->
+            <div class="panel" id="ph-show">
+              <div class="show-head">
+                <div class="letter-tile small" id="showLetter"></div>
+                <div><h2 id="showTitle">نتيجة الجولة</h2><p class="muted" id="showText"></p></div>
+              </div>
+              <ol class="board" id="board"></ol>
+              <div class="show-actions">
+                <button class="btn btn-primary btn-big" id="nextBtn">الجولة التالية</button>
+                <div class="row-btns">
+                  <button class="btn btn-small" id="regradeBtn">عدّل التصحيح</button>
+                  <button class="btn btn-small" id="sheetBtn">ورقة الجولات</button>
+                  <button class="btn btn-small" id="finishBtn">إنهاء وإعلان الفائز</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- الفائز -->
+            <div class="panel" id="ph-end">
+              <div class="win">
+                <span class="kicker">انتهت اللعبة</span>
+                <div class="trophy" aria-hidden="true">
+                  <svg viewBox="0 0 120 120"><path class="cup" d="M34 18h52v20c0 16-11 28-26 28S34 54 34 38z"/><path class="ears" d="M34 26H20c0 14 6 22 16 22M86 26h14c0 14-6 22-16 22" fill="none" stroke-width="7" stroke-linecap="round"/><path class="stem" d="M52 66h16v14H52z"/><rect class="foot" x="36" y="82" width="48" height="12" rx="4"/><path class="shine" d="M46 26v12c0 6 3 11 7 14" fill="none" stroke-width="5" stroke-linecap="round"/></svg>
+                </div>
+                <h2 id="winName"></h2>
+                <p class="win-pts" id="winPts"></p>
+              </div>
+              <ol class="board podium" id="finalBoard"></ol>
+              <div class="table-wrap"><table class="sheet totals" id="totalsTable"></table></div>
+              <div class="show-actions">
+                <button class="btn btn-primary btn-big" id="againBtn">لعبة جديدة بنفس المشاركين</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- المشاركون -->
+        <aside class="people">
+          <div class="card-head">
+            <h2>المشاركون</h2>
+            <span class="pill" id="peopleCount">٠</span>
+          </div>
+          <p class="muted empty" id="peopleEmpty">ما دخل أحد للحين. اعرض الرمز على الشاشة وخلّهم يدخلون.</p>
+          <ul class="people-list" id="peopleList"></ul>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
+
+<!-- ============ نافذة الإعدادات داخل الغرفة ============ -->
+<div class="modal" id="settingsModal" hidden>
+  <div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <h3 id="setTitle">إعدادات اللعبة</h3>
+    <p class="muted" id="setNote"></p>
+    <div class="modal-body" id="settingsSlot"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="setSave">احفظ</button>
+      <button class="btn" id="setCancel">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ورقة الجولات كاملة ============ -->
+<div class="modal" id="sheetModal" hidden>
+  <div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <h3 id="sheetTitle">ورقة الجولات</h3>
+    <div class="modal-body"><div class="table-wrap"><table class="sheet totals" id="roundsTable"></table></div></div>
+    <div class="modal-actions single"><button class="btn" id="sheetClose">إغلاق</button></div>
+  </div>
+</div>
+
+<!-- ============ تنبيه عائم ============ -->
+<div class="toast" id="toast" role="status" hidden></div>
+
+<!-- ============ تأكيد ============ -->
+<div class="modal" id="confirm" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h3 id="confirmTitle"></h3>
+    <p id="confirmText"></p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="confirmYes"></button>
+      <button class="btn" id="confirmNo">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<script src="firebase-config.js" defer></script>
+<script src="../assets/athar-sound.js" defer></script>
+<script src="net.js" defer></script>
+<script src="shared.js" defer></script>
+<script src="lib/qrcode.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>

@@ -198,6 +198,21 @@ a.game-card:hover .art-buzzer .waves{animation:buzzWave .6s ease infinite altern
 a.game-card:hover .art-fleet .sweep{animation:fleetSweep 1.6s linear infinite;}
 a.game-card:hover .art-fleet .grid .hit{animation:pop .5s cubic-bezier(.3,1.6,.5,1) both; transform-box:fill-box; transform-origin:center;}
 @keyframes fleetSweep{to{transform:rotate(360deg);}}
+.art-huroof{background:linear-gradient(160deg,#1547A8,#3B98EA);}
+.art-huroof svg{width:100%; height:100%;}
+.art-huroof .sheet{transform:rotate(-3deg); transform-origin:80px 46px;}
+.art-huroof .sheet rect{fill:#fff;}
+.art-huroof .rl,.art-huroof .cl{stroke:rgba(30,111,224,.22); stroke-width:1.4;}
+.art-huroof .mg{stroke:rgba(229,72,77,.6); stroke-width:1.6;}
+.art-huroof .ink{fill:none; stroke:#1E6FE0; stroke-width:2.4; stroke-linecap:round; stroke-dasharray:90; stroke-dashoffset:0;}
+.art-huroof .pb{fill:#F5B700;} .art-huroof .pt{fill:#F4D9A8;} .art-huroof .pe{fill:#F08A9B;}
+.art-huroof .pen{transition:transform .4s ease;}
+.art-huroof .lc{fill:#fff; stroke:#E5484D; stroke-width:2.5;}
+.art-huroof .lt{fill:#E5484D; font-size:17px; font-weight:700; font-family:inherit;}
+a.game-card:hover .art-huroof .pen{animation:huroofPen 1s ease-in-out infinite alternate;}
+a.game-card:hover .art-huroof .ink{animation:huroofInk 1.2s ease both;}
+@keyframes huroofPen{to{transform:translate(-14px,-4px) rotate(-3deg);}}
+@keyframes huroofInk{from{stroke-dashoffset:90;}}
 .art-soon span{font-size:4rem; font-weight:700; color:var(--text-2); opacity:.5;}
 
 .game-body{padding:18px 20px 20px; display:flex; flex-direction:column; flex:1;}

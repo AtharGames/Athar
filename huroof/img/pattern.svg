@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- قلم رصاص -->
+  <g transform="translate(26 30) rotate(-35 30 10)"><path d="M0 4h44l10 6-10 6H0z"/><path d="M44 4v12M8 4v12"/><path d="M54 10h4"/></g>
+  <!-- علامة صح -->
+  <path d="M178 40l10 11 20-24"/>
+  <!-- ممحاة -->
+  <g transform="translate(232 92) rotate(20)"><rect x="0" y="0" width="40" height="20" rx="4"/><path d="M14 0v20"/></g>
+  <!-- ورقة مسطّرة -->
+  <g transform="translate(110 96)"><rect x="0" y="0" width="38" height="48" rx="4"/><path d="M8 14h22M8 24h22M8 34h14"/><path d="M28 0v48" stroke-dasharray="2 5"/></g>
+  <!-- علامة خطأ -->
+  <path d="M40 132l16 16M56 132l-16 16"/>
+  <!-- نجمة المعلم -->
+  <path d="M232 196l6 12 13 2-9 9 2 13-12-6-12 6 2-13-9-9 13-2z"/>
+  <!-- طائرة ورقية -->
+  <g transform="translate(60 210)"><path d="M0 18L48 0 34 40 22 26z"/><path d="M48 0L22 26v14l6-9"/></g>
+  <!-- برّاية -->
+  <g transform="translate(160 214)"><rect x="0" y="6" width="30" height="24" rx="4"/><path d="M30 12l10 6-10 6"/><circle cx="12" cy="18" r="5"/></g>
+  <!-- خط خربشة -->
+  <path d="M180 150c8-8 14 6 22-2s14 6 22-2"/>
+  <!-- دائرة حرف -->
+  <path d="M264 262c-2-10-16-14-24-8s-6 20 4 22 18-4 20-12"/>
+</svg>
