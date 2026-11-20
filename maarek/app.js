@@ -8,7 +8,11 @@
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const S = window.AtharSound;
-  const MAP = window.MAAREK_MAP;
+  // خريطتان: ٢٠ إقليمًا، و٣٠ إقليمًا للحملات من ٥ و٦ فرق
+  const MAPS = window.MAAREK_MAPS || { m20: window.MAAREK_MAP };
+  let MAP = MAPS.m20;
+  const useMap = (k) => { MAP = MAPS[k] || MAPS.m20; const f = document.getElementById('mapFrame'); if (f) f.dataset.size = MAPS[k] ? k : 'm20'; };
+  const mapFor = (count, pref) => (pref === 'm20' || pref === 'm30') && MAPS[pref] ? pref : (count > 4 && MAPS.m30 ? 'm30' : 'm20');
   // الأسئلة من بنك ديوان (../diwan/data.js): [الديوان، القسم، المستوى، النص، الخيارات، رقم الإجابة، العزو، الرقم]
   const DW = window.DIWAN_DATA || { diwans: [], questions: [] };
   const QB = {
@@ -244,7 +248,7 @@
   // =========================================================
   // الإعدادات
   // =========================================================
-  const prefs = Object.assign({ count: 4, names: NAMES.slice(), colors: COLORS.slice(), weeks: 12, timer: 25, charge: 3, capitals: 'pick', cats: QB.cats.map((c) => c.id), levels: [0, 1, 2] }, store.get(KEY_PREF, {}));
+  const prefs = Object.assign({ count: 4, names: NAMES.slice(), colors: COLORS.slice(), weeks: 12, timer: 25, charge: 3, capitals: 'pick', mapSize: 'auto', cats: QB.cats.map((c) => c.id), levels: [0, 1, 2] }, store.get(KEY_PREF, {}));
   // ترحيل الإعدادات القديمة (أقسام اللعبة الأصلية) إلى دواوين ديوان
   prefs.cats = (prefs.cats || []).filter((id) => QB.cats.some((c) => c.id === id));
   if (!prefs.cats.length) prefs.cats = QB.cats.map((c) => c.id);
@@ -287,6 +291,8 @@
       else prefs.cats.push(id);
       store.set(KEY_PREF, prefs); SFX.click(); renderSetup();
     }));
+    const mk = mapFor(prefs.count, prefs.mapSize);
+    $('#mapNote').textContent = `الخريطة لهذه الحملة: ${ar(MAPS[mk].regions.length)} إقليمًا${prefs.mapSize === 'auto' ? ' (تلقائيًا حسب عدد الفرق: أكثر من ٤ فرق = ٣٠ إقليمًا)' : ''}.`;
     const lv = $('#lvChips');
     lv.innerHTML = LEVELS.map((l, i) => `<button class="chip" data-l="${i}" aria-pressed="${prefs.levels.includes(i)}">${l}</button>`).join('');
     $$('.chip', lv).forEach((b) => b.addEventListener('click', () => {
@@ -307,7 +313,10 @@
       name: (prefs.names[i] || '').trim() || NAMES[i], color: prefs.colors[i],
       money: R.startMoney, capital: null, alive: true, needCap: false
     }));
+    const mapKey = mapFor(teams.length, prefs.mapSize);
+    useMap(mapKey);
     G = {
+      map: mapKey,
       v: 1, teams,
       regions: MAP.regions.map((r) => ({ id: r.id, name: r.name, owner: null, bat: 0, can: 0, wall: false, oldCap: false })),
       turn: 0, week: 1, phase: 'capitals', battle: null,
@@ -892,7 +901,30 @@
     };
   }
 
+  // تعديل اسم أي إقليم (يُحفظ مع الحملة)
+  function openEditName(id) {
+    const r = reg(id), orig = MAP.regions[id - 1].name;
+    $('#renameTitle').textContent = 'تعديل اسم الإقليم';
+    $('#renameSub').textContent = r.name === orig ? `الاسم الحالي: ${r.name}` : `الاسم الحالي: ${r.name} (الأصلي: ${orig})`;
+    $('#renameInput').value = r.name;
+    $('#renameOk').textContent = 'حفظ الاسم';
+    $('#renameSkip').textContent = r.name === orig ? 'إلغاء' : 'رجّع الاسم الأصلي';
+    openModal('renameModal');
+    setTimeout(() => { $('#renameInput').focus(); $('#renameInput').select(); }, 50);
+    const done = (name) => {
+      closeModal('renameModal');
+      if (name && name !== r.name) { r.name = name; save(); renderAll([id]); toast(`صار اسم الإقليم «${name}»`); }
+    };
+    $('#renameOk').onclick = () => done($('#renameInput').value.trim());
+    $('#renameSkip').onclick = () => done(r.name === orig ? '' : orig);
+    $('#renameInput').onkeydown = (e) => { if (e.key === 'Enter') $('#renameOk').click(); };
+  }
+
   function openRename(id, loser) {
+    $('#renameTitle').textContent = 'سقطت العاصمة!';
+    $('#renameOk').textContent = 'اعتمد الاسم';
+    $('#renameSkip').textContent = 'خلّه كما هو';
+    $('#renameInput').onkeydown = null;
     const r = reg(id);
     $('#renameSub').textContent = `سقطت عاصمة فريق ${loser.name} (${r.name}). تقدر تسمّي الإقليم باسم جديد لفريقك.`;
     $('#renameInput').value = '';
@@ -1103,7 +1135,9 @@
         ${r.wall ? '<span class="unit"><svg class="ico"><use href="#i-wall"/></svg>سور</span>' : ''}
         ${t ? `<span class="unit"><b>القوة ${num(power(r))}</b></span>` : ''}
       </div>
-      <p class="rc-nb">يجاور: ${NB(r.id).map((n) => esc(reg(n).name)).join('، ')}</p>`;
+      <p class="rc-nb">يجاور: ${NB(r.id).map((n) => esc(reg(n).name)).join('، ')}</p>
+      <button class="btn btn-sm rc-edit" id="rcEdit"><svg class="ico"><use href="#i-pen"/></svg>تعديل اسم الإقليم</button>`;
+    $('#rcEdit').onclick = () => { SFX.click(); openEditName(r.id); };
   }
   function renderStandings() {
     $('#standings').innerHTML = G.teams.map((t, i) => {
@@ -1210,6 +1244,7 @@
       SFX.click();
       G = store.get(KEY_SAVE, null);
       if (!G) return;
+      useMap(G.map || 'm20');
       G.settings.cats = (G.settings.cats || []).filter((id) => QB.cats.some((c) => c.id === id));
       if (!G.settings.cats.length) G.settings.cats = QB.cats.map((c) => c.id);
       if (!G.settings.levels) G.settings.levels = [0, 1, 2];
@@ -1219,7 +1254,7 @@
       if (G.battle) openBattle();
     };
     $$('[data-go]').forEach((b) => b.addEventListener('click', () => { SFX.click(); show(b.dataset.go); }));
-    segInit('optWeeks', 'weeks'); segInit('optTimer', 'timer'); segInit('optCharge', 'charge'); segInit('optCapitals', 'capitals', String);
+    segInit('optWeeks', 'weeks'); segInit('optTimer', 'timer'); segInit('optCharge', 'charge'); segInit('optCapitals', 'capitals', String); segInit('optMap', 'mapSize', String);
     $('#startBtn').onclick = () => { SFX.click(); newGame(); };
     $('#rulesBtn').onclick = $('#rulesBtn2').onclick = () => { SFX.click(); openModal('rulesModal'); };
 
