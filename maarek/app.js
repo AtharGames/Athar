@@ -87,7 +87,7 @@
       move: () => play('hooves', 0.7),
       hit: () => play('clash', 0.75),
       conquer: () => { play('flag', 0.85); play('applause', 0.6, 0.45); },
-      coins: () => play('coins', 0.6),
+      coins: () => play('coins', 0.75),        // نقرتا لسان «تِك تِك»
       alarm: () => play('whistle', 0.55),
       right: () => { S.chirp(0, 3200); S.drop(620, 0.05); },
       wrong: () => S.sigh(),

@@ -1,4 +1,4 @@
-# توليد مؤثرات «معارك» (بلا موسيقى ولا آلات): حوافر، صليل سيوف، تصفيق، عملات، صفير إنذار، رفرفة راية
+# توليد مؤثرات «معارك» (بلا موسيقى ولا آلات): حوافر، صليل سيوف، تصفيق، نقرات لسان للخزينة، صفير إنذار، رفرفة راية
 # التشغيل: python3 make.py  (يحتاج numpy و scipy و ffmpeg)
 import os, subprocess
 import numpy as np
@@ -67,14 +67,12 @@ for _ in range(520):
     place(buf, clap() * rng.uniform(.3, 1) * (1 - tt / 2.1), tt)
 save('applause', lp(buf, 7000), .8)
 
-# ٤) رنين عملات تتساقط في الخزينة
-n = int(.9 * SR); buf = np.zeros(n)
-def coin(f):
-    m = int(.35 * SR); tt = np.arange(m) / SR
-    return (np.sin(2 * np.pi * f * tt) + .5 * np.sin(2 * np.pi * f * 2.76 * tt) + .3 * np.sin(2 * np.pi * f * 5.4 * tt)) * np.exp(-tt / .07) \
-        + bp(rng.standard_normal(m), 5000, 12000) * env(m, .0005, .004)
-for k, tt in enumerate([0, .07, .12, .2, .26, .34]):
-    place(buf, coin(rng.uniform(3600, 5200)) * (1 - k * .1), tt)
+# ٤) صوت الخزينة (الملف coins.mp3): نقرتا لسان «تِك تِك» بالفم، بلا رنين معدني
+n = int(.5 * SR); buf = np.zeros(n)
+for k in range(2):
+    m = int(.05 * SR); tt = np.arange(m) / SR
+    x = bp(rng.standard_normal(m), 1800, 3200) * env(m, .0008, .008) + .5 * np.sin(2 * np.pi * (1400 * np.exp(-tt * 30) + 600) * tt) * env(m, .0005, .012)
+    place(buf, x, .04 + k * .14)
 save('coins', buf, .7)
 
 # ٥) صفير إنذار بالفم: صفرتان متقطعتان مع اهتزاز (خطر على العاصمة)
