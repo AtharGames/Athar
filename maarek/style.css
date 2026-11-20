@@ -266,6 +266,9 @@ select option{color:#111;}
 .chip[aria-pressed="true"]{border-color:var(--accent); color:var(--text); background:var(--surface-2);}
 .chip[aria-pressed="true"]::before{content:""; width:8px; height:8px; border-radius:50%; background:var(--accent);}
 #catNote{display:block; margin-top:10px;}
+.panel .label{display:block; margin:4px 0 8px;}
+.lv-label{margin-top:14px !important;}
+.q-cite{display:block; margin-top:6px; color:var(--text-2); font-size:.78rem;}
 .setup-actions{display:flex; flex-wrap:wrap; gap:12px; justify-content:center; padding:6px 0 20px;}
 
 /* ---------- شريط الدور ---------- */

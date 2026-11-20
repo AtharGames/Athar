@@ -9,7 +9,12 @@
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const S = window.AtharSound;
   const MAP = window.MAAREK_MAP;
-  const QB = window.MAAREK_Q;
+  // الأسئلة من بنك ديوان (../diwan/data.js): [الديوان، القسم، المستوى، النص، الخيارات، رقم الإجابة، العزو، الرقم]
+  const DW = window.DIWAN_DATA || { diwans: [], questions: [] };
+  const QB = {
+    cats: DW.diwans.map((d, i) => ({ id: d.id, name: d.title, q: DW.questions.filter((x) => x[0] === i && Array.isArray(x[4]) && x[4].length >= 2) }))
+  };
+  const LEVELS = ['سهل', 'متوسط', 'صعب'];
   const NS = 'http://www.w3.org/2000/svg';
   const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -41,7 +46,7 @@
     can: { name: 'مدافع', one: 'مدفع', icon: 'i-cannon', hint: 'قوة ضاربة ٤' },
     wall: { name: 'أسوار', one: 'سور', icon: 'i-wall', hint: 'نصف الضرر على المدافع' }
   };
-  const KEY_SAVE = 'maarek-save', KEY_USED = 'maarek-used', KEY_PREF = 'maarek-prefs';
+  const KEY_SAVE = 'maarek-save', KEY_USED = 'maarek-used-diwan', KEY_PREF = 'maarek-prefs';
   const TIPS = [
     'المال وحده لا يكفي لتكون قويًا.',
     'أسعار السوق تتغيّر من أسبوع لأسبوع… راقبها قبل ما تشتري.',
@@ -110,28 +115,32 @@
   // =========================================================
   const Qs = (() => {
     let used = store.get(KEY_USED, {});
-    function next(cats) {
-      const list = QB.cats.filter((c) => cats.includes(c.id));
-      // اختيار القسم بحسب حجمه
-      const total = list.reduce((s, c) => s + c.q.length, 0);
-      let r = Math.random() * total, cat = list[0];
-      for (const c of list) { if ((r -= c.q.length) <= 0) { cat = c; break; } }
+    // الأسئلة المتاحة في قسم حسب المستويات المختارة
+    const eligible = (c, lv) => c.q.map((x, i) => (lv.includes(x[2]) ? i : -1)).filter((i) => i >= 0);
+    function next(cats, lv) {
+      if (!lv || !lv.length) lv = [0, 1, 2];
+      let list = QB.cats.filter((c) => cats.includes(c.id)).map((c) => ({ c, idx: eligible(c, lv) })).filter((x) => x.idx.length);
+      if (!list.length) list = QB.cats.map((c) => ({ c, idx: eligible(c, [0, 1, 2]) })).filter((x) => x.idx.length);
+      // اختيار الديوان بحسب عدد أسئلته
+      const total = list.reduce((s, x) => s + x.idx.length, 0);
+      let r = Math.random() * total, sel = list[0];
+      for (const x of list) { if ((r -= x.idx.length) <= 0) { sel = x; break; } }
+      const { c: cat, idx } = sel;
       let u = new Set(used[cat.id] || []);
-      if (u.size >= cat.q.length) u = new Set();
-      const free = [];
-      for (let i = 0; i < cat.q.length; i++) if (!u.has(i)) free.push(i);
+      let free = idx.filter((i) => !u.has(i));
+      if (!free.length) { idx.forEach((i) => u.delete(i)); free = idx.slice(); }
       const i = pick(free);
       u.add(i); used[cat.id] = [...u]; store.set(KEY_USED, used);
-      const [q, ...ans] = cat.q[i];
-      const order = shuffle([0, 1, 2, 3]);
-      return { cat: cat.name, q, opts: order.map((k) => ans[k]), right: order.indexOf(0) };
+      const [, , level, q, opts, right, cite] = cat.q[i];
+      const order = shuffle(opts.map((_, k) => k));
+      return { cat: cat.name + ' · ' + LEVELS[level], q, opts: order.map((k) => opts[k]), right: order.indexOf(right), cite };
     }
     return { next };
   })();
 
   // عرض سؤال بخيارات ومؤقت. يرجّع دالة تنظيف.
   function askQuestion(box, { teamIdx, label, onAnswer }) {
-    const Q = Qs.next(G.settings.cats);
+    const Q = Qs.next(G.settings.cats, G.settings.levels);
     const t = team(teamIdx);
     const secs = G.settings.timer;
     box.innerHTML = `
@@ -142,7 +151,7 @@
       </div>
       <p class="q-text">${esc(Q.q)}</p>
       <div class="opts">${Q.opts.map((o, k) => `<button class="opt" data-k="${k}"><b>${'أبجد'[k]}</b><span>${esc(o)}</span></button>`).join('')}</div>
-      <p class="q-res" aria-live="polite"></p>`;
+      <p class="q-res" aria-live="polite"></p>${Q.cite ? `<small class="q-cite">ديوان: ${esc(Q.cite)}</small>` : ''}`;
     let done = false, timer = 0;
     const end = Date.now() + secs * 1000;
     let lastSec = secs;
@@ -235,7 +244,12 @@
   // =========================================================
   // الإعدادات
   // =========================================================
-  const prefs = Object.assign({ count: 4, names: NAMES.slice(), colors: COLORS.slice(), weeks: 12, timer: 25, charge: 3, capitals: 'pick', cats: QB.cats.map((c) => c.id) }, store.get(KEY_PREF, {}));
+  const prefs = Object.assign({ count: 4, names: NAMES.slice(), colors: COLORS.slice(), weeks: 12, timer: 25, charge: 3, capitals: 'pick', cats: QB.cats.map((c) => c.id), levels: [0, 1, 2] }, store.get(KEY_PREF, {}));
+  // ترحيل الإعدادات القديمة (أقسام اللعبة الأصلية) إلى دواوين ديوان
+  prefs.cats = (prefs.cats || []).filter((id) => QB.cats.some((c) => c.id === id));
+  if (!prefs.cats.length) prefs.cats = QB.cats.map((c) => c.id);
+  prefs.levels = (Array.isArray(prefs.levels) ? prefs.levels : []).filter((l) => [0, 1, 2].includes(l));
+  if (!prefs.levels.length) prefs.levels = [0, 1, 2];
 
   function segInit(id, key, cast = Number) {
     const el = $('#' + id);
@@ -273,8 +287,16 @@
       else prefs.cats.push(id);
       store.set(KEY_PREF, prefs); SFX.click(); renderSetup();
     }));
-    const n = QB.cats.filter((c) => prefs.cats.includes(c.id)).reduce((s, c) => s + c.q.length, 0);
-    $('#catNote').textContent = `${num(n)} سؤالًا في الأقسام المختارة. الأسئلة ما تتكرر حتى تخلص.`;
+    const lv = $('#lvChips');
+    lv.innerHTML = LEVELS.map((l, i) => `<button class="chip" data-l="${i}" aria-pressed="${prefs.levels.includes(i)}">${l}</button>`).join('');
+    $$('.chip', lv).forEach((b) => b.addEventListener('click', () => {
+      const l = +b.dataset.l;
+      if (prefs.levels.includes(l)) { if (prefs.levels.length === 1) { toast('لازم مستوى واحد على الأقل'); return; } prefs.levels = prefs.levels.filter((x) => x !== l); }
+      else prefs.levels.push(l);
+      store.set(KEY_PREF, prefs); SFX.click(); renderSetup();
+    }));
+    const n = QB.cats.filter((c) => prefs.cats.includes(c.id)).reduce((s, c) => s + c.q.filter((x) => prefs.levels.includes(x[2])).length, 0);
+    $('#catNote').textContent = QB.cats.length ? `${num(n)} سؤالًا من بنك ديوان في الدواوين والمستويات المختارة. الأسئلة ما تتكرر حتى تخلص.` : 'تعذّر تحميل بنك ديوان.';
   }
 
   // =========================================================
@@ -289,7 +311,7 @@
       v: 1, teams,
       regions: MAP.regions.map((r) => ({ id: r.id, name: r.name, owner: null, bat: 0, can: 0, wall: false, oldCap: false })),
       turn: 0, week: 1, phase: 'capitals', battle: null,
-      settings: { weeks: prefs.weeks, timer: prefs.timer, charge: prefs.charge, cats: prefs.cats.slice(), capitals: prefs.capitals },
+      settings: { weeks: prefs.weeks, timer: prefs.timer, charge: prefs.charge, cats: prefs.cats.slice(), levels: prefs.levels.slice(), capitals: prefs.capitals },
       prices: { ...BASE }, prev: { ...BASE },
       used: { attack: false, occupy: false, charge: false }
     };
@@ -1188,6 +1210,9 @@
       SFX.click();
       G = store.get(KEY_SAVE, null);
       if (!G) return;
+      G.settings.cats = (G.settings.cats || []).filter((id) => QB.cats.some((c) => c.id === id));
+      if (!G.settings.cats.length) G.settings.cats = QB.cats.map((c) => c.id);
+      if (!G.settings.levels) G.settings.levels = [0, 1, 2];
       enterGame();
       if (G.phase === 'capitals') setMode('capital');
       else if (team().needCap && regionsOf(G.turn).length) setMode('capital');
