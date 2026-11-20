@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 260" width="260" height="260">
+  <!-- نقش «معارك» المائي: راية، درع، خوذة، خيمة، بوصلة، مدفع، سيفان، برج -->
+  <g fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <!-- راية -->
+    <g transform="translate(22 18) rotate(-8)">
+      <path d="M4 4v44"/><path d="M4 6c8-4 14 4 22 0s12-2 12-2v18s-6-2-12 2-14-4-22 0"/>
+    </g>
+    <!-- درع -->
+    <g transform="translate(100 14) rotate(6)">
+      <path d="M18 2l16 6v12c0 12-8 20-16 24C10 40 2 32 2 20V8z"/><path d="M18 10v26M9 20h18"/>
+    </g>
+    <!-- خوذة -->
+    <g transform="translate(186 26) rotate(-6)">
+      <path d="M4 32c0-16 8-26 20-26s20 10 20 26z"/><path d="M4 32h40M24 6v26M14 22h20"/><path d="M24 2v4"/>
+    </g>
+    <!-- خيمة -->
+    <g transform="translate(18 104) rotate(4)">
+      <path d="M2 40L26 6l24 34z"/><path d="M26 6v34M18 40l8-14 8 14"/><path d="M26 6V0l8 3-8 3"/>
+    </g>
+    <!-- بوصلة -->
+    <g transform="translate(108 98)">
+      <circle cx="22" cy="22" r="20"/><path d="M22 6l5 16-5 16-5-16z"/><path d="M22 0v4M22 40v4M0 22h4M40 22h4"/>
+    </g>
+    <!-- مدفع -->
+    <g transform="translate(184 112) rotate(-10)">
+      <path d="M6 18l34-12 4 10-32 12z"/><circle cx="16" cy="32" r="8"/><circle cx="16" cy="32" r="2"/><path d="M4 40h26"/>
+    </g>
+    <!-- سيفان متقاطعان -->
+    <g transform="translate(40 186) rotate(-4)">
+      <path d="M4 4l34 34M38 4L4 38"/><path d="M8 14l6-6M34 14l-6-6"/><path d="M30 34l6 6-4 4-6-6M12 34l-6 6 4 4 6-6"/>
+    </g>
+    <!-- برج حصن -->
+    <g transform="translate(134 178) rotate(5)">
+      <path d="M6 48V14h30v34z"/><path d="M4 14V4h8v6h6V4h6v6h6V4h8v10"/><path d="M17 48V36a4 4 0 0 1 8 0v12"/><path d="M14 22h4M24 22h4"/>
+    </g>
+    <!-- نجمة صغيرة -->
+    <g transform="translate(222 200)">
+      <path d="M10 0l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/>
+    </g>
+  </g>
+</svg>
