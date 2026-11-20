@@ -1,9 +1,9 @@
 /* =========================================================
    شاشة البداية المتحركة لأثَر (المدة الكلية 3.5 ثانية)
    0.00 – 0.65  ظهور الأيقونة
-   0.65 – 1.60  كشف «أثَر» من اليمين إلى اليسار
+   0.65 – 1.60  كشف «أثَر للألعاب» من اليمين إلى اليسار
    1.60 – 2.05  تمدد الخط المضيء
-   1.85 – 2.35  ظهور نص اللجنة
+   1.85 – 2.35  ظهور الوصف (منصة ألعاب…)
    2.00 – 2.80  لمعة تمرّ على الشعار + وميض نجمة على رأس السهم
    2.90 – 3.50  انتقال: الشعار يكبر ويتلاشى والصفحة تصعد من خلفه
    تظهر فقط إذا أضاف سكربت الرأس الصنف splash-on على <html>
@@ -51,9 +51,9 @@ html.splash-on, html.splash-on body{overflow:hidden;}
 
 /* المرحلة 2: الاسم يُكشف من اليمين إلى اليسار */
 .splash-title{
-  width:calc(var(--splash-w) * .62); aspect-ratio:218/206;
-  margin-top:calc(var(--splash-w) * .12);
-  background-size:255.05% auto; background-position:47.04% 77.82%;
+  width:calc(var(--splash-w) * 1.19); aspect-ratio:441/160;
+  margin-top:calc(var(--splash-w) * .1);
+  background-size:126.08% auto; background-position:50.43% 68.93%;
   animation:splash-title .95s ease-out .65s both;
 }
 
@@ -74,8 +74,8 @@ html.splash-on, html.splash-on body{overflow:hidden;}
   animation:splash-shine .7s ease-in-out 2s both;
 }
 .splash-title::after{
-  -webkit-mask-size:255.05% auto; mask-size:255.05% auto;
-  -webkit-mask-position:47.04% 77.82%; mask-position:47.04% 77.82%;
+  -webkit-mask-size:126.08% auto; mask-size:126.08% auto;
+  -webkit-mask-position:50.43% 68.93%; mask-position:50.43% 68.93%;
   animation:splash-shine .7s ease-in-out 2.1s both;
 }
 
@@ -97,17 +97,17 @@ html.splash-on, html.splash-on body{overflow:hidden;}
   animation:splash-line .45s ease-out 1.6s both, splash-line-glow .7s ease-in-out 2.1s both;
 }
 
-/* نص اللجنة أسفل الخط: يظهر بنعومة مع ارتفاع خفيف */
+/* الوصف أسفل الخط: يظهر بنعومة مع ارتفاع خفيف */
 .splash-tag{
   margin-top:calc(var(--splash-w) * .11);
   font-family:"Thmanyah Sans","IBM Plex Sans Arabic",system-ui,sans-serif;
   color:#DCEEFE; line-height:1.5;
   animation:splash-tag .5s ease-out 1.85s both;
 }
-.splash-tag-ar{font-weight:500; font-size:max(13px, calc(var(--splash-w) * .1)); white-space:nowrap;}
+.splash-tag-ar{font-weight:500; font-size:max(13px, calc(var(--splash-w) * .088)); white-space:nowrap;}
 .splash-tag-en{
-  font-weight:500; font-size:max(9.5px, calc(var(--splash-w) * .062));
-  letter-spacing:.06em; opacity:.8; margin-top:2px; white-space:nowrap;
+  font-weight:700; font-size:max(10px, calc(var(--splash-w) * .068));
+  letter-spacing:.16em; color:#8FD0FA; opacity:.8; margin-top:2px; white-space:nowrap;
 }
 
 @keyframes splash-icon{
