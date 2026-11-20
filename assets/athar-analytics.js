@@ -10,7 +10,7 @@
   'use strict';
 
   // معرّف القياس من Google Analytics (يبدأ بـ G-)
-  var GA_ID = 'G-XXXXXXXXXX';
+  var GA_ID = 'G-BGFXL24QVE';
 
   // دالة فارغة آمنة حتى لا تتعطل الألعاب إذا لم تُفعَّل الإحصائيات
   window.atharTrack = function () {};
