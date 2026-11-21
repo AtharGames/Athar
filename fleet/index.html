@@ -9,11 +9,10 @@
 <!-- تطبيق الثيم المحفوظ قبل الرسم لتفادي الوميض (ops ثيم خاص باللعبة) -->
 <script>
 (function(){
+  // الثيم الافتراضي هو ثيم اللعبة الخاص، وما يختاره اللاعب يُحفظ لهذه اللعبة وحدها
   var t=null;
-  try{ t=localStorage.getItem('athar-theme'); }catch(e){}
-  if(['light','navy','blue','ops'].indexOf(t)<0){
-    t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'navy':'light';
-  }
+  try{ t=localStorage.getItem('athar-fleet-theme'); }catch(e){}
+  if(['ops','light','navy','blue'].indexOf(t)<0){ t='ops'; }
   document.documentElement.setAttribute('data-theme',t);
 })();
 </script>
@@ -45,10 +44,10 @@
     </button>
     <!-- مبدّل الثيمات: ثيمات أثَر الثلاثة + غرفة العمليات -->
     <div class="theme-switch" role="group" aria-label="ألوان الواجهة">
+      <button class="theme-dot" data-set-theme="ops" aria-label="ثيم غرفة العمليات" aria-pressed="false"></button>
       <button class="theme-dot" data-set-theme="light" aria-label="الثيم الفاتح" aria-pressed="false"></button>
       <button class="theme-dot" data-set-theme="navy" aria-label="الثيم الكحلي" aria-pressed="false"></button>
       <button class="theme-dot" data-set-theme="blue" aria-label="ثيم أزرق أثَر" aria-pressed="false"></button>
-      <button class="theme-dot" data-set-theme="ops" aria-label="ثيم غرفة العمليات" aria-pressed="false"></button>
     </div>
   </div>
 </header>

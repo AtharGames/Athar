@@ -9,11 +9,10 @@
 <!-- تطبيق الثيم المحفوظ قبل الرسم لتفادي الوميض (parch و camp ثيمان خاصان باللعبة) -->
 <script>
 (function(){
+  // الثيم الافتراضي هو ثيم اللعبة الخاص، وما يختاره اللاعب يُحفظ لهذه اللعبة وحدها
   var t=null;
-  try{ t=localStorage.getItem('athar-theme'); }catch(e){}
-  if(['light','navy','blue','parch','camp'].indexOf(t)<0){
-    t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'navy':'light';
-  }
+  try{ t=localStorage.getItem('athar-maarek-theme'); }catch(e){}
+  if(['parch','camp','light','navy','blue'].indexOf(t)<0){ t='parch'; }
   document.documentElement.setAttribute('data-theme',t);
 })();
 </script>
@@ -76,11 +75,11 @@
     </button>
     <!-- مبدّل الثيمات: ثيمات أثَر الثلاثة + رَقّ الحملة + ليل المعسكر -->
     <div class="theme-switch" role="group" aria-label="ألوان الواجهة">
+      <button class="theme-dot" data-set-theme="parch" aria-label="ثيم رَقّ الحملة" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="camp" aria-label="ثيم ليل المعسكر" aria-pressed="false"></button>
       <button class="theme-dot" data-set-theme="light" aria-label="الثيم الفاتح" aria-pressed="false"></button>
       <button class="theme-dot" data-set-theme="navy" aria-label="الثيم الكحلي" aria-pressed="false"></button>
       <button class="theme-dot" data-set-theme="blue" aria-label="ثيم أزرق أثَر" aria-pressed="false"></button>
-      <button class="theme-dot" data-set-theme="parch" aria-label="ثيم رَقّ الحملة" aria-pressed="false"></button>
-      <button class="theme-dot" data-set-theme="camp" aria-label="ثيم ليل المعسكر" aria-pressed="false"></button>
     </div>
   </div>
 </header>

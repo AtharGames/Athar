@@ -627,11 +627,16 @@ window.Fleet = (() => {
   // =========================================================
   // الثيمات، الصوت، الشاشات، التنبيه، التأكيد، القصاصات
   // =========================================================
-  const THEMES = ['light', 'navy', 'blue', 'ops'];
+  const THEMES = ['ops', 'light', 'navy', 'blue'];
+  const THEME_KEY = 'athar-fleet-theme';   // مفتاح خاص باللعبة حتى يبقى ثيمها الافتراضي
   function setTheme(t) {
-    if (!THEMES.includes(t)) t = 'light';
+    if (!THEMES.includes(t)) t = 'ops';
     document.documentElement.dataset.theme = t;
-    try { localStorage.setItem('athar-theme', t); } catch { /* تجاهل */ }
+    try {
+      localStorage.setItem(THEME_KEY, t);
+      // ثيمات أثَر العامة تُشارك مع باقي الألعاب
+      if (['light', 'navy', 'blue'].includes(t)) localStorage.setItem('athar-theme', t);
+    } catch { /* تجاهل */ }
     $$('.theme-dot').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.setTheme === t)));
   }
   function initChrome() {

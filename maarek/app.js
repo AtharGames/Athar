@@ -188,11 +188,16 @@
   // =========================================================
   // الهيكل العام: الثيمات، الصوت، الشاشات، التنبيه، التأكيد، القصاصات
   // =========================================================
-  const THEMES = ['light', 'navy', 'blue', 'parch', 'camp'];
+  const THEMES = ['parch', 'camp', 'light', 'navy', 'blue'];
+  const THEME_KEY = 'athar-maarek-theme';   // مفتاح خاص باللعبة حتى يبقى ثيمها الافتراضي
   function setTheme(t) {
-    if (!THEMES.includes(t)) t = 'light';
+    if (!THEMES.includes(t)) t = 'parch';
     document.documentElement.dataset.theme = t;
-    try { localStorage.setItem('athar-theme', t); } catch { /* تجاهل */ }
+    try {
+      localStorage.setItem(THEME_KEY, t);
+      // ثيمات أثَر العامة تُشارك مع باقي الألعاب
+      if (['light', 'navy', 'blue'].includes(t)) localStorage.setItem('athar-theme', t);
+    } catch { /* تجاهل */ }
     $$('.theme-dot').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.setTheme === t)));
   }
   function show(id) {
