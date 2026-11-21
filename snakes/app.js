@@ -864,7 +864,25 @@
   el.soundBtn.addEventListener('click', () => el.soundBtn.setAttribute('aria-pressed', String(S.toggle())));
 
   $('#startBtn').addEventListener('click', startGame);
-  el.spinBtn.addEventListener('click', roll);
+  // الأسئلة: قبل كل تدويرة سؤال (من ديوان أو من المقدّم)، الصح يدوّر والغلط يروح دوره
+  const Quiz = window.AtharQuiz;
+  const quizUI = Quiz ? Quiz.settingsUI($('#quizSetup'), {
+    game: 'snakes', def: 'diwan',
+    labels: { none: { s: 'تدوير على طول' } }
+  }) : null;
+  function spinClick() {
+    if (busy) return;
+    const q = quizUI ? quizUI.get() : { src: 'none' };
+    if (q.src === 'none') { roll(); return; }
+    const t = teams[cur];
+    Quiz.ask({
+      settings: q, team: { name: t.name, color: t.color }, cancel: true,
+      rightText: 'يلا دوّروا الأرقام!', wrongText: 'راح الدور للي بعدكم',
+      sounds: { open: () => S.whoosh(true), right: () => { S.chirp(0, 3000); S.drop(620, 0.2); }, wrong: () => S.sigh() },
+      onDone: (r) => { if (r === 'right') roll(); else if (r === 'wrong' || r === 'timeout') nextTurn(); }
+    });
+  }
+  el.spinBtn.addEventListener('click', spinClick);
   el.nextBtn.addEventListener('click', nextTurn);
   el.manualForm.addEventListener('submit', (e) => { e.preventDefault(); manualMove(); });
 

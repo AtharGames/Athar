@@ -233,6 +233,7 @@
   function show(id) {
     $$('.screen').forEach((s) => s.classList.toggle('active', s.id === id));
     el.newGameBtn.hidden = id !== 'screen-game';
+    if (id !== 'screen-game' && window.AtharQuiz) window.AtharQuiz.close();
     window.scrollTo(0, 0);
   }
 
@@ -367,8 +368,33 @@
   const counts = () => game.teams.map((_, k) => game.grid.reduce((a, v) => a + (v === k ? 1 : 0), 0));
   const label  = (i) => `${LETTERS[Math.floor(i / game.cols)]}${num((i % game.cols) + 1)}`;
 
+  // الأسئلة: من ديوان (نافذة بخيارات)، أو من المقدّم شفهيًا، أو بدون
+  const Quiz = window.AtharQuiz;
+  const quizUI = Quiz ? Quiz.settingsUI($('#quizSetup'), {
+    game: 'tarabee', def: 'diwan',
+    labels: { host: { s: 'يسأل شفهيًا ويحكم' }, none: { s: 'كل فريق يختار بالدور' } }
+  }) : null;
+  let askTimer = 0;
+
+  // سؤال ديوان للفريق صاحب الدور: الصح يختار مربعه، والغلط يروح دوره
+  function askQuestion() {
+    clearTimeout(askTimer);
+    if (!Quiz || !game || game.over || game.quiz.src !== 'diwan' || !$('#screen-game').classList.contains('active')) return;
+    const t = game.teams[game.turn];
+    Quiz.ask({
+      settings: game.quiz, team: { name: t.name, color: t.color }, cover: true, cancel: true,
+      rightText: 'يلا اختاروا مربعكم', wrongText: 'الدور ينتقل للي بعدكم',
+      sounds: { open: () => Sound.click(), right: () => { Sound.pop(0); Sound.pop(1); }, wrong: () => Sound.sigh() },
+      onDone: (r) => {
+        if (r === 'right') toast(`يلا يا ${t.name}… اختاروا مربعكم`);
+        else if (r === 'wrong' || r === 'timeout') skipTurn();
+      }
+    });
+  }
+
   function startGame() {
     game = {
+      quiz: quizUI ? quizUI.get() : { src: 'host' },
       rows: setup.rows, cols: setup.cols, random: setup.random,
       teams: setup.teams.map((t, i) => ({ name: t.name.trim() || `الفريق ${ORDINALS[i]}`, color: PALETTE[t.color].c })),
       grid: new Array(setup.rows * setup.cols).fill(-1),
@@ -430,12 +456,14 @@
     });
   }
 
-  function renderTurn() {
+  function renderTurn(askNow = true) {
     markBlocked();
     const t = game.teams[game.turn];
     el.game.style.setProperty('--turn', t.color);
     el.turnName.textContent = t.name;
-    el.turnHint.textContent = pick(TXT.hints);
+    el.turnHint.textContent = game.quiz.src === 'none' ? 'اختاروا مربعكم' : pick(TXT.hints);
+    $('#askBtn').hidden = game.quiz.src !== 'diwan';
+    if (askNow && game.quiz.src === 'diwan' && !game.over) { clearTimeout(askTimer); askTimer = setTimeout(askQuestion, 900); }
     el.turnBox.classList.remove('swap'); void el.turnBox.offsetWidth; el.turnBox.classList.add('swap');
     $$('.score', el.scores).forEach((s, k) => s.classList.toggle('now', !game.over && k === game.turn));
   }
@@ -558,7 +586,7 @@
     if (!h) { toast('ما فيه شي نتراجع عنه!'); return; }
     game.grid = h.grid; game.turn = h.turn;
     Sound.undo();
-    paintAll(); renderScores(); renderTurn();
+    paintAll(); renderScores(); renderTurn(false);
     toast('رجّعنا الحركة… ولا كأن شي صار');
   }
 
@@ -576,6 +604,7 @@
     game.over = true;
     el.board.classList.add('locked');
     el.skipBtn.disabled = el.undoBtn.disabled = true;
+    clearTimeout(askTimer); if (Quiz) Quiz.close();
     el.endBtn.disabled = false;
     el.endBtn.textContent = 'ورّني النتيجة';
     $$('.score', el.scores).forEach((s) => s.classList.remove('now'));
@@ -749,6 +778,7 @@
     capture(Number(b.dataset.i));
   });
   el.skipBtn.addEventListener('click', skipTurn);
+  $('#askBtn').addEventListener('click', askQuestion);
   el.undoBtn.addEventListener('click', undo);
   el.endBtn.addEventListener('click', () => {
     if (game.over) { el.reveal.hidden = false; return; }

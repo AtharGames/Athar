@@ -89,6 +89,7 @@
     el.joinUrl.textContent = link.replace(/^https?:\/\//, '').replace(/\?.*$/, '');
     el.qr.innerHTML = qrSVG(link);
     show('screen-room');
+    setTimeout(drawBQ, 0);
     if (stopWatch) stopWatch();
     stopWatch = NET.watch(c, onRoom);
     keepAwake();
@@ -229,6 +230,7 @@
   // سؤال جديد: يصفّر الجرس للكل
   function reset() {
     if (!room) return;
+    drawBQ();
     const r = room.s.r;
     S.whoosh(true);
     NET.update(code, {
@@ -325,6 +327,32 @@
 
   $$('#introModes .mode, #roomModes .mode').forEach((b) => b.addEventListener('click', () => { S.tongue(0, 0.2); setMode(b.dataset.mode); }));
   el.createBtn.addEventListener('click', createRoom);
+  // سؤال ديوان على شاشة المقدّم: يتجدد مع كل «سؤال جديد»، والإجابة تظهر بضغطة
+  const Quiz = window.AtharQuiz;
+  const quizUI = Quiz ? Quiz.settingsUI($('#quizSetup'), {
+    game: 'buzzer', def: 'host', sources: ['diwan', 'host'],
+    labels: { diwan: { s: 'السؤال على شاشة المقدّم' }, host: { s: 'من ورقتك أو راسك' } }
+  }) : null;
+  const LET = ['أ', 'ب', 'ج', 'د', 'هـ'];
+  let BQ = null;
+  function drawBQ() {
+    const q = quizUI ? quizUI.get() : { src: 'host' };
+    BQ = q.src === 'diwan' && Quiz.available ? Quiz.next(q) : null;
+    if (BQ) BQ.shown = false;
+    renderBQ();
+  }
+  function renderBQ() {
+    const box = $('#bq');
+    box.hidden = !BQ;
+    if (!BQ) return;
+    $('#bqCat').textContent = BQ.cat;
+    $('#bqText').textContent = BQ.q;
+    $('#bqOpts').innerHTML = BQ.opts.map((o, i) => `<div class="aq-opt${BQ.shown && i === BQ.correct ? ' right' : ''}"><span class="aq-l">${LET[i] || ar(i + 1)}</span><span></span></div>`).join('');
+    $$('#bqOpts .aq-opt span:last-child').forEach((sp, i) => { sp.textContent = BQ.opts[i]; });
+    $('#bqReveal').textContent = BQ.shown ? 'خبّ الإجابة' : 'أظهر الإجابة';
+  }
+  $('#bqReveal').addEventListener('click', () => { if (BQ) { BQ.shown = !BQ.shown; S.tongue(); renderBQ(); } });
+  $('#bqSwap').addEventListener('click', () => { S.tongue(); drawBQ(); });
   el.resetBtn.addEventListener('click', reset);
   el.wrongBtn.addEventListener('click', wrong);
   el.armBtn.addEventListener('click', toggleArm);

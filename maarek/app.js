@@ -143,35 +143,68 @@
   })();
 
   // عرض سؤال بخيارات ومؤقت. يرجّع دالة تنظيف.
-  function askQuestion(box, { teamIdx, label, onAnswer }) {
-    const Q = Qs.next(G.settings.cats, G.settings.levels);
+  // سؤال للفريق: من ديوان بخيارات، أو من المقدّم (صح / غلط)، أو بدون أسئلة
+  // kind: battle (بدون أسئلة = الضربة تصيب دائمًا) أو charge (بدون أسئلة = حظ ٦٠٪)
+  const qSrc = () => (G && G.settings.quiz ? G.settings.quiz.src : 'diwan');
+  function askQuestion(box, { teamIdx, label, onAnswer, kind = 'battle' }) {
+    const qz = G.settings.quiz || { src: 'diwan', cats: G.settings.cats, levels: G.settings.levels };
+    let src = qz.src;
+    let Q = null;
+    if (src === 'diwan') {
+      const x = window.AtharQuiz ? AtharQuiz.next(qz) : Qs.next(G.settings.cats || [], G.settings.levels);
+      if (x) Q = x.right != null ? x : { q: x.q, opts: x.opts, right: x.correct, cat: x.cat, cite: x.cite };
+      else src = 'host';
+    }
     const t = team(teamIdx);
-    const secs = G.settings.timer;
-    box.innerHTML = `
-      <div class="q-head">
+    const secs = src === 'none' ? 0 : G.settings.timer;
+    const head = `<div class="q-head">
         <span class="q-who" style="--c:${t.color}"><i></i>${esc(label || 'سؤال لفريق ' + t.name)}</span>
-        <span class="q-cat">${esc(Q.cat)}</span>
+        ${Q ? `<span class="q-cat">${esc(Q.cat)}</span>` : ''}
         ${secs ? `<span class="timer" style="--p:1"><span>${ar(secs)}</span></span>` : ''}
-      </div>
-      <p class="q-text">${esc(Q.q)}</p>
-      <div class="opts">${Q.opts.map((o, k) => `<button class="opt" data-k="${k}"><b>${'أبجد'[k]}</b><span>${esc(o)}</span></button>`).join('')}</div>
-      <p class="q-res" aria-live="polite"></p>${Q.cite ? `<small class="q-cite">ديوان: ${esc(Q.cite)}</small>` : ''}`;
+      </div>`;
+    if (src === 'none') {
+      box.innerHTML = `${head}
+        <p class="q-text">${kind === 'charge' ? 'بدون أسئلة: الشحن بالحظ… جرّبوا!' : 'بدون أسئلة: الضربة تمشي على طول.'}</p>
+        <div class="opts judge"><button class="opt" data-j="go"><b>${kind === 'charge' ? '؟' : '⚔'}</b><span>${kind === 'charge' ? 'جرّب حظك' : 'اضرب!'}</span></button></div>
+        <p class="q-res" aria-live="polite"></p>`;
+    } else if (src === 'host') {
+      box.innerHTML = `${head}
+        <p class="q-text">المقدّم يسأل…</p>
+        <div class="opts judge">
+          <button class="opt" data-j="1"><b>✓</b><span>صح!</span></button>
+          <button class="opt" data-j="0"><b>✗</b><span>غلط!</span></button>
+        </div>
+        <p class="q-res" aria-live="polite"></p>`;
+    } else {
+      box.innerHTML = `${head}
+        <p class="q-text">${esc(Q.q)}</p>
+        <div class="opts">${Q.opts.map((o, k) => `<button class="opt" data-k="${k}"><b>${'أبجد'[k]}</b><span>${esc(o)}</span></button>`).join('')}</div>
+        <p class="q-res" aria-live="polite"></p>${Q.cite ? `<small class="q-cite">ديوان: ${esc(Q.cite)}</small>` : ''}`;
+    }
     let done = false, timer = 0;
     const end = Date.now() + secs * 1000;
     let lastSec = secs;
-    const finish = (k) => {
+    // ok: النتيجة، picked: الزر المضغوط (لتلوينه)
+    const finish = (ok, timeout, picked) => {
       if (done) return; done = true; clearInterval(timer);
-      const ok = k === Q.right;
-      $$('.opt', box).forEach((b, j) => {
+      $$('.opt', box).forEach((b) => {
         b.disabled = true;
-        if (j === Q.right) b.classList.add('right');
-        else if (j === k) b.classList.add('wrong');
+        if (Q) {
+          const j = +b.dataset.k;
+          if (j === Q.right) b.classList.add('right');
+          else if (b === picked) b.classList.add('wrong');
+          else b.classList.add('fade');
+        } else if (b === picked) b.classList.add(ok ? 'right' : 'wrong');
         else b.classList.add('fade');
       });
       ok ? SFX.right() : SFX.wrong();
-      onAnswer(ok, k === -1, Q);
+      onAnswer(ok, timeout, Q);
     };
-    $$('.opt', box).forEach((b) => b.addEventListener('click', () => finish(+b.dataset.k)));
+    $$('.opt', box).forEach((b) => b.addEventListener('click', () => {
+      if (Q) return finish(+b.dataset.k === Q.right, false, b);
+      if (b.dataset.j === 'go') return finish(kind === 'battle' ? true : Math.random() < 0.6, false, b);
+      finish(b.dataset.j === '1', false, b);
+    }));
     if (secs) {
       const tm = $('.timer', box);
       timer = setInterval(() => {
@@ -179,7 +212,7 @@
         tm.style.setProperty('--p', String(left / secs));
         const s = Math.ceil(left);
         if (s !== lastSec) { lastSec = s; tm.firstElementChild.textContent = ar(s); if (s <= 5 && s > 0) { tm.classList.add('low'); SFX.tick(); } }
-        if (left <= 0) finish(-1);
+        if (left <= 0) finish(false, true, null);
       }, 100);
     }
     return () => { done = true; clearInterval(timer); };
@@ -288,31 +321,19 @@
       do { k = (k + 1) % COLORS.length; } while (taken.includes(COLORS[k]));
       prefs.colors[i] = COLORS[k]; store.set(KEY_PREF, prefs); SFX.click(); renderSetup();
     }));
-    const chips = $('#catChips');
-    chips.innerHTML = QB.cats.map((c) => `<button class="chip" data-c="${c.id}" aria-pressed="${prefs.cats.includes(c.id)}">${esc(c.name)} <small>${ar(c.q.length)}</small></button>`).join('');
-    $$('.chip', chips).forEach((b) => b.addEventListener('click', () => {
-      const id = b.dataset.c;
-      if (prefs.cats.includes(id)) { if (prefs.cats.length === 1) { toast('لازم قسم واحد على الأقل'); return; } prefs.cats = prefs.cats.filter((x) => x !== id); }
-      else prefs.cats.push(id);
-      store.set(KEY_PREF, prefs); SFX.click(); renderSetup();
-    }));
     const mk = mapFor(prefs.count, prefs.mapSize);
     $('#mapNote').textContent = `الخريطة لهذه الحملة: ${ar(MAPS[mk].regions.length)} إقليمًا${prefs.mapSize === 'auto' ? ' (تلقائيًا حسب عدد الفرق: أكثر من ٤ فرق = ٣٠ إقليمًا)' : ''}.`;
-    const lv = $('#lvChips');
-    lv.innerHTML = LEVELS.map((l, i) => `<button class="chip" data-l="${i}" aria-pressed="${prefs.levels.includes(i)}">${l}</button>`).join('');
-    $$('.chip', lv).forEach((b) => b.addEventListener('click', () => {
-      const l = +b.dataset.l;
-      if (prefs.levels.includes(l)) { if (prefs.levels.length === 1) { toast('لازم مستوى واحد على الأقل'); return; } prefs.levels = prefs.levels.filter((x) => x !== l); }
-      else prefs.levels.push(l);
-      store.set(KEY_PREF, prefs); SFX.click(); renderSetup();
-    }));
-    const n = QB.cats.filter((c) => prefs.cats.includes(c.id)).reduce((s, c) => s + c.q.filter((x) => prefs.levels.includes(x[2])).length, 0);
-    $('#catNote').textContent = QB.cats.length ? `${num(n)} سؤالًا من بنك ديوان في الدواوين والمستويات المختارة. الأسئلة ما تتكرر حتى تخلص.` : 'تعذّر تحميل بنك ديوان.';
   }
 
   // =========================================================
   // بدء الحملة
   // =========================================================
+  // إعدادات الأسئلة المشتركة: ديوان أو المقدّم أو بدون
+  const quizUI = window.AtharQuiz ? AtharQuiz.settingsUI($('#quizSetup'), {
+    game: 'maarek', def: 'diwan',
+    labels: { host: { s: 'يسأل ويحكم صح أو غلط' }, none: { s: 'الضربة تصيب، والشحن بالحظ' } }
+  }) : null;
+
   function newGame() {
     const teams = Array.from({ length: prefs.count }, (_, i) => ({
       name: (prefs.names[i] || '').trim() || NAMES[i], color: prefs.colors[i],
@@ -325,7 +346,7 @@
       v: 1, teams,
       regions: MAP.regions.map((r) => ({ id: r.id, name: r.name, owner: null, bat: 0, can: 0, wall: false, oldCap: false })),
       turn: 0, week: 1, phase: 'capitals', battle: null,
-      settings: { weeks: prefs.weeks, timer: prefs.timer, charge: prefs.charge, cats: prefs.cats.slice(), levels: prefs.levels.slice(), capitals: prefs.capitals },
+      settings: { weeks: prefs.weeks, timer: prefs.timer, charge: prefs.charge, cats: prefs.cats.slice(), levels: prefs.levels.slice(), capitals: prefs.capitals, quiz: quizUI ? quizUI.get() : { src: 'diwan', cats: prefs.cats.slice(), levels: prefs.levels.slice() } },
       prices: { ...BASE }, prev: { ...BASE },
       used: { attack: false, occupy: false, charge: false }
     };
@@ -780,7 +801,7 @@
     st.innerHTML = `<div class="b-intro">
       ${B.isCap ? `<div class="danger"><svg class="ico"><use href="#i-crown"/></svg>خطر! هجوم على عاصمة فريق ${esc(team(B.def.team).name)}</div>` : ''}
       <p>فريق <b>${esc(team(B.att.team).name)}</b> يزحف على <b>${esc(reg(B.dst).name)}</b>.</p>
-      <p class="muted">${ar(R.rounds)} جولات: سؤال للمهاجم ثم سؤال للمدافع. الإجابة الصحيحة ضربة${B.def.wall ? '، والسور يخفف الضرب على المدافع للنصف' : ''}.</p>
+      <p class="muted">${ar(R.rounds)} جولات: ${qSrc() === 'none' ? 'ضربة للمهاجم ثم ضربة للمدافع، والأقوى يكسب' : 'سؤال للمهاجم ثم سؤال للمدافع. الإجابة الصحيحة ضربة'}${B.def.wall ? '، والسور يخفف الضرب على المدافع للنصف' : ''}.</p>
     </div>`;
     act.innerHTML = `<button class="btn btn-danger btn-xl" id="bGo"><svg class="ico"><use href="#i-sword"/></svg>${B.step === 'intro' ? 'ابدأ المعركة' : 'تابع المعركة'}</button>`;
     if (B.isCap && B.step === 'intro') SFX.alarm(); else SFX.move();
@@ -809,7 +830,7 @@
           applyDamage(B[other], dmg);
           const lost = before - power(B[other]);
           res.className = 'q-res ok';
-          res.textContent = `إجابة صحيحة! ضربة أسقطت ${num(lost)} من قوة ${side === 'att' ? 'المدافع' : 'المهاجم'}.`;
+          res.textContent = `${qSrc() === 'none' ? '' : 'إجابة صحيحة! '}ضربة أسقطت ${num(lost)} من قوة ${side === 'att' ? 'المدافع' : 'المهاجم'}.`;
           SFX.hit();
           hitFx(other, lost);
         } else {
@@ -1040,15 +1061,15 @@
     const ask = () => {
       $('#chargeNext').hidden = true;
       cleanQ = askQuestion(box, {
-        teamIdx: G.turn, label: `فريق ${team().name}: سؤال ${ar(total - left + 1)} من ${ar(total)}`,
+        kind: 'charge', teamIdx: G.turn, label: `فريق ${team().name}: سؤال ${ar(total - left + 1)} من ${ar(total)}`,
         onAnswer: (ok, timeout) => {
           left--;
           const res = $('.q-res', box);
           if (ok) {
             right++; gain += R.chargeReward; team().money += R.chargeReward;
-            res.className = 'q-res ok'; res.textContent = `صح! ${signed(R.chargeReward)} للخزينة`;
+            res.className = 'q-res ok'; res.textContent = `${qSrc() === 'none' ? 'زبطت!' : 'صح!'} ${signed(R.chargeReward)} للخزينة`;
             SFX.coins(); bump($('#tbMoney').parentElement);
-          } else { res.className = 'q-res bad'; res.textContent = timeout ? 'انتهى الوقت' : 'خطأ… الإجابة الصحيحة باللون الأخضر'; }
+          } else { res.className = 'q-res bad'; res.textContent = timeout ? 'انتهى الوقت' : qSrc() === 'none' ? 'ما زبطت… حظًا أوفر' : qSrc() === 'host' ? 'غلط… ما فيه شي للخزينة' : 'خطأ… الإجابة الصحيحة باللون الأخضر'; }
           stats(); save(); renderTurnbar(); renderStandings();
           const btn = $('#chargeNext');
           btn.hidden = false;

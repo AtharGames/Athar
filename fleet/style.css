@@ -761,3 +761,7 @@ body.play .pick-l{width:auto;}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important;}
 }
+
+/* زر سؤال ديوان لكل فريق، وزر الجولة في وضع «بدون أسئلة» */
+.qbtn.ask{font-weight:700; font-size:1.1rem; flex:1.2;}
+.round-strike{width:100%; margin:4px 0 10px;}

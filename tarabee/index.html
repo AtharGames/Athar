@@ -20,6 +20,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/athar.css">
+<link rel="stylesheet" href="../assets/athar-quiz.css">
 <link rel="stylesheet" href="style.css">
 <!-- إحصائيات الزيارات (Google Analytics) -->
 <script src="../assets/athar-analytics.js" defer></script>
@@ -146,6 +147,11 @@
         <div class="mini" id="miniGrid" aria-hidden="true"></div>
       </div>
 
+      <div class="card">
+        <div class="card-head"><h3>الأسئلة</h3><span class="muted">اختيارية</span></div>
+        <div id="quizSetup"></div>
+      </div>
+
       <div class="setup-actions">
         <button class="btn btn-primary btn-big" id="startBtn">نبدأ في تكسير الروس؟</button>
         <button class="btn btn-ghost" id="backIntroBtn">رجّعني للشرح</button>
@@ -167,6 +173,7 @@
       </div>
 
       <div class="actions">
+        <button class="btn" id="askBtn" hidden>اعرض السؤال</button>
         <button class="btn" id="skipBtn">تجاوز الدور</button>
         <button class="btn" id="undoBtn">تراجع</button>
         <button class="btn btn-end" id="endBtn">انتهت اللعبة</button>
@@ -219,6 +226,8 @@
 </div>
 
 <script src="../assets/athar-sound.js" defer></script>
+<script src="../diwan/data.js" defer></script>
+<script src="../assets/athar-quiz.js" defer></script>
 <script src="app.js" defer></script>
 </body>
 </html>

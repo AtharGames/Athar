@@ -20,6 +20,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/athar.css">
+<link rel="stylesheet" href="../assets/athar-quiz.css">
 <link rel="stylesheet" href="style.css">
 <!-- إحصائيات الزيارات (Google Analytics) -->
 <script src="../assets/athar-analytics.js" defer></script>
@@ -174,6 +175,11 @@
         </div>
       </div>
 
+      <div class="card">
+        <div class="card-head"><h3>الأسئلة</h3><span class="muted">كيف تنكسب الضربات؟</span></div>
+        <div id="quizSetup"></div>
+      </div>
+
       <div class="card" id="placeCard">
         <div class="card-head"><h3>تقسيم الأسطول</h3></div>
         <div class="modes two" id="placeModes" role="group" aria-label="طريقة التقسيم">
@@ -260,7 +266,8 @@
             <h3>الفرق والأسئلة</h3>
             <span class="code-chip" id="roomChip" hidden></span>
           </div>
-          <p class="muted tip">بعد كل سؤال: <b>✓</b> تعطي الفريق ضربة، و<b>✗</b> للإجابة الخاطئة.</p>
+          <p class="muted tip" id="qTip">بعد كل سؤال: <b>✓</b> تعطي الفريق ضربة، و<b>✗</b> للإجابة الخاطئة.</p>
+          <button class="btn btn-primary round-strike" id="roundStrikeBtn" hidden>جولة جديدة: ضربة لكل فريق</button>
           <ol class="scores" id="scores"></ol>
         </div>
         <div class="panel">
@@ -358,6 +365,8 @@
 
 <script src="firebase-config.js" defer></script>
 <script src="../assets/athar-sound.js" defer></script>
+<script src="../diwan/data.js" defer></script>
+<script src="../assets/athar-quiz.js" defer></script>
 <script src="net.js" defer></script>
 <script src="shared.js" defer></script>
 <script src="lib/qrcode.js" defer></script>

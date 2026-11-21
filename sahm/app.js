@@ -81,6 +81,7 @@
   const saveCfg = () => store.set(CFG_KEY, JSON.stringify(cfg));
 
   // ---------- حالة اللعب ----------
+  let quizUI = null;   // إعدادات الأسئلة المشتركة (ديوان / المشرف / بدون)
   let G = null;        // الحالة المحفوظة: الفرق، الشركات، الجولة، الدور…
   let cur = null;      // السؤال الحالي (لا يُحفظ)
   let tr = null;       // جلسة التداول الحالية (لا تُحفظ)
@@ -175,10 +176,14 @@
     chipGroup($('#roundChips'), ROUND_OPTIONS, (v) => (v ? num(v) : 'مفتوح'), () => cfg.rounds, (v) => { cfg.rounds = v; });
     staticChips($('#modeChips'), () => cfg.mode, (v) => { cfg.mode = v; });
     staticChips($('#luckChips'), () => (cfg.luck ? '1' : '0'), (v) => { cfg.luck = v === '1'; });
-    // مصدر الأسئلة: بنك اللعبة، أو أسئلة المشرف، أو بدون أسئلة (تداول مباشر)
-    const syncQsrc = () => $$('[data-needs-q]').forEach((f) => { f.hidden = cfg.qsrc === 'none'; });
-    staticChips($('#qsrcChips'), () => cfg.qsrc, (v) => { cfg.qsrc = v; syncQsrc(); });
-    syncQsrc();
+    // مصدر الأسئلة: بنك ديوان، أو أسئلة المشرف، أو بدون أسئلة (تداول مباشر)
+    const syncQsrc = (q) => $$('[data-needs-q]').forEach((f) => { f.hidden = q.src === 'none'; });
+    quizUI = window.AtharQuiz ? AtharQuiz.settingsUI($('#quizSetup'), {
+      game: 'sahm', def: 'diwan',
+      labels: { host: { t: 'أسئلة المشرف' }, none: { s: 'تداول مباشر لكل فريق' } },
+      onChange: syncQsrc
+    }) : null;
+    syncQsrc(quizUI ? quizUI.get() : { src: 'host' });
 
     el.cashInput.value = cfg.cash; el.priceInput.value = cfg.price;
     const bindNum = (input, key, min, max) => input.addEventListener('change', () => {
@@ -212,8 +217,9 @@
     cfg.cash = clamp(parseInt(el.cashInput.value, 10) || 10000, 500, 50000);
     cfg.price = clamp(parseInt(el.priceInput.value, 10) || 100, 50, 1000);
     saveCfg();
+    const quiz = quizUI ? quizUI.get() : { src: 'host' };
     G = {
-      cfg: { cash: cfg.cash, price: cfg.price, tAnswer: cfg.tAnswer, tTrade: cfg.tTrade, mode: cfg.mode, rounds: cfg.rounds, luck: cfg.luck, qsrc: cfg.qsrc },
+      cfg: { cash: cfg.cash, price: cfg.price, tAnswer: cfg.tAnswer, tTrade: cfg.tTrade, mode: cfg.mode, rounds: cfg.rounds, luck: cfg.luck, qsrc: quiz.src, quiz },
       teams: Array.from({ length: cfg.count }, (_, i) => ({
         name: (cfg.names[i] || '').trim() || TEAM_NAMES[i],
         color: TEAM_COLORS[i], cash: cfg.cash, shares: CITIES.map(() => 0), prev: cfg.cash
@@ -241,7 +247,8 @@
   }
 
   const wealth = (t) => t.cash + t.shares.reduce((s, q, i) => s + q * G.cos[i].price, 0);
-  const qsrc = () => G.cfg.qsrc || 'bank';   // المسابقات المحفوظة قديمًا كانت من البنك
+  // المسابقات المحفوظة قديمًا كانت من «بنك اللعبة»، وصارت من ديوان
+  const qsrc = () => (!G.cfg.qsrc || G.cfg.qsrc === 'bank' ? 'diwan' : G.cfg.qsrc);
   const isFast = () => G.cfg.mode === 'fast' && qsrc() !== 'none';
 
   // =========================================================
@@ -403,13 +410,10 @@
     }
   }
 
-  // سحب سؤال بلا تكرار حتى ينتهي البنك
+  // سحب سؤال من ديوان بلا تكرار (وإذا تعذّر، يسأل المشرف)
   function drawQuestion() {
-    const bank = window.SAHM_QUESTIONS || [];
-    if (!G.deck.length) G.deck = shuffle(bank.map((_, i) => i));
-    const item = bank[G.deck.pop()];
-    const order = shuffle([0, 1, 2, 3]);
-    return { q: item.q, opts: order.map((k) => item.a[k]), correct: order.indexOf(0) };
+    const q = window.AtharQuiz && AtharQuiz.available ? AtharQuiz.next(G.cfg.quiz || {}) : null;
+    return q || { host: true, q: '', opts: [], correct: -1 };
   }
 
   function showQuestion(sound = true) {
@@ -471,7 +475,7 @@
 
     el.stage.innerHTML = `
       <div class="panel question" style="--c:${t ? t.color : 'var(--accent)'}">
-        <p class="kicker">${t ? `سؤال ${esc(t.name)}` : 'سؤال للأسرع'}</p>
+        <p class="kicker">${t ? `سؤال ${esc(t.name)}` : 'سؤال للأسرع'}${cur.cat ? ` <span class="q-cat">${esc(cur.cat)}</span>` : ''}</p>
         <h2 class="q-text">${esc(cur.q)}</h2>
         ${buzz}
         <div class="opts">${opts}</div>

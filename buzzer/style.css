@@ -643,3 +643,11 @@ html,body{overflow-x:clip;}
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important;}
 }
+
+/* سؤال ديوان فوق المسرح */
+.bq{margin-bottom:14px; padding:16px; border-radius:20px; background:var(--surface); border:1px solid var(--line); box-shadow:var(--shadow);}
+.bq-head{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+.bq-cat{font-size:.8rem; color:var(--text-2); background:var(--surface-2); border-radius:999px; padding:1px 10px;}
+.bq-text{font-size:clamp(1.25rem,3.4vw,1.9rem); line-height:1.6; margin:6px 0 12px; overflow-wrap:anywhere;}
+.bq .aq-opt{cursor:default;}
+.bq-reveal{margin-top:12px;}

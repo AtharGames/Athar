@@ -151,11 +151,38 @@
     newGame();
   };
 
+  // الأسئلة: ديوان (نافذة لكل فريق)، أو المقدّم (✓ و ✗)، أو بدون (ضربة لكل فريق كل جولة)
+  const Quiz = window.AtharQuiz;
+  const quizUI = Quiz ? Quiz.settingsUI($('#quizSetup'), {
+    game: 'fleet', def: 'diwan',
+    labels: { host: { s: 'يسأل ويعطي ✓ أو ✗' }, none: { s: 'ضربة لكل فريق كل جولة' } }
+  }) : null;
+  const qsrc = () => (G && G.quiz && G.quiz.src) || 'host';
+  function askTeam(i) {
+    const t = team(i);
+    if (!Quiz || !t) return;
+    Quiz.ask({
+      settings: G.quiz, team: { name: t.name, color: t.color }, cancel: true,
+      rightText: 'كسبتوا ضربة! يلا اقصفوا', wrongText: 'ما فيه ضربة هالمرة',
+      onDone: (r) => { if (r === 'right') answer(i, true); else if (r === 'wrong' || r === 'timeout') answer(i, false); }
+    });
+  }
+  function roundStrike() {
+    if (!G || G.phase !== 'play') return;
+    G.teams.forEach((t) => { t.strikes++; });
+    sfx.whistle();
+    addLog('quiz', 'جولة جديدة: ضربة لكل فريق');
+    toast('جولة جديدة: ضربة لكل فريق', 'ok');
+    commit();
+  }
+  $('#roundStrikeBtn').onclick = roundStrike;
+
   function newGame() {
     const online = setup.mode !== 'A';
     F.setRules(setup.cfg);
     G = {
       v: 1, mode: setup.mode, place: setup.place, phase: 'prep', cfg: F.normCfg(setup.cfg),
+      quiz: quizUI ? quizUI.get() : { src: 'host' },
       teams: Array.from({ length: setup.n }, (_, i) => ({
         name: setup.names[i] || F.TEAM_NAMES[i], color: F.TEAM_COLORS[i],
         fleet: null, hits: {}, score: 0, strikes: F.START_STRIKES, ready: false,
@@ -372,6 +399,11 @@
   }
 
   function renderScores() {
+    const src = qsrc();
+    $('#qTip').innerHTML = src === 'diwan' ? 'اضغطوا <b>سؤال</b> عند الفريق: الصح يعطيه ضربة. و<b>✓</b> و<b>✗</b> للحكم اليدوي.'
+      : src === 'none' ? 'بدون أسئلة: كل جولة تعطي كل فريق ضربة.'
+        : 'بعد كل سؤال: <b>✓</b> تعطي الفريق ضربة، و<b>✗</b> للإجابة الخاطئة.';
+    $('#roundStrikeBtn').hidden = src !== 'none';
     const order = G.teams.map((t, i) => i).sort((a, b) => team(b).score - team(a).score);
     const top = team(order[0]).score;
     $('#scores').innerHTML = order.map((i, rank) => {
@@ -383,8 +415,9 @@
         <span class="spts">${num(t.score)}<small>نقطة</small></span>
         <span class="sstr">${F.ico('i-bolt')}${ar(t.strikes)}</span>
         <span class="sbtns">
-          <button class="qbtn ok" data-q="1" data-i="${i}" aria-label="إجابة صحيحة لـ ${esc(t.name)}">${F.ico('i-check')}</button>
-          <button class="qbtn no" data-q="0" data-i="${i}" aria-label="إجابة خاطئة لـ ${esc(t.name)}">${F.ico('i-x')}</button>
+          ${qsrc() === 'diwan' ? `<button class="qbtn ask" data-ask="${i}" aria-label="سؤال من ديوان لـ ${esc(t.name)}">سؤال</button>` : ''}
+          ${qsrc() === 'none' ? '' : `<button class="qbtn ok" data-q="1" data-i="${i}" aria-label="إجابة صحيحة لـ ${esc(t.name)}">${F.ico('i-check')}</button>
+          <button class="qbtn no" data-q="0" data-i="${i}" aria-label="إجابة خاطئة لـ ${esc(t.name)}">${F.ico('i-x')}</button>`}
           <button class="qbtn more" data-adj-open="${i}" aria-label="تعديل ${esc(t.name)}">⋯</button>
         </span>
       </li>`;
@@ -413,6 +446,8 @@
   }
 
   $('#scores').onclick = (e) => {
+    const k = e.target.closest('[data-ask]');
+    if (k) { askTeam(+k.dataset.ask); return; }
     const q = e.target.closest('[data-q]');
     if (q) { answer(+q.dataset.i, q.dataset.q === '1'); return; }
     const a = e.target.closest('[data-adj-open]');

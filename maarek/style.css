@@ -684,3 +684,6 @@ select option{color:#111;}
   *,*::before,*::after{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important;}
   .rose{animation:none;}
 }
+
+/* أزرار حكم المقدّم أو «بدون أسئلة» */
+.opts.judge .opt{justify-content:center; font-size:1.15rem; min-height:64px;}

@@ -596,3 +596,4 @@ html,body{overflow-x:clip;}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important;}
 }
+.q-cat{display:inline-block; font-size:.78rem; font-weight:500; color:var(--text-2); background:var(--surface-2); border-radius:999px; padding:1px 10px; margin-inline-start:6px;}

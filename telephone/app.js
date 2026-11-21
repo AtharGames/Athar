@@ -186,6 +186,7 @@
   // اللعب
   // =========================================================
   function startGame() {
+    qs = quizUI ? quizUI.get() : { src: 'host' }; Q = null;
     teams = [];
     for (let i = 0; i < cfg.count; i++) {
       teams.push({
@@ -206,7 +207,44 @@
     playRing(); // رنّة التيلفون عند فتح الاستوديو
   }
 
+  // =========================================================
+  // الأسئلة: من ديوان على الشاشة، أو شفهيًا من المقدّم
+  // =========================================================
+  const Quiz = window.AtharQuiz;
+  const quizUI = Quiz ? Quiz.settingsUI($('#quizSetup'), {
+    game: 'telephone', def: 'diwan', sources: ['diwan', 'host'],
+    labels: { host: { s: 'يلقيه شفهيًا ويسجّل النتيجة' } }
+  }) : null;
+  let qs = { src: 'host' }, Q = null, qLocked = false;
+  const LET = ['أ', 'ب', 'ج', 'د', 'هـ'];
+  const useDiwan = () => qs.src === 'diwan' && Quiz && Quiz.available;
+
+  function drawQ() { Q = useDiwan() ? Quiz.next(qs) : null; if (Q) Q.gone = []; qLocked = false; }
+  function renderQ() {
+    const box = $('#tq');
+    box.hidden = !Q;
+    if (!Q) return;
+    $('#tqCat').textContent = Q.cat;
+    $('#tqText').textContent = Q.q;
+    $('#tqCite').textContent = Q.cite ? `ديوان: ${Q.cite}` : '';
+    $('#tqOpts').innerHTML = Q.opts.map((o, i) => {
+      let c = 'aq-opt';
+      if (Q.gone.includes(i)) c += ' gone';
+      if (Q.picked != null && i === Q.correct) c += ' right';
+      if (Q.picked != null && Q.picked === i && i !== Q.correct) c += ' wrong';
+      return `<button type="button" class="${c}" data-i="${i}" ${Q.picked != null ? 'disabled' : ''}><span class="aq-l">${LET[i] || num(i + 1)}</span><span></span></button>`;
+    }).join('');
+    $$('#tqOpts .aq-opt span:last-child').forEach((sp, i) => { sp.textContent = Q.opts[i]; });
+  }
+  function pickOption(i) {
+    if (!Q || qLocked || Q.picked != null || answering) return;
+    Q.picked = i; qLocked = true;
+    renderQ();
+    handleAnswer(i === Q.correct);
+  }
+
   function render(bumpIdx = -1) {
+    if (useDiwan() && !Q) drawQ();
     const t = teams[cur];
     el.game.style.setProperty('--c', t.color);
 
@@ -236,7 +274,10 @@
     el.roundMax.textContent = num(MAX_ROUNDS);
     el.activeName.textContent = t.name;
     el.qPoints.textContent = num(t.currentQuestionPoints);
-    el.hostSpeech.textContent = `الدور الآن على (${t.name}). ألقِ السؤال شفهيًا بقيمة ${num(t.currentQuestionPoints)} نقطة، ثم سجّل النتيجة.`;
+    el.hostSpeech.textContent = useDiwan()
+      ? `الدور الآن على (${t.name}). السؤال على الشاشة بقيمة ${num(t.currentQuestionPoints)} نقطة… اختاروا جوابكم.`
+      : `الدور الآن على (${t.name}). ألقِ السؤال شفهيًا بقيمة ${num(t.currentQuestionPoints)} نقطة، ثم سجّل النتيجة.`;
+    renderQ();
 
     // سُلّم الفريق
     el.ladder.innerHTML = '';
@@ -259,7 +300,7 @@
 
   function selectTeam(i) {
     if (i < 0 || i >= teams.length || i === cur) return;
-    cur = i;
+    cur = i; Q = null;
     S.tongue(0, 0.25); S.drop(440, 0.05, 0.16);
     render();
   }
@@ -326,6 +367,7 @@
   }
 
   function nextTurn() {
+    Q = null;
     cur++;
     if (cur >= teams.length) { cur = 0; round++; }
     if (round > MAX_ROUNDS) endGame();
@@ -340,7 +382,17 @@
     S.whoosh(true); S.drop(640, 0.2, 0.18);
     render();
 
-    if (type === 'fifty') {
+    if (type === 'fifty' && Q) {
+      // حذف خيارين خاطئين فعليًا (ويبقى خياران على الأقل)
+      const wrong = Q.opts.map((_, i) => i).filter((i) => i !== Q.correct && !Q.gone.includes(i));
+      const n = Math.min(2, Q.opts.length - 2);
+      for (let k = 0; k < n && wrong.length; k++) Q.gone.push(wrong.splice(Math.floor(Math.random() * wrong.length), 1)[0]);
+      renderQ();
+      info({ title: 'حذف إجابتين (٥٠:٥٠)', text: `${t.name} يبون ٥٠:٥٠! شلنا لهم ${n === 1 ? 'خيار غلط' : 'خيارين غلط'}.` });
+    } else if (type === 'change' && Q) {
+      drawQ(); renderQ();
+      info({ title: 'تغيير السؤال', text: `ما عجبهم السؤال! عطيناهم واحد ثاني من ديوان.` });
+    } else if (type === 'fifty') {
       info({ title: 'حذف إجابتين (٥٠:٥٠)', text: `طلب ${t.name} حذف إجابتين. يا ${host()}، احذف خيارين خاطئين من الخيارات وأبلغهم شفهيًا.` });
     } else if (type === 'change') {
       info({ title: 'تغيير السؤال', text: `طلب ${t.name} تغيير السؤال. يا ${host()}، ألقِ عليهم سؤالًا آخر.` });
@@ -505,6 +557,8 @@
   $('#minusBtn').addEventListener('click', () => changePoints(-POINT_STEP));
   $('#plusBtn').addEventListener('click', () => changePoints(POINT_STEP));
   $('#correctBtn').addEventListener('click', () => handleAnswer(true));
+  $('#tqOpts').addEventListener('click', (e) => { const b = e.target.closest('[data-i]'); if (b && !b.disabled) pickOption(+b.dataset.i); });
+  $('#tqSwap').addEventListener('click', () => { if (Q && Q.picked == null) { drawQ(); renderQ(); S.tongue(0, 0.2); } });
   $('#wrongBtn').addEventListener('click', () => handleAnswer(false));
   $$('.life').forEach((b) => b.addEventListener('click', () => useLifeline(b.dataset.life)));
   $('#bankBtn').addEventListener('click', openBank);

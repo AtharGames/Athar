@@ -21,6 +21,7 @@
 index.html, home.css, home.js   الصفحة الرئيسية
 assets/athar.css                الهوية المشتركة: الخط، الثيمات، الشعار
 assets/athar-sound.js           الأصوات المشتركة (مؤثرات بلا موسيقى ولا آلات)
+assets/athar-quiz.js, .css      الأسئلة المشتركة: ربط الألعاب ببنك ديوان (من ديوان / من المقدّم / بدون)، اختيار الدواوين والمستوى، ونافذة سؤال جاهزة
 assets/sounds/                  مقاطع صوتية مسجّلة (إعلان الفائز)
 assets/*.png                    شعارات أثَر (الأساسي والمعكوس)
 assets/fonts/                   ملفات خط ثمانية (لا تُرفع بسبب الترخيص)
@@ -32,7 +33,7 @@ huroof/                         إنسان حيوان جماد (index.html شا�
 maarek/                         معارك (map.js الخريطتان (٢٠ و٣٠ إقليمًا) المولّدتان بـ img/make_map.py، الأسئلة من ../diwan/data.js، sounds/ مؤثرات مولّدة بـ make.py)
 haraj/                          على السَّوم (الأسئلة من ../diwan/data.js، img/pattern.svg النقش المائي، المؤثرات مولّدة في app.js)
 diwan/                          بنك أسئلة ديوان (data.js مولّد من ملفات الأسئلة الأصلية)
-sahm/                           مسابقة سهمك الصاعد (questions.js بنك الأسئلة)
+sahm/                           مسابقة سهمك الصاعد (الأسئلة من ../diwan/data.js)
 crime/                          مسابقة مسرح جريمة (team.html صفحة الفريق بالجوال، net.js الاتصال: Firebase إذا وُجدت firebase-config.js وإلا ntfy.sh، الأسئلة من ../diwan/data.js)
 fleet/                          الأسطول البحري (index.html شاشة المقدّم، play.html جوال الفريق، shared.js القواعد واللوح والمحرر، net.js الاتصال: Firebase مستقل إذا عُبّئت firebase-config.js وإلا ntfy.sh، وقواعده في fleet/database.rules.json)
 database.rules.json, firebase.json   قواعد Firebase Realtime Database لمسرح جريمة (firebase deploy --only database)
@@ -42,6 +43,7 @@ database.rules.json, firebase.json   قواعد Firebase Realtime Database لم�
 - هوية أثَر: خط Thmanyah Sans، وثلاثة ثيمات (فاتح، كحلي، أزرق أثَر) مع مبدّل محفوظ
 - عربي واتجاه RTL، ومتجاوب مع الجوال والآيباد والكمبيوتر
 - الأصوات مؤثرات صوتية فقط (طبيعة، فم، تصفير، تصفيق…)، بلا موسيقى ولا آلات
+- الأسئلة من بنك ديوان مع خيار أسئلة المقدّم وخيار بدون أسئلة (`assets/athar-quiz.js`)، والأسئلة ما تتكرر بين الألعاب حتى تخلص
 
 ## إضافة لعبة جديدة
 أنشئ مجلدًا باسم اللعبة فيه `index.html` و`style.css` و`app.js`، واربط `../assets/athar.css` قبل ملف التنسيق، ثم أضف بطاقتها في `index.html` الرئيسي قبل بطاقة «قريبًا». بطاقة ديوان (بنك الأسئلة) تبقى دائمًا الأخيرة في الترتيب.
