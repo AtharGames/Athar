@@ -1,5 +1,5 @@
 # لإعادة التوليد: python3 make.py <مجلد الإخراج>  (يحتاج numpy و scipy و ffmpeg)
-# مؤثر الثعبان: فحيح وانزلاق (بلا موسيقى ولا آلات). النرد والسلم يستخدمان أصوات athar-sound.js
+# مؤثر الثعبان: فحيح وانزلاق (بلا موسيقى ولا آلات). عدّاد الأرقام والسلم يستخدمان أصوات athar-sound.js
 import numpy as np, subprocess, sys
 from scipy.io import wavfile
 from scipy.signal import butter, sosfilt

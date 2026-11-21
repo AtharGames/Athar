@@ -156,12 +156,12 @@ a.game-card:hover .art-phone .ph-waves path{animation:phWaves .9s ease-out;}
 .art-snakes .body{fill:none; stroke:#2FA862; stroke-width:16; stroke-linecap:round;}
 .art-snakes .spots{fill:none; stroke:#1E6B2D; stroke-width:5; stroke-linecap:round; stroke-dasharray:.1 15; opacity:.75;}
 .art-snakes .head{transform-origin:146px 44px; animation:snkSway 3s ease-in-out infinite;}
-.art-snakes .die{transform-origin:36px 148px;}
+.art-snakes .strip text{font-family:inherit;}
 .art-snakes .stars path{fill:#F59E0B;}
-a.game-card:hover .art-snakes .die{animation:snkDie .9s cubic-bezier(.3,.7,.4,1) both;}
+a.game-card:hover .art-snakes .strip{animation:snkReel 1s cubic-bezier(.2,.7,.25,1) both;}
 @keyframes snkSway{0%,100%{transform:rotate(-6deg);} 50%{transform:rotate(7deg);}}
-@keyframes snkDie{40%{transform:translateY(-30px) rotate(-90deg);} 80%{transform:rotate(-180deg);} 100%{transform:rotate(-180deg);}}
-@media (prefers-reduced-motion:reduce){.art-snakes .head,.art-snakes .die{animation:none !important;}}
+@keyframes snkReel{to{transform:translateY(-120px);}}
+@media (prefers-reduced-motion:reduce){.art-snakes .head,.art-snakes .strip{animation:none !important;}}
 @keyframes wiggle{30%{transform:translateX(-3px);} 60%{transform:translateX(3px);}}
 
 .art-crime{background:#0C0E12;}

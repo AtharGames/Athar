@@ -1,6 +1,6 @@
 /* =========================================================
    السلم والثعبان | منطق اللعبة
-   القواعد: نرد، سلالم ترفع، ثعابين تنزّل، وأول من يصل ١٠٠ يفوز
+   القواعد: أرقام تدور من ١ إلى ٦، سلالم ترفع، ثعابين تنزّل، وأول من يصل ١٠٠ يفوز
    ========================================================= */
 (() => {
   'use strict';
@@ -124,7 +124,7 @@
   // ---------- العبارات العفوية ----------
   const T = {
     turn: ['دور فريق الطحاطيح {t}', 'دور الأساطير {t}', 'يله دوركم {t}'],
-    turnSub: ['ارموا النرد وورّونا حظكم', 'فرصتكم… لا تضيّعونها', 'ورّونا شطارتكم'],
+    turnSub: ['دوّروا الأرقام وورّونا حظكم', 'فرصتكم… لا تضيّعونها', 'ورّونا شطارتكم'],
     ladder: ['كفو يا {t}!', 'يا سلام عليكم يا {t}!', 'ما شاء الله عليكم يا {t}!', 'عداكم العيب يا {t}!', 'ضربة معلّم يا {t}!'],
     snake: ['أفا يا {t}!', 'يا ساتر يا {t}!', 'راحت عليكم يا {t}!'],
     snakeTail: ['معليش، الجايات أكثر', 'ركّزوا شوي!', 'الثعبان ما يرحم'],
@@ -156,7 +156,7 @@
     skins: $('#skins'), layouts: $('#layouts'), skinDots: $('#skinDots'),
     frame: $('#boardFrame'), fx: $('#fx'), tiles: $('#tiles'), decor: $('#decor'), pawns: $('#pawns'),
     turnPanel: $('#turnPanel'), turnChip: $('#turnChip'), turnTitle: $('#turnTitle'), turnSub: $('#turnSub'),
-    dice: $('#dice'), diceResult: $('#diceResult'), rollBtn: $('#rollBtn'), nextBtn: $('#nextBtn'),
+    reel: $('#reel'), reelStrip: $('#reelStrip'), reelResult: $('#reelResult'), spinBtn: $('#spinBtn'), nextBtn: $('#nextBtn'),
     standings: $('#standings'), manualHint: $('#manualHint'), manualForm: $('#manualForm'), manualInput: $('#manualInput'),
     modal: $('#modal'), modalIcon: $('#modalIcon'), modalTitle: $('#modalTitle'), modalText: $('#modalText'), modalOk: $('#modalOk'),
     confirm: $('#confirm'), confirmTitle: $('#confirmTitle'), confirmText: $('#confirmText'), confirmYes: $('#confirmYes'), confirmNo: $('#confirmNo'),
@@ -454,30 +454,56 @@
     if (teams[cur]) el.pawns.append(teams[cur].el);
   }
 
-  // ---------- النرد ثلاثي الأبعاد ----------
-  const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
-  const FACE_ROT = { 1: [0, 0], 2: [90, 0], 3: [0, -90], 4: [0, 90], 5: [-90, 0], 6: [0, 180] };
-  let spin = 0;
+  // ---------- عدّاد الأرقام الدوّار (بديل النرد) ----------
+  // شريط أرقام يتحرك للأعلى بتتابع ١←٦ ثم يتباطأ ويقف على الرقم المسحوب
+  const REEL_LOOPS = 3;          // دورات كاملة قبل الوقوف
+  const REEL_MS = 1600;          // زمن الدوران
+  let reelNow = 1;
 
-  function buildDice() {
-    el.dice.innerHTML = '';
-    for (let f = 1; f <= 6; f++) {
-      const face = document.createElement('div');
-      face.className = `face f${f}`;
-      for (let k = 0; k < 9; k++) {
-        const i = document.createElement('i');
-        if (PIPS[f].includes(k)) i.className = 'pip';
-        face.append(i);
-      }
-      el.dice.append(face);
-    }
-    showDice(1, false);
+  function reelCell(n) {
+    const d = document.createElement('div');
+    d.className = 'reel-n';
+    d.textContent = num(n);
+    return d;
   }
 
-  function showDice(f, roll = true) {
-    if (roll) spin += 720;
-    const [rx, ry] = FACE_ROT[f];
-    el.dice.style.transform = `rotateX(${spin + rx}deg) rotateY(${spin + ry}deg)`;
+  function showReel(n) {
+    el.reelStrip.replaceChildren(reelCell(n));
+    el.reelStrip.style.transform = 'translateY(0)';
+    reelNow = n;
+  }
+
+  function spinReel(n) {
+    return new Promise((done) => {
+      // الرقم الحالي ثم الأرقام بالتتابع حتى نصل للرقم الجديد
+      const steps = REEL_LOOPS * 6 + (((n - reelNow + 6) % 6) || 6);
+      const seq = [reelNow];
+      for (let i = 0, k = reelNow; i < steps; i++) { k = (k % 6) + 1; seq.push(k); }
+      if (reducedMotion()) { showReel(n); done(); return; }
+
+      el.reelStrip.replaceChildren(...seq.map(reelCell));
+      el.reel.classList.remove('landed');
+      el.reel.classList.add('spinning');
+      const h = el.reel.clientHeight;
+      const ease = (t) => 1 - Math.pow(1 - t, 4);   // سريع ثم يتباطأ
+      const t0 = performance.now();
+      let passed = 0;
+      const frame = (now) => {
+        const t = Math.min(1, (now - t0) / REEL_MS);
+        const p = ease(t) * steps;
+        el.reelStrip.style.transform = `translateY(${-p * h}px)`;
+        // طقّة مع كل رقم يمر
+        const k = Math.floor(p + 0.5);
+        if (k > passed) { passed = k; S.tongue(0, 0.15); }
+        if (t > 0.7) el.reel.classList.remove('spinning');
+        if (t < 1) { requestAnimationFrame(frame); return; }
+        showReel(n);
+        void el.reel.offsetWidth;
+        el.reel.classList.add('landed');
+        done();
+      };
+      requestAnimationFrame(frame);
+    });
   }
 
   // =========================================================
@@ -515,7 +541,7 @@
     }));
     cur = 0;
     enterGame();
-    el.diceResult.textContent = '';
+    el.reelResult.textContent = '';
     S.whoosh(true);
     save();
   }
@@ -542,7 +568,7 @@
     el.turnTitle.textContent = turnTitle;
     el.turnSub.textContent = turnSub;
     el.manualHint.textContent = `اكتبوا رقم المربع (من ١ إلى ١٠٠) وننقل ${t.name} له على طول.`;
-    el.rollBtn.disabled = el.nextBtn.disabled = busy;
+    el.spinBtn.disabled = el.nextBtn.disabled = busy;
 
     el.standings.innerHTML = '';
     teams.forEach((tm, i) => {
@@ -588,20 +614,16 @@
     } catch { return false; }
   }
 
-  // رمي النرد ثم المشي
+  // سحب رقم عشوائي من ١ إلى ٦ بالعدّاد الدوّار ثم المشي
   async function roll() {
     if (busy) return;
     busy = true; render();
     const n = Math.floor(Math.random() * 6) + 1;
-    const spinMs = reducedMotion() ? 0 : 950;
-    el.diceResult.textContent = '…';
-    showDice(n);
-    // خشخشة النرد بنقرات لسان
-    [0, 0.11, 0.24, 0.4, 0.58, 0.78].forEach((d) => S.tongue(d, 0.2));
-    await sleep(spinMs);
+    el.reelResult.textContent = '…';
+    await spinReel(n);
     S.drop(520);
-    el.diceResult.textContent = `طلع لكم ${num(n)}`;
-    await sleep(250);
+    el.reelResult.textContent = `وقف على ${num(n)}`;
+    await sleep(reducedMotion() ? 0 : 350);
     await walk(teams[cur], n);
     await resolve(teams[cur]);
   }
@@ -686,7 +708,7 @@
 
     const go = () => {
       advance(); newTurnText();
-      el.diceResult.textContent = '';
+      el.reelResult.textContent = '';
       busy = false;
       S.drop(380);
       placePawns(200); render(); save();
@@ -707,7 +729,7 @@
     if (busy) return;
     advance();
     newTurnText();
-    el.diceResult.textContent = '';
+    el.reelResult.textContent = '';
     S.drop(380);
     placePawns(200);
     render();
@@ -842,7 +864,7 @@
   el.soundBtn.addEventListener('click', () => el.soundBtn.setAttribute('aria-pressed', String(S.toggle())));
 
   $('#startBtn').addEventListener('click', startGame);
-  el.rollBtn.addEventListener('click', roll);
+  el.spinBtn.addEventListener('click', roll);
   el.nextBtn.addEventListener('click', nextTurn);
   el.manualForm.addEventListener('submit', (e) => { e.preventDefault(); manualMove(); });
 
@@ -872,7 +894,7 @@
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeAsk(false, true); closeInfo(); } });
 
   // ---------- تهيئة أولى ----------
-  buildDice();
+  showReel(1);
   renderCounts();
   renderTeamInputs();
   renderSkins();

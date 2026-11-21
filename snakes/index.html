@@ -77,17 +77,26 @@
                 <path d="M147 38q6 4 12 0" stroke="#1E6B2D" stroke-width="2" fill="none" stroke-linecap="round"/>
               </g>
             </g>
-            <!-- النرد يقفز -->
-            <g class="h-die">
-              <rect x="14" y="104" width="44" height="44" rx="10" fill="#fff" stroke="#BCC8DD" stroke-width="2"/>
-              <g fill="#0A2463"><circle cx="26" cy="116" r="4"/><circle cx="46" cy="116" r="4"/><circle cx="26" cy="126" r="4"/><circle cx="46" cy="126" r="4"/><circle cx="26" cy="136" r="4"/><circle cx="46" cy="136" r="4"/></g>
+            <!-- عدّاد الأرقام يدور ويقف -->
+            <g class="h-reel">
+              <rect x="10" y="98" width="52" height="56" rx="13" fill="#fff" stroke="#BCC8DD" stroke-width="2"/>
+              <clipPath id="heroReelClip"><rect x="15" y="106" width="42" height="40" rx="7"/></clipPath>
+              <rect x="15" y="106" width="42" height="40" rx="7" fill="#E9F0FA"/>
+              <g clip-path="url(#heroReelClip)">
+                <g class="h-strip" fill="#0A2463" font-size="30" font-weight="700" text-anchor="middle">
+                  <text x="36" y="137">٦</text><text x="36" y="177">٢</text><text x="36" y="217">٥</text><text x="36" y="257">١</text><text x="36" y="297">٣</text><text x="36" y="337">٤</text><text x="36" y="377">٦</text>
+                </g>
+                <rect x="15" y="106" width="42" height="9" fill="#0A2463" opacity=".12"/>
+                <rect x="15" y="137" width="42" height="9" fill="#0A2463" opacity=".12"/>
+              </g>
+              <path d="M10 126l6 0M62 126l-6 0" stroke="#E5484D" stroke-width="3" stroke-linecap="round"/>
             </g>
             <!-- نجوم القمة -->
             <g class="h-stars"><path d="M172 12l2.6 5.4 6 .8-4.4 4 1.1 5.9-5.3-2.9-5.3 2.9 1.1-5.9-4.4-4 6-.8z"/><path d="M196 40l1.8 3.7 4 .5-3 2.8.8 4-3.6-2-3.6 2 .8-4-3-2.8 4-.5z"/></g>
           </svg>
         </div>
         <h1>السلم والثعبان</h1>
-        <p class="lead">ارموا النرد، اطلعوا السلالم، وانتبهوا من الثعابين… وأول فريق يوصل ١٠٠ هو البطل.</p>
+        <p class="lead">دوّروا الأرقام، اطلعوا السلالم، وانتبهوا من الثعابين… وأول فريق يوصل ١٠٠ هو البطل.</p>
       </div>
 
       <div class="card">
@@ -109,10 +118,10 @@
       <details class="card rules">
         <summary>كيف نلعب؟ (باختصار)</summary>
         <ul>
-          <li>كل الفرق تبدأ من المربع ١، والفريق صاحب الدور يرمي النرد ويمشي بعدد اللي طلع له.</li>
+          <li>كل الفرق تبدأ من المربع ١، والفريق صاحب الدور يدوّر الأرقام (من ١ إلى ٦) ويمشي بعدد الرقم اللي يوقف عليه.</li>
           <li><strong>السلّم:</strong> لو وقفتوا عند أوله طلعتوا لآخره على طول.</li>
           <li><strong>الثعبان:</strong> لو وقفتوا على راسه نزّلكم لذيله.</li>
-          <li>بعد الرمية اضغطوا <strong>«تجاوز الدور»</strong> عشان ينتقل الدور للفريق اللي بعده.</li>
+          <li>بعد ما يوقف الرقم وتمشون اضغطوا <strong>«تجاوز الدور»</strong> عشان ينتقل الدور للفريق اللي بعده.</li>
           <li><strong>النقل اليدوي:</strong> ينقل الفريق صاحب الدور لأي مربع تكتبونه.</li>
           <li>أول فريق يوصل المربع ١٠٠ هو الفائز، وبعدها تختارون: نعلن الفائز أو تكمّلون على باقي المراكز.</li>
           <li><strong>إنهاء اللعبة:</strong> تقدرون توقفون بأي وقت، والفائز هو الأبعد على اللوحة.</li>
@@ -173,7 +182,7 @@
       <!-- لوحة التحكم -->
       <aside class="side">
 
-        <!-- الدور والنرد -->
+        <!-- الدور وعدّاد الأرقام -->
         <div class="panel turn-panel" id="turnPanel">
           <div class="turn-info">
             <span class="turn-chip" id="turnChip"></span>
@@ -183,15 +192,15 @@
             </div>
           </div>
 
-          <div class="dice-row">
-            <div class="dice-stage" aria-hidden="true">
-              <div class="dice" id="dice"></div>
+          <div class="reel-row">
+            <div class="reel-stage" aria-hidden="true">
+              <div class="reel" id="reel"><div class="reel-strip" id="reelStrip"></div></div>
             </div>
-            <div class="dice-actions">
-              <output class="dice-result" id="diceResult" aria-live="polite"></output>
-              <button class="btn btn-primary" id="rollBtn">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="none" stroke-width="2"/><circle cx="8.5" cy="8.5" r="1.6"/><circle cx="15.5" cy="15.5" r="1.6"/><circle cx="12" cy="12" r="1.6"/></svg>
-                ارمِ النرد
+            <div class="reel-actions">
+              <output class="reel-result" id="reelResult" aria-live="polite"></output>
+              <button class="btn btn-primary" id="spinBtn">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="4"/><path d="M9 8.5l3-2.6 3 2.6M9 15.5l3 2.6 3-2.6"/></svg>
+                دوّر الأرقام
               </button>
             </div>
           </div>

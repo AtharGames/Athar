@@ -156,9 +156,16 @@
               <circle cx="149" cy="28" r="4" fill="#fff"/><circle cx="158" cy="28" r="4" fill="#fff"/>
               <circle cx="150" cy="28.5" r="2" fill="#0A2463"/><circle cx="159" cy="28.5" r="2" fill="#0A2463"/>
             </g>
-            <g class="die">
-              <rect x="14" y="104" width="44" height="44" rx="10" fill="#fff" stroke="#BCC8DD" stroke-width="2"/>
-              <g fill="#0A2463"><circle cx="26" cy="116" r="4"/><circle cx="46" cy="116" r="4"/><circle cx="26" cy="126" r="4"/><circle cx="46" cy="126" r="4"/><circle cx="26" cy="136" r="4"/><circle cx="46" cy="136" r="4"/></g>
+            <g class="reel">
+              <rect x="10" y="98" width="52" height="56" rx="13" fill="#fff" stroke="#BCC8DD" stroke-width="2"/>
+              <clipPath id="cardReelClip"><rect x="15" y="106" width="42" height="40" rx="7"/></clipPath>
+              <rect x="15" y="106" width="42" height="40" rx="7" fill="#E9F0FA"/>
+              <g clip-path="url(#cardReelClip)">
+                <g class="strip" fill="#0A2463" font-size="30" font-weight="700" text-anchor="middle">
+                  <text x="36" y="137">٦</text><text x="36" y="177">٣</text><text x="36" y="217">١</text><text x="36" y="257">٤</text>
+                </g>
+              </g>
+              <path d="M10 126h6M62 126h-6" stroke="#E5484D" stroke-width="3" stroke-linecap="round"/>
             </g>
             <g class="stars"><path d="M172 12l2.6 5.4 6 .8-4.4 4 1.1 5.9-5.3-2.9-5.3 2.9 1.1-5.9-4.4-4 6-.8z"/><path d="M196 40l1.8 3.7 4 .5-3 2.8.8 4-3.6-2-3.6 2 .8-4-3-2.8 4-.5z"/></g>
           </g>
@@ -166,8 +173,8 @@
       </div>
       <div class="game-body">
         <h2>السلم والثعبان</h2>
-        <p>ارموا النرد، اطلعوا السلالم، وانتبهوا من الثعابين… وأول من يوصل ١٠٠ هو البطل.</p>
-        <div class="tags"><span>فرق</span><span>نرد وحظ</span><span>من ٢ إلى ٤ فرق</span></div>
+        <p>دوّروا الأرقام، اطلعوا السلالم، وانتبهوا من الثعابين… وأول من يوصل ١٠٠ هو البطل.</p>
+        <div class="tags"><span>فرق</span><span>أرقام دوّارة</span><span>من ٢ إلى ٤ فرق</span></div>
         <span class="play">العب الآن</span>
       </div>
     </a>
