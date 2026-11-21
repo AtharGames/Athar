@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220">
+  <g fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <!-- مفتاح سيارة -->
+    <g transform="translate(18 18) rotate(-20 20 20)">
+      <circle cx="12" cy="20" r="10"/><circle cx="12" cy="20" r="3"/>
+      <path d="M22 20H46l4 4-4 4-3-3-3 3-3-3-3 3-3-3"/>
+    </g>
+    <!-- طارة -->
+    <g transform="translate(132 14)">
+      <circle cx="26" cy="26" r="22"/><circle cx="26" cy="26" r="6"/>
+      <path d="M6 22h14M32 22h14M26 32v16"/>
+    </g>
+    <!-- مطرقة الدلّال -->
+    <g transform="translate(78 86) rotate(30 22 22)">
+      <rect x="4" y="2" width="36" height="16" rx="5"/>
+      <path d="M22 18V46"/>
+      <path d="M12 2v16M32 2v16"/>
+    </g>
+    <!-- عداد سرعة -->
+    <g transform="translate(14 120)">
+      <path d="M6 40a24 24 0 1 1 48 0"/>
+      <path d="M30 40l12-14"/>
+      <path d="M12 30l4 2M30 18v4M48 30l-4 2"/>
+    </g>
+    <!-- كفر -->
+    <g transform="translate(150 118)">
+      <circle cx="24" cy="24" r="22"/><circle cx="24" cy="24" r="11"/>
+      <path d="M24 2v6M24 40v6M2 24h6M40 24h6"/>
+    </g>
+    <!-- قمع مواقف -->
+    <g transform="translate(96 168)">
+      <path d="M4 44h40M10 44L20 6h8l10 38"/>
+      <path d="M14 30h20M17 18h14"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="lot">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>على السَّوم | حرّاج السيارات | أثَر للألعاب</title>
+<meta name="description" content="مسابقة ثقافية بنكهة حرّاج السيارات: جاوب صح وادخل الحراج، سوّم على السيارات، واكشف حالتها بعد البيع… والشريطي يزاحمك. من أثَر للألعاب.">
+<meta name="theme-color" content="#14171C">
+<!-- تطبيق الثيم قبل الرسم لتفادي الوميض (lot و sand ثيمان خاصان باللعبة) -->
+<script>
+(function(){
+  // الثيم الافتراضي «ليل الحراج»، واختيار اللاعب يُحفظ لهذه اللعبة وحدها
+  var t=null;
+  try{ t=localStorage.getItem('athar-haraj-theme'); }catch(e){}
+  if(['lot','sand','light','navy','blue'].indexOf(t)<0){ t='lot'; }
+  document.documentElement.setAttribute('data-theme',t);
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/athar.css">
+<link rel="stylesheet" href="style.css">
+<!-- إحصائيات الزيارات (Google Analytics) -->
+<script src="../assets/athar-analytics.js" defer></script>
+</head>
+<body>
+
+<!-- ============ خلفية الحراج: أسفلت ونقش مائي وخطوط مواقف ============ -->
+<div class="lot-bg" aria-hidden="true">
+  <div class="lot-pattern"></div>
+  <div class="lot-lines"></div>
+</div>
+
+<!-- ============ الشريط العلوي ============ -->
+<header class="topbar">
+  <a class="brand" href="../" aria-label="الرجوع إلى أثَر للألعاب">
+    <img class="logo logo-main" src="../assets/athar-mark.png" alt="" width="52" height="60">
+    <img class="logo logo-rev" src="../assets/athar-mark-reversed.png" alt="" width="52" height="60">
+    <span class="brand-text">
+      <strong>على السَّوم</strong>
+      <small>حرّاج السيارات</small>
+    </span>
+  </a>
+
+  <div class="top-tools">
+    <button class="icon-btn snd" id="soundBtn" aria-pressed="true" aria-label="المؤثرات الصوتية">
+      <span class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    </button>
+    <!-- مبدّل الثيمات: ليل الحراج + عصرية الحراج + ثيمات أثَر الثلاثة -->
+    <div class="theme-switch" role="group" aria-label="ألوان الواجهة">
+      <button class="theme-dot" data-set-theme="lot" aria-label="ثيم ليل الحراج" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="sand" aria-label="ثيم عصرية الحراج" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="light" aria-label="الثيم الفاتح" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="navy" aria-label="الثيم الكحلي" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="blue" aria-label="ثيم أزرق أثَر" aria-pressed="false"></button>
+    </div>
+  </div>
+</header>
+
+<!-- أعلام الحراج الملوّنة (تُولَّد بالسكربت حسب عرض الشاشة) -->
+<div class="bunting" id="bunting" aria-hidden="true"></div>
+
+<main>
+
+  <!-- ============ ١) البداية والإعدادات ============ -->
+  <section class="screen active" id="screen-setup">
+    <div class="setup">
+      <div class="setup-hero">
+        <svg class="hero" viewBox="0 0 260 180" aria-hidden="true">
+          <!-- حبل الأعلام -->
+          <path class="h-rope" d="M0 10Q130 58 260 10"/>
+          <g class="h-flags">
+            <path style="--k:0" class="f1" d="M17 14.3h18l-9 18z"/><path style="--k:1" class="f2" d="M43 17.7h18l-9 18z"/><path style="--k:2" class="f3" d="M69 20.1h18l-9 18z"/><path style="--k:3" class="f4" d="M95 21.5h18l-9 18z"/><path style="--k:4" class="f5" d="M121 22h18l-9 18z"/><path style="--k:5" class="f1" d="M147 21.5h18l-9 18z"/><path style="--k:6" class="f2" d="M173 20.1h18l-9 18z"/><path style="--k:7" class="f3" d="M199 17.7h18l-9 18z"/><path style="--k:8" class="f4" d="M225 14.3h18l-9 18z"/>
+          </g>
+          <!-- ضوء الكشاف -->
+          <path class="h-beam" d="M104 0L156 0L236 172L24 172Z"/>
+          <ellipse class="h-shadow" cx="108" cy="170" rx="100" ry="7"/>
+          <!-- الجيب -->
+          <g class="h-car">
+            <g transform="translate(8 64) scale(.82)">
+              <path class="c-body" d="M10 82Q8 64 22 60L52 56L70 28Q74 22 82 22L198 22Q208 22 212 30L224 56Q232 60 232 72L232 86Q232 92 224 92L16 92Q10 92 10 86Z"/>
+              <path class="c-rack" d="M86 17H196M100 17V22M180 17V22"/>
+              <path class="c-glass" d="M60 56L75 30L116 30L116 56ZM122 30L160 30L160 56L122 56ZM166 30L202 30L214 56L166 56Z"/>
+              <path class="c-line" d="M119 58V90M163 58V90M10 76H232"/>
+              <path class="c-lamp" d="M12 68Q12 64 20 63L32 62L30 71L14 72Z"/>
+              <rect class="c-tail" x="226" y="62" width="6" height="10" rx="2"/>
+              <g class="c-wheel"><circle cx="56" cy="92" r="19"/><circle class="rim" cx="56" cy="92" r="9"/></g>
+              <g class="c-wheel"><circle cx="188" cy="92" r="19"/><circle class="rim" cx="188" cy="92" r="9"/></g>
+            </g>
+            <!-- ملصق تم البيع -->
+            <g class="h-sold">
+              <rect x="70" y="100" width="90" height="28" rx="6"/>
+              <text x="115" y="120" text-anchor="middle">تم البيع!</text>
+            </g>
+          </g>
+          <!-- قاعدة المطرقة والمطرقة -->
+          <rect class="h-block" x="206" y="156" width="44" height="12" rx="3"/>
+          <g class="h-hit"><path d="M200 150l-8-6M228 140v-10M256 150l8-6"/></g>
+          <g class="h-gavel">
+            <rect class="g-handle" x="226" y="96" width="8" height="52" rx="4" transform="rotate(38 230 122)"/>
+            <rect class="g-head" x="208" y="138" width="44" height="18" rx="6"/>
+            <rect class="g-band" x="218" y="138" width="5" height="18"/><rect class="g-band" x="237" y="138" width="5" height="18"/>
+          </g>
+        </svg>
+        <h1>على السَّوم</h1>
+        <p class="lead">حرّاج سيارات ثقافي: جاوبوا صح وادخلوا الحراج، سوّموا على السيارات، وبعد البيع تنكشف حالتها… يا كسبانين يا مقلب! والشريطي واقف لكم بالمرصاد.</p>
+      </div>
+
+      <!-- متابعة مسابقة محفوظة -->
+      <div class="card resume" id="resumeCard" hidden>
+        <div>
+          <h2>عندكم حرّاج ما خلص</h2>
+          <p class="muted" id="resumeText"></p>
+        </div>
+        <div class="resume-actions">
+          <button class="btn btn-primary" id="resumeBtn">تمام، نكمّل</button>
+          <button class="btn" id="discardBtn">شيلها</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>مين بيلعب؟</h2><span class="muted">من ٢ إلى ٦ فرق</span></div>
+        <div class="chips c5" id="counts" role="group" aria-label="عدد الفرق"></div>
+        <div class="team-inputs" id="teamInputs"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>إعدادات الحراج</h2><span class="muted">نحفظها لك على الجهاز</span></div>
+        <label class="field">
+          <span>رصيد كل فريق بالريال (٥٠٬٠٠٠ إلى ٢٬٠٠٠٬٠٠٠)</span>
+          <input type="number" id="cashInput" min="50000" max="2000000" step="10000" inputmode="numeric">
+        </label>
+        <div class="field">
+          <span>كم سيارة تدخل الحراج في كل جولة؟</span>
+          <div class="chips c3" id="lotChips" role="group" aria-label="عدد السيارات في الجولة"></div>
+        </div>
+        <div class="field">
+          <span>عدد الجولات</span>
+          <div class="chips c4" id="roundChips" role="group" aria-label="عدد الجولات"></div>
+        </div>
+        <div class="field">
+          <span>سرعة المطرقة (المهلة قبل «أول مرة… ثاني مرة… تم البيع»)</span>
+          <div class="chips c5" id="hammerChips" role="group" aria-label="سرعة المطرقة"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>الأسئلة</h2><span class="muted">اختيارية</span></div>
+        <div class="field">
+          <div class="chips c3" id="qsrcChips" role="group" aria-label="مصدر الأسئلة">
+            <button class="chip" data-v="diwan">من ديوان<small>أسئلة بخيارات على الشاشة</small></button>
+            <button class="chip" data-v="host">من المقدّم<small>يسأل ويحكم صح أو غلط</small></button>
+            <button class="chip" data-v="none">بدون أسئلة<small>الكل يدخل الحراج</small></button>
+          </div>
+        </div>
+        <div class="field" data-needs-q>
+          <span>طريقة الأسئلة</span>
+          <div class="chips c2" id="modeChips" role="group" aria-label="طريقة الأسئلة">
+            <button class="chip" data-v="seq">بالدور<small>سؤال لكل فريق</small></button>
+            <button class="chip" data-v="fast">للأسرع<small>اللي يجاوب أول</small></button>
+          </div>
+        </div>
+        <div class="field" data-needs-q>
+          <span>مدة الإجابة</span>
+          <div class="chips c5" id="answerChips" role="group" aria-label="مدة الإجابة"></div>
+        </div>
+        <div class="field" data-needs-diwan>
+          <span>دواوين الأسئلة</span>
+          <div class="chips cats" id="catChips" role="group" aria-label="الدواوين"></div>
+        </div>
+        <div class="field" data-needs-diwan>
+          <span>المستوى</span>
+          <div class="chips c3" id="levelChips" role="group" aria-label="المستوى"></div>
+          <p class="muted note" id="catNote"></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>الشريطي والمفاجآت</h2></div>
+        <div class="field">
+          <span>الشريطي يزاحمكم في المزاد ويشتري منكم</span>
+          <div class="chips c2" id="dealerChips" role="group" aria-label="الشريطي">
+            <button class="chip" data-v="1">شغّال<small>يرفع السوم ويلهف الرخيص</small></button>
+            <button class="chip" data-v="0">مطفي<small>المزاد لكم بس</small></button>
+          </div>
+        </div>
+        <div class="field">
+          <span>المفاجآت (ساهر، ورث، استدعاء…)</span>
+          <div class="chips c2" id="luckChips" role="group" aria-label="المفاجآت">
+            <button class="chip" data-v="1">شغّالة<small>أنت وحظّك!</small></button>
+            <button class="chip" data-v="0">مطفية<small>ثابتة ومضمونة</small></button>
+          </div>
+        </div>
+      </div>
+
+      <details class="card rules">
+        <summary>كيف نلعب؟ (باختصار)</summary>
+        <ul>
+          <li>لكل فريق <strong>رصيد</strong> يشتري فيه سيارات من الحراج.</li>
+          <li>في كل جولة سؤال لكل فريق: <strong>اللي يجاوب صح</strong> ياخذ عمولة ويدخل الحراج، واللي يغلط يتفرّج هالجولة.</li>
+          <li><strong>المزاد:</strong> تدخل السيارة بسوم افتتاحي، وكل فريق يزيد بضغطة. إذا سكت الكل تبدأ المطرقة: «أول مرة… ثاني مرة… تم البيع!».</li>
+          <li>كل سيارة لها <strong>حالة مخفية</strong> ما تنكشف إلا بعد البيع: من «كرت بلانش» إلى «مكينة ضاربة». ملاحظة صاحبها ممكن تصدق وممكن تكذب!</li>
+          <li><strong>الشريطي</strong> يعرف السيارات: إذا زاحمكم فغالبًا السيارة زينة، وتقدرون تبيعون عليه سياراتكم بنهاية كل جولة (بس بياكل منكم شوي).</li>
+          <li>بعد كل جولة تتغيّر <strong>أسعار الموديلات</strong>: شيء حظ، وشيء منطق: <strong>الموديل اللي نزل يرجع يطلع</strong>، والمطلوب في المزاد يغلى.</li>
+          <li>بالنهاية تنباع كل السيارات بقيمتها السوقية، و<strong>الأكثر فلوس يفوز</strong>.</li>
+        </ul>
+      </details>
+
+      <button class="btn btn-primary btn-big" id="startBtn">يلا نفتح الحراج!</button>
+      <a class="home-link" href="../">← كل ألعاب أثَر</a>
+    </div>
+  </section>
+
+  <!-- ============ ٢) اللعب ============ -->
+  <section class="screen" id="screen-game">
+    <div class="game">
+      <div class="bar">
+        <div class="round-pill" id="roundPill"></div>
+        <div class="timer" id="timer" hidden>
+          <span class="timer-ring" id="timerRing"><b id="timerNum"></b></span>
+          <button class="btn btn-sm" id="pauseBtn">وقّف الوقت</button>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="endBtn">خلّصنا؟</button>
+      </div>
+
+      <!-- أرصدة الفرق وكراجاتها -->
+      <div class="teams" id="teams"></div>
+
+      <div class="layout" id="layout">
+        <div class="stage" id="stage" aria-live="polite"></div>
+        <aside class="board" id="board" aria-label="أسعار الحراج"></aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ٣) الفوز ============ -->
+  <section class="screen" id="screen-victory">
+    <canvas id="confetti" aria-hidden="true"></canvas>
+    <div class="victory">
+      <div class="win-car" id="winCar"></div>
+      <p class="kicker" id="victoryKicker"></p>
+      <h1 id="winnerName"></h1>
+      <p class="lead" id="winnerText"></p>
+      <div class="final" id="finalBoard"></div>
+      <button class="btn btn-primary btn-big" id="resetBtn">نعيدها؟</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ تأكيد ============ -->
+<div class="modal" id="confirm" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h3 id="confirmTitle"></h3>
+    <p id="confirmText"></p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="confirmYes"></button>
+      <button class="btn" id="confirmNo">لا، هوّنت</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/athar-sound.js" defer></script>
+<script src="../diwan/data.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>

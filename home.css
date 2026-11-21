@@ -260,3 +260,29 @@ a.game-card:hover .art-maarek .cloth{transform-box:fill-box; transform-origin:0 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none !important; transition:none !important;}
 }
+
+/* على السَّوم: حرّاج سيارات بالليل */
+.art-haraj{background:linear-gradient(180deg,#1A1F27,#14171C);}
+.art-haraj svg{width:100%; height:100%;}
+.art-haraj .rope{fill:none; stroke:#C9C2B0; stroke-width:1; opacity:.7;}
+.art-haraj .f1{fill:#E8554E;} .art-haraj .f2{fill:#FFC21A;} .art-haraj .f3{fill:#1E6FE0;} .art-haraj .f4{fill:#1FA971;}
+.art-haraj .floor{fill:#2A2F37;}
+.art-haraj .pline{stroke:#FFC21A; stroke-width:2;}
+.art-haraj .body{fill:#F4F6F8; stroke:#07090C; stroke-width:4; stroke-linejoin:round;}
+.art-haraj .glass{fill:#9CC9E8; stroke:#07090C; stroke-width:3.5; stroke-linejoin:round;}
+.art-haraj .wheel{fill:#1B1E24; stroke:#07090C; stroke-width:3;}
+.art-haraj .rim{fill:#C9CED6;}
+.art-haraj .sold rect{fill:#F04A4F; stroke:#fff; stroke-width:1.6;}
+.art-haraj .sold text{fill:#fff; font-size:9px; font-weight:700; font-family:inherit;}
+.art-haraj .sold{transform-box:fill-box; transform-origin:center; transform:rotate(-8deg);}
+.art-haraj .stick{stroke:#B7773D; stroke-width:4; stroke-linecap:round;}
+.art-haraj .head{fill:#8A5226; stroke:#07090C; stroke-width:1.2;}
+.art-haraj .block{fill:#8A5226;}
+.art-haraj .gavel{transform-origin:150px 30px;}
+.art-haraj .flags path{transform-box:fill-box; transform-origin:50% 0;}
+a.game-card:hover .art-haraj .gavel{animation:harajGavel .9s cubic-bezier(.6,0,.4,1) infinite;}
+a.game-card:hover .art-haraj .sold{animation:harajSold .5s cubic-bezier(.2,1.4,.4,1) both;}
+a.game-card:hover .art-haraj .flags path{animation:harajFlag 1.6s ease-in-out infinite alternate;}
+@keyframes harajGavel{0%,100%{transform:rotate(-18deg);} 45%{transform:rotate(6deg);}}
+@keyframes harajSold{from{opacity:0; transform:translateY(-14px) rotate(-26deg) scale(1.5);} to{opacity:1; transform:rotate(-8deg);}}
+@keyframes harajFlag{from{transform:rotate(-8deg);} to{transform:rotate(8deg);}}
