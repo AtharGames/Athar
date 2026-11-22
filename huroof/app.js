@@ -203,7 +203,9 @@
       openRoom(c);
     } catch (e) {
       console.warn('[huroof] create', e && e.message);
-      toast('ما قدرنا نفتح الغرفة، تأكد من الإنترنت وجرّب مرة ثانية');
+      toast(/permission/i.test(String(e && (e.code || e.message)))
+        ? 'Firebase رفض فتح الغرفة: انسخ قواعد huroof/database.rules.json الجديدة في Firebase'
+        : 'ما قدرنا نفتح الغرفة، تأكد من الإنترنت وجرّب مرة ثانية');
     } finally {
       busy = false; el.createBtn.disabled = false; el.createBtn.textContent = 'افتح غرفة جديدة';
     }
