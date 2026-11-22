@@ -15,10 +15,10 @@ window.HuroofAI = (() => {
   const params = new URLSearchParams(location.search);
   const FB = window.HUROOF_FIREBASE || null;
   const SDK = 'https://www.gstatic.com/firebasejs/13.4.0/';
-  // النموذج الأساسي ثم البديل (كلاهما متاح في الخطة المجانية)
-  const MODELS = [(FB && FB.aiModel) || 'gemini-3.8-flash', 'gemini-3.5-flash-lite'];
+  // النموذج السريع أولًا، والأقوى احتياطًا (كلاهما متاح في الخطة المجانية)
+  const MODELS = [(FB && FB.aiModel) || 'gemini-3.5-flash-lite', 'gemini-3.8-flash'];
+  const TIMEOUTS = [12000, 25000];
   const MODE = params.get('ai') === 'mock' ? 'mock' : params.get('ai') === 'off' ? 'off' : 'gemini';
-  const TIMEOUT = 25000;
 
   // تعليمات الحَكَم
   const SYSTEM = [
@@ -101,9 +101,10 @@ window.HuroofAI = (() => {
     });
     const prompt = `حرف الجولة: «${letter}»\nالخانات والإجابات (JSON):\n${body}`;
     let lastErr = null;
-    for (const m of models) {
+    for (let k = 0; k < models.length; k++) {
+      const m = models[k];
       try {
-        const res = await withTimeout(m.generateContent(prompt), TIMEOUT);
+        const res = await withTimeout(m.generateContent(prompt), TIMEOUTS[k] || 25000);
         const data = JSON.parse(res.response.text());
         const out = {};
         (data.results || []).forEach((r) => {
