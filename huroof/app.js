@@ -3,29 +3,36 @@
    بيانات الغرفة في قاعدة البيانات (huroof/<الرمز>):
      s : الحالة والإعدادات { c: وقت الإنشاء، ph: المرحلة، r: رقم الجولة (نص)، L: حرف الجولة، at: وقت بدايتها،
                             dl: وقت الجولة بالثواني (٠ بدون)، R: عدد الجولات (٠ مفتوح)، pu/pd: نقاط الوحيدة/المكررة،
-                            all: لازم تعبئة كل الخانات قبل التسليم؟، xl: حروف مستبعدة، used: حروف استُخدمت، cats: الخانات }
+                            all: لازم تعبئة كل الخانات قبل التسليم؟، xl: حروف مستبعدة، used: حروف استُخدمت، cats: الخانات،
+                            mo: طريقة اللعب (host بمقدّم يعتمد / auto بدون مقدّم)، ai: التصحيح بالذكاء الاصطناعي؟،
+                            aq: حالة الذكاء في الجولة (run يصحّح / ok خلص / err ما رد / off) }
        المراحل: lobby انتظار ← pick اختيار الحرف ← play كتابة ← stop قف! ← grade تصحيح ← show نتيجة ← end الفائز
      p : المشاركون { n: الاسم، j: وقت الدخول، on: متصل؟ }
      a : الإجابات لكل جولة { <الجولة>: { <المشارك>: { v: {رقم الخانة: الإجابة}، d: سلّم؟، t } } }
      f : أول تسليم لكل جولة { p: المشارك (أو _host إذا أوقفها المقدّم أو خلص الوقت)، t: وقت الخادم }
-     g : النتيجة المعتمدة لكل جولة { L: الحرف، s: { <المشارك>: [نقاط كل خانة] } }
+     g : النتيجة المعتمدة لكل جولة { L: الحرف، s: { <المشارك>: [نقاط كل خانة] }، n: { <المشارك>: {خانة: سبب الخطأ} }،
+                                     by: من اعتمدها (host المقدّم / ai الذكاء / auto التصحيح الآلي) }
    ========================================================= */
 (() => {
   'use strict';
   const H = window.HUI;
   const { $, $$, S, FX, store, ar, esc, plus, clock, LETTERS, HARD, DEFAULT_CATS, SUGGEST, MAX_CATS,
-    autoMarks, pointsOf, sum, asList, catsOf, roundsDone, ranking, colorOf, rollLetter, initChrome, show, toast, confirmBox, confetti, keepAwake, MARK } = H;
+    smartMarks, aiItems, aiKey, pointsOf, sum, asList, catsOf, roundsDone, ranking, colorOf, rollLetter, initChrome, show, toast, confirmBox, confetti, keepAwake, MARK } = H;
   const NET = window.HuroofNet;
+  const AI = window.HuroofAI;
   const HOST_KEY = 'athar-huroof-host';
   const CFG_KEY = 'athar-huroof-cfg';
   const STALE = 12 * 60 * 60 * 1000;   // غرفة أقدم من ١٢ ساعة تُعتبر منتهية
   const GATHER = 3800;                  // مهلة جمع آخر الإجابات بعد «قف!» (القواعد تسمح ٥ ثوانٍ)
+  const AUTO_NEXT = 15;                 // بدون مقدّم: ثوانٍ قبل الجولة التالية
+  const AUTO_SHOW = 1600;               // بدون مقدّم: مدة عرض التصحيح قبل الاعتماد
 
   const el = {
     netDot: $('#netDot'), netText: $('#netText'), heroLetter: $('#heroLetter'),
     resumeCard: $('#resumeCard'), resumeCode: $('#resumeCode'), resumeBtn: $('#resumeBtn'),
     settings: $('#settings'), settingsHome: $('#settingsHome'),
     catsList: $('#catsList'), catForm: $('#catForm'), catInput: $('#catInput'), suggest: $('#suggest'), catsReset: $('#catsReset'), catsHint: $('#catsHint'),
+    segMode: $('#segMode'), modeHint: $('#modeHint'), aiInput: $('#aiInput'), aiHint: $('#aiHint'),
     segR: $('#segR'), segT: $('#segT'), allInput: $('#allInput'), puVal: $('#puVal'), pdVal: $('#pdVal'),
     lettersPick: $('#lettersPick'), lettersHint: $('#lettersHint'),
     createBtn: $('#createBtn'),
@@ -36,6 +43,9 @@
     playLetter: $('#playLetter'), playText: $('#playText'), timebar: $('#timebar'), timefill: $('#timefill'), progress: $('#progress'), forceStopBtn: $('#forceStopBtn'),
     stopWho: $('#stopWho'), stopText: $('#stopText'),
     gradeLetter: $('#gradeLetter'), gradeTable: $('#gradeTable'), approveBtn: $('#approveBtn'), lgOk: $('#lgOk'), lgDup: $('#lgDup'),
+    gradeTitle: $('#gradeTitle'), gradeSub: $('#gradeSub'), lgAi: $('#lgAi'),
+    aiBar: $('#aiBar'), aiText: $('#aiText'), aiRetry: $('#aiRetry'), aiReset: $('#aiReset'),
+    autoBar: $('#autoBar'), autoText: $('#autoText'), autoPause: $('#autoPause'),
     showLetter: $('#showLetter'), showTitle: $('#showTitle'), showText: $('#showText'), board: $('#board'),
     nextBtn: $('#nextBtn'), regradeBtn: $('#regradeBtn'), sheetBtn: $('#sheetBtn'), finishBtn: $('#finishBtn'),
     winName: $('#winName'), winPts: $('#winPts'), finalBoard: $('#finalBoard'), totalsTable: $('#totalsTable'), againBtn: $('#againBtn'),
@@ -48,7 +58,7 @@
   // =========================================================
   // الإعدادات
   // =========================================================
-  const DEFAULT_CFG = { cats: DEFAULT_CATS.slice(), R: 5, dl: 0, pu: 10, pd: 5, all: true, xl: HARD };
+  const DEFAULT_CFG = { cats: DEFAULT_CATS.slice(), R: 5, dl: 0, pu: 10, pd: 5, all: true, xl: HARD, mo: 'host', ai: true };
   function loadCfg() {
     try {
       const c = JSON.parse(store.get(CFG_KEY) || 'null');
@@ -74,6 +84,12 @@
     el.catsHint.textContent = lockCats ? 'تنقفل بعد أول جولة' : `${ar(draft.cats.length)} من ${ar(MAX_CATS)}`;
     el.suggest.innerHTML = lockCats || draft.cats.length >= MAX_CATS ? '' :
       SUGGEST.filter((x) => !draft.cats.includes(x)).slice(0, 8).map((x) => `<button type="button">+ ${esc(x)}</button>`).join('');
+    $$('button', el.segMode).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === draft.mo)));
+    el.aiInput.checked = !!draft.ai;
+    el.modeHint.textContent = draft.mo === 'auto'
+      ? 'الشاشة تمشي لحالها: تسحب الحرف، و' + (draft.ai ? 'الذكاء الاصطناعي يصحّح ويعتمد' : 'التصحيح الآلي يعتمد') + '، والمقدّم يقدر يلعب معهم من جواله.'
+      : (draft.ai ? 'الذكاء الاصطناعي يصحّح ويقترح، والمقدّم يراجع ويعتمد.' : 'التصحيح الآلي يقترح، والمقدّم يراجع ويعتمد.');
+    el.aiHint.textContent = draft.ai ? 'يحكم على معنى الكلمة ويكشف المكرر حتى لو اختلف الإملاء' : 'يفحص الحرف والتكرار فقط';
     $$('button', el.segR).forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.v === draft.R)));
     $$('button', el.segT).forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.v === draft.dl)));
     el.allInput.checked = !!draft.all;
@@ -105,6 +121,8 @@
       const b = e.target.closest('button'); if (b) addCat(b.textContent.replace('+', ''));
     });
     el.catsReset.addEventListener('click', () => { draft.cats = DEFAULT_CATS.slice(); S.whoosh(false); onDraft(); renderSettings(); });
+    el.segMode.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; draft.mo = b.dataset.v; S.tongue(0, 0.2); onDraft(); renderSettings(); });
+    el.aiInput.addEventListener('change', () => { draft.ai = el.aiInput.checked; S.tongue(0, 0.2); onDraft(); renderSettings(); });
     el.segR.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; draft.R = +b.dataset.v; S.tongue(0, 0.2); onDraft(); renderSettings(); });
     el.segT.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; draft.dl = +b.dataset.v; S.tongue(0, 0.2); onDraft(); renderSettings(); });
     el.allInput.addEventListener('change', () => { draft.all = el.allInput.checked; S.tongue(0, 0.2); onDraft(); });
@@ -139,6 +157,13 @@
   let rolling = false;
   let lastPh = '', lastR = '', stopping = false, gatherTimer = 0, tickTimer = 0;
   let ov = {};                    // تعديلات المقدّم على التصحيح الآلي { pid: {i: mark} }
+  let verdict = {};               // حكم الذكاء الاصطناعي للجولة { 'خانة|إجابة': {ok, key, why} }
+  let aiState = 'idle';           // idle / run / ok / err / off
+  let aiRun = 0;                  // رقم الطلب الحالي (نتجاهل الردود القديمة)
+  let aiTried = new Set();
+  let aiWhy = '';                 // سبب فشل الذكاء: setup غير مفعّل / check حماية App Check        // إجابات أُرسلت للذكاء في هذي الجولة (ما نعيد إرسالها)
+  let regrading = '';             // بدون مقدّم: المقدّم فتح «عدّل التصحيح» لهذي الجولة
+  let autoTimer = 0, autoAt = 0, autoPaused = false, autoPicked = '';
   const seenPeople = new Set(), doneSeen = new Set();
   const now = () => Date.now() + offset;
 
@@ -170,7 +195,8 @@
       if (!c) throw new Error('no-code');
       await NET.set(c + '/s', {
         c: NET.TS, ph: 'lobby', r: '0', L: '', used: '',
-        cats: cfg.cats.slice(), R: cfg.R, dl: cfg.dl, pu: cfg.pu, pd: cfg.pd, all: !!cfg.all, xl: cfg.xl
+        cats: cfg.cats.slice(), R: cfg.R, dl: cfg.dl, pu: cfg.pu, pd: cfg.pd, all: !!cfg.all, xl: cfg.xl,
+        mo: cfg.mo === 'auto' ? 'auto' : 'host', ai: !!cfg.ai
       });
       store.set(HOST_KEY, c);
       S.whoosh(true);
@@ -185,7 +211,7 @@
 
   function openRoom(c) {
     code = c; room = null; loaded = false; chosen = null;
-    lastPh = lastR = ''; stopping = false; ov = {};
+    lastPh = lastR = ''; stopping = false; ov = {}; verdict = {}; aiState = 'idle'; regrading = ''; autoPicked = '';
     seenPeople.clear(); doneSeen.clear();
     el.roomCode.textContent = c;
     const link = joinLink();
@@ -200,7 +226,7 @@
 
   function closeRoom(msg) {
     if (stopWatch) { stopWatch(); stopWatch = null; }
-    clearTimeout(gatherTimer); clearInterval(tickTimer);
+    clearTimeout(gatherTimer); clearInterval(tickTimer); clearInterval(autoTimer);
     code = null; room = null;
     store.del(HOST_KEY);
     el.resumeCard.hidden = true;
@@ -237,6 +263,9 @@
   const answersOf = (r) => (room.a && room.a[r]) || {};
   const firstOf = (r) => (room.f && room.f[r]) || null;
   const lastRound = (s) => s.R > 0 && +s.r >= s.R;
+  const isAuto = (s) => s.mo === 'auto';
+  // هل المقدّم يراجع التصحيح؟ (بمقدّم دائمًا، وبدون مقدّم إذا ضغط «عدّل التصحيح»)
+  const hostReview = (s) => !isAuto(s) || regrading === s.r;
   const pool = (s) => {
     const xl = s.xl || '', used = s.used || '';
     let p = LETTERS.filter((L) => !xl.includes(L) && !used.includes(L));
@@ -276,9 +305,12 @@
   function onEnter(ph, s, prev) {
     clearTimeout(gatherTimer);
     clearInterval(tickTimer);
+    clearInterval(autoTimer); autoTimer = 0;
     el.timerPill.hidden = true;
+    if (ph !== 'grade' && ph !== 'show') regrading = '';
     if (ph === 'play') {
       stopping = false; doneSeen.clear();
+      autoApproveFor = ''; autoPicked = '';
       if (prev && prev !== 'play') { FX.flip(); S.whoosh(true, 0.05); }
       el.playLetter.textContent = s.L;
       tickTimer = setInterval(tick, 200); tick();
@@ -294,9 +326,13 @@
     }
     if (ph === 'grade') {
       loadOv(s.r);
+      loadVerdict(s);
+      aiState = 'idle';
       if (prev === 'stop') FX.scribble(4);
+      runAI();
     }
     if (ph === 'show' && prev === 'grade') { S.chirp(0.05); }
+    if (ph === 'show' && isAuto(s)) startAutoNext(s);
     if (ph === 'end' && prev && prev !== 'end') {
       S.winner();
       setTimeout(() => confetti(el.confetti, { y: 0.3 }), 250);
@@ -318,6 +354,11 @@
     el.startBtn.disabled = !chosen || !ps.length || rolling;
     el.startBtn.textContent = chosen ? `ابدأ الجولة ${ar(nextR)} بحرف «${chosen}»` : 'ابدأ الجولة';
     el.rollBtn.disabled = rolling;
+    // بدون مقدّم: من الجولة الثانية تُسحب الحروف وتبدأ لحالها
+    if (isAuto(s) && s.ph === 'pick' && s.r !== '0' && !chosen && !rolling && autoPicked !== s.r && ps.length) {
+      autoPicked = s.r;
+      autoRoll(s.r);
+    }
     const used = s.used || '', xl = s.xl || '';
     const sig = used + '|' + xl + '|' + chosen;
     if (el.lettersManual.dataset.sig !== sig) {
@@ -357,7 +398,7 @@
       const r = String(+s.r + 1);
       const used = (s.used || '').includes(chosen) ? s.used : (s.used || '') + chosen;
       await NET.remove(`${code}/a/${r}`).catch(() => {});
-      await NET.update(code + '/s', { ph: 'play', r, L: chosen, at: NET.TS, used: used.slice(-80) });
+      await NET.update(code + '/s', { ph: 'play', r, L: chosen, at: NET.TS, used: used.slice(-80), aq: null });
       chosen = null;
     } catch (e) {
       console.warn('[huroof] start', e && e.message);
@@ -430,23 +471,111 @@
   const ovKey = (r) => `athar-huroof-ov-${code}-${r}`;
   function loadOv(r) { try { ov = JSON.parse(store.get(ovKey(r)) || '{}') || {}; } catch { ov = {}; } }
   const saveOv = (r) => store.set(ovKey(r), JSON.stringify(ov));
+  // حكم الذكاء محفوظ في الجهاز حتى ما نعيد الطلب لو انعاد تحميل الصفحة
+  const aiCacheKey = (s) => `athar-huroof-ai-${code}-${s.r}-${s.L}`;
+  function loadVerdict(s) {
+    aiTried = new Set();
+    try { verdict = JSON.parse(store.get(aiCacheKey(s)) || '{}') || {}; } catch { verdict = {}; }
+  }
+  const pendingAI = (s, cats, all) => aiItems(all || answersAll(s), cats.length, s.L, verdict).filter((x) => !aiTried.has(x.k));
+  const saveVerdict = (s) => store.set(aiCacheKey(s), JSON.stringify(verdict));
+
+  const answersAll = (s) => {
+    const ans = answersOf(s.r), all = {};
+    players().forEach((p) => { all[p.pid] = (ans[p.pid] && ans[p.pid].v) || {}; });
+    return all;
+  };
 
   function marksFor(s, cats) {
-    const ans = answersOf(s.r), ps = players();
-    const all = {};
-    ps.forEach((p) => { all[p.pid] = (ans[p.pid] && ans[p.pid].v) || {}; });
-    const auto = autoMarks(all, cats.length, s.L);
+    const all = answersAll(s);
+    const sm = smartMarks(all, cats.length, s.L, s.ai ? verdict : null);
     const out = {};
-    ps.forEach((p) => {
-      out[p.pid] = auto[p.pid].map((m, i) => (m !== 'empty' && ov[p.pid] && ov[p.pid][i]) || m);
+    Object.keys(sm.marks).forEach((pid) => {
+      out[pid] = sm.marks[pid].map((m, i) => (m !== 'empty' && ov[pid] && ov[pid][i]) || m);
     });
-    return { all, marks: out };
+    return { all, marks: out, base: sm.marks, notes: sm.notes, ai: sm.ai };
   }
 
+  // طلب حكم الذكاء للإجابات اللي ما انحكم عليها
+  async function runAI() {
+    if (!room || room.s.ph !== 'grade') return;
+    const s = room.s, cats = catsOf(s), r = s.r;
+    if (!s.ai || !AI) { aiState = 'off'; renderGrade(s, cats); return autoApprove(); }
+    const items = pendingAI(s, cats);
+    items.forEach((x) => aiTried.add(x.k));
+    if (!items.length) {
+      aiState = 'ok'; setAq('ok'); renderGrade(s, cats);
+      return autoApprove();
+    }
+    const id = ++aiRun;
+    aiState = 'run'; setAq('run');
+    renderGrade(s, cats);
+    try {
+      const res = await AI.grade({ letter: s.L, cats, items: items.map(({ id: i, c, a }) => ({ id: i, c, a })) });
+      if (id !== aiRun || !room || room.s.r !== r || room.s.ph !== 'grade') return;
+      items.forEach((x) => { if (res[x.id]) verdict[x.k] = res[x.id]; });
+      saveVerdict(room.s);
+      aiState = 'ok'; setAq('ok');
+      FX.scribble(3, 0, 0.14);
+    } catch (e) {
+      if (id !== aiRun || !room || room.s.r !== r) return;
+      console.warn('[huroof] ai', e && e.message);
+      aiState = 'err'; setAq('err');
+      const c = String((e && (e.code || e.message)) || '');
+      aiWhy = /api-not-enabled|no-config/.test(c) ? 'setup' : /app-check|appcheck|permission|403/i.test(c) ? 'check' : '';
+      if (!isAuto(room.s) || regrading === r) toast('الذكاء الاصطناعي ما رد، التصحيح الآلي البسيط شغّال');
+    }
+    if (room && room.s.ph === 'grade') { renderGrade(room.s, catsOf(room.s)); autoApprove(); }
+  }
+  const setAq = (v) => { if (room && room.s.aq !== v) NET.update(code + '/s', { aq: v }).catch(() => {}); };
+
+  // بدون مقدّم: نعرض التصحيح لحظة ثم نعتمده تلقائيًا
+  let autoApproveFor = '';
+  function autoApprove() {
+    const s = room && room.s;
+    if (!s || s.ph !== 'grade' || hostReview(s) || autoApproveFor === s.r) return;
+    autoApproveFor = s.r;
+    setTimeout(() => {
+      if (room && room.s.ph === 'grade' && room.s.r === s.r && !hostReview(room.s)) approve();
+      else autoApproveFor = '';
+    }, AUTO_SHOW);
+  }
+
+  const AI_ICON = '<svg class="ai-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.8 5.4L19 9.2l-5.2 1.8L12 16.4l-1.8-5.4L5 9.2l5.2-1.8zM19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9z"/></svg>';
+
   function renderGrade(s, cats) {
-    const { all, marks } = marksFor(s, cats), ps = players(), f = firstOf(s.r);
+    const { all, marks, notes, ai } = marksFor(s, cats), ps = players(), f = firstOf(s.r);
+    const review = hostReview(s);
+    // إجابات وصلت متأخرة بعد حكم الذكاء: نطلب حكمها
+    if (s.ai && aiState === 'ok' && pendingAI(s, cats, all).length) setTimeout(runAI, 0);
+
     el.gradeLetter.textContent = s.L;
     el.lgOk.textContent = ar(s.pu); el.lgDup.textContent = ar(s.pd);
+    el.lgAi.hidden = !s.ai;
+    el.gradeTitle.textContent = review ? 'صحّح الأوراق' : 'التصحيح التلقائي';
+    el.gradeSub.textContent = review
+      ? (s.ai ? 'الذكاء الاصطناعي يقترح، والاعتماد لك. اضغط أي خانة لتغييرها: صح ← مكرر ← خطأ.' : 'اضغط أي خانة لتغيير تصحيحها: صح ← مكرر ← خطأ.')
+      : (s.ai ? 'الذكاء الاصطناعي يصحّح ويعتمد النتيجة بنفسه.' : 'التصحيح الآلي يعتمد النتيجة بنفسه.');
+
+    // شريط حالة الذكاء
+    const hasOv = Object.keys(ov).some((p) => Object.keys(ov[p] || {}).length);
+    el.aiBar.hidden = !s.ai;
+    el.aiBar.dataset.state = aiState;
+    el.aiText.textContent = {
+      run: 'الذكاء الاصطناعي يراجع الإجابات…',
+      ok: review ? 'راجعها الذكاء الاصطناعي. راجعها أنت واعتمد.' : 'راجعها الذكاء الاصطناعي.',
+      err: aiWhy === 'setup' ? 'التصحيح بالذكاء غير مفعّل في Firebase بعد (AI Logic)، والتصحيح الحين بالحرف والتكرار فقط.'
+        : aiWhy === 'check' ? 'Firebase رفض الطلب (App Check)، والتصحيح الحين بالحرف والتكرار فقط.'
+        : 'الذكاء الاصطناعي ما رد، والتصحيح الحين بالحرف والتكرار فقط.',
+      off: 'التصحيح بالذكاء متوقف.',
+      idle: 'نجهّز التصحيح…'
+    }[aiState] || '';
+    el.aiRetry.hidden = aiState !== 'err' || !review;
+    el.aiReset.hidden = !review || !hasOv;
+
+    el.approveBtn.hidden = !review;
+    el.approveBtn.textContent = aiState === 'run' ? 'اعتمد بدون انتظار الذكاء' : 'اعتمد وأعلن النتيجة';
+
     el.gradeTable.innerHTML = `<thead><tr><th class="who">الاسم</th>${cats.map((c) => `<th>${esc(c)}</th>`).join('')}<th class="sum">مجموع</th></tr></thead><tbody>${
       ps.map((p) => {
         const m = marks[p.pid], v = all[p.pid];
@@ -454,8 +583,12 @@
         return `<tr><th class="who" style="--c:${colorOf(p.pid)}"><span>${esc(p.name)}</span>${f && f.p === p.pid ? '<small class="first">سلّم أول</small>' : ''}</th>${
           cats.map((_, i) => {
             const a = (v[i] || '').trim(), mk = m[i];
-            return `<td><button type="button" class="cell ${mk}" data-pid="${p.pid}" data-i="${i}" ${mk === 'empty' ? 'disabled' : ''} aria-label="${esc(a || 'فاضية')}: ${MARK[mk].label}">
-              <span class="ans">${a ? esc(a) : '—'}</span><span class="mk"><i>${MARK[mk].sym}</i>${ar(pointsOf(mk, s))}</span></button></td>`;
+            const changed = !!(ov[p.pid] && ov[p.pid][i] && mk !== 'empty');
+            const why = mk === 'bad' && !changed ? notes[p.pid][i] : '';
+            const wait = s.ai && aiState === 'run' && a && !ai[p.pid][i] && !why;
+            const cls = ['cell', mk, changed ? 'ov' : '', wait ? 'wait' : '', ai[p.pid][i] && !changed ? 'by-ai' : ''].join(' ');
+            return `<td><button type="button" class="${cls}" data-pid="${p.pid}" data-i="${i}" ${mk === 'empty' || !review ? 'disabled' : ''} aria-label="${esc(a || 'فاضية')}: ${MARK[mk].label}${why ? '، ' + esc(why) : ''}">
+              <span class="ans">${a ? esc(a) : '—'}</span><span class="mk"><i>${MARK[mk].sym}</i>${ar(pointsOf(mk, s))}${ai[p.pid][i] && !changed ? AI_ICON : ''}${changed ? '<em class="ov-tag">المقدّم</em>' : ''}</span>${why ? `<small class="why">${esc(why)}</small>` : ''}</button></td>`;
           }).join('')
         }<td class="sum"><b>${ar(tot)}</b></td></tr>`;
       }).join('') || `<tr><td colspan="${cats.length + 2}" class="muted">ما فيه مشاركين</td></tr>`
@@ -464,31 +597,84 @@
 
   function cycleCell(pid, i) {
     const s = room.s, cats = catsOf(s);
-    const { marks } = marksFor(s, cats);
+    if (!hostReview(s)) return;
+    const { marks, base } = marksFor(s, cats);
     const cur = marks[pid] && marks[pid][i];
     if (!cur || cur === 'empty') return;
     const next = { ok: 'dup', dup: 'bad', bad: 'ok' }[cur];
     ov[pid] = ov[pid] || {};
-    ov[pid][i] = next;
+    // إذا رجعت الخانة لاقتراح الذكاء نشيل التعديل
+    if (next === base[pid][i]) delete ov[pid][i]; else ov[pid][i] = next;
     saveOv(s.r);
     if (next === 'bad') FX.scribble(2, 0, 0.2); else FX.scribble(1, 0, 0.18);
     renderGrade(s, cats);
   }
 
+  function resetToAI() {
+    ov = {}; saveOv(room.s.r);
+    S.whoosh(false);
+    renderGrade(room.s, catsOf(room.s));
+  }
+
   async function approve() {
-    if (busy) return;
+    if (busy || !room || room.s.ph !== 'grade') return;
     const s = room.s, cats = catsOf(s);
-    const { marks } = marksFor(s, cats);
-    const sc = {};
-    Object.keys(marks).forEach((pid) => { sc[pid] = marks[pid].map((m) => pointsOf(m, s)); });
+    const { marks, notes } = marksFor(s, cats);
+    const sc = {}, n = {};
+    Object.keys(marks).forEach((pid) => {
+      sc[pid] = marks[pid].map((m) => pointsOf(m, s));
+      marks[pid].forEach((m, i) => {
+        if (m !== 'bad') return;
+        const changed = ov[pid] && ov[pid][i];
+        const why = changed ? 'رفضها المقدّم' : notes[pid][i];
+        if (why) { n[pid] = n[pid] || {}; n[pid][i] = why.slice(0, 80); }
+      });
+    });
+    const by = hostReview(s) ? 'host' : (s.ai && aiState === 'ok' ? 'ai' : 'auto');
+    const body = { L: s.L, s: sc, by };
+    if (Object.keys(n).length) body.n = n;
     busy = true; el.approveBtn.disabled = true;
+    aiRun++; // أي رد متأخر من الذكاء ما يغيّر النتيجة المعتمدة
     try {
-      await NET.set(`${code}/g/${s.r}`, { L: s.L, s: sc });
+      await NET.set(`${code}/g/${s.r}`, body);
       await NET.update(code + '/s', { ph: 'show' });
     } catch (e) {
       console.warn('[huroof] approve', e && e.message);
       toast('ما قدرنا نحفظ النتيجة، جرّب مرة ثانية');
+      autoApproveFor = '';
     } finally { busy = false; el.approveBtn.disabled = false; }
+  }
+
+  // ---------- بدون مقدّم: الجولة التالية تلقائيًا ----------
+  function startAutoNext(s) {
+    clearInterval(autoTimer);
+    autoPaused = false;
+    autoAt = Date.now() + AUTO_NEXT * 1000;
+    const step = () => {
+      if (!room || room.s.ph !== 'show' || !isAuto(room.s)) { clearInterval(autoTimer); autoTimer = 0; return; }
+      if (autoPaused) { autoAt += 250; }
+      const left = Math.max(0, Math.ceil((autoAt - Date.now()) / 1000));
+      renderAutoBar(room.s, left);
+      if (!autoPaused && left <= 0) { clearInterval(autoTimer); autoTimer = 0; nextRound(); }
+    };
+    autoTimer = setInterval(step, 250); step();
+  }
+  function renderAutoBar(s, left) {
+    const show = isAuto(s) && s.ph === 'show';
+    el.autoBar.hidden = !show;
+    if (!show) return;
+    el.autoBar.classList.toggle('paused', autoPaused);
+    el.autoText.textContent = autoPaused ? 'متوقف مؤقتًا' : `${lastRound(s) ? 'إعلان الفائز' : 'الجولة الجاية'} بعد ${ar(left)} ث`;
+    el.autoPause.textContent = autoPaused ? 'كمّل' : 'انتظر';
+    el.autoBar.style.setProperty('--k', autoPaused ? 1 : Math.max(0, Math.min(1, left / AUTO_NEXT)));
+  }
+
+  // بدون مقدّم: سحب الحرف وبدء الجولة تلقائيًا (من الجولة الثانية)
+  async function autoRoll(r) {
+    await roll();
+    setTimeout(() => {
+      if (room && room.s.ph === 'pick' && room.s.r === r && chosen && isAuto(room.s)) startRound();
+    }, 1500);
   }
 
   // ---------- نتيجة الجولة ----------
@@ -509,6 +695,7 @@
     }
     el.nextBtn.textContent = lastRound(s) ? 'أعلن الفائز' : 'الجولة التالية';
     el.finishBtn.hidden = lastRound(s);
+    if (!isAuto(s)) el.autoBar.hidden = true;
   }
 
   // ---------- الفائز ----------
@@ -585,6 +772,10 @@
   async function again() {
     const ok = await confirmBox({ title: 'لعبة جديدة؟', text: 'تتصفر النقاط والحروف، والمشاركون يبقون في الغرفة.', yes: 'ابدأ من جديد' });
     if (!ok) return;
+    // نمسح تصحيحات اللعبة السابقة المحفوظة في الجهاز
+    try {
+      Object.keys(localStorage).filter((k) => k.startsWith(`athar-huroof-ov-${code}-`) || k.startsWith(`athar-huroof-ai-${code}-`)).forEach((k) => store.del(k));
+    } catch { /* تجاهل */ }
     try {
       await NET.remove(code + '/a'); await NET.remove(code + '/f'); await NET.remove(code + '/g');
       await NET.update(code + '/s', { ph: 'lobby', r: '0', L: '', used: '' });
@@ -620,7 +811,7 @@
   // ---------- نافذة الإعدادات داخل الغرفة ----------
   function openSettings() {
     const s = room.s;
-    draft = { cats: catsOf(s), R: s.R || 0, dl: s.dl || 0, pu: s.pu, pd: s.pd, all: !!s.all, xl: s.xl || '' };
+    draft = { cats: catsOf(s), R: s.R || 0, dl: s.dl || 0, pu: s.pu, pd: s.pd, all: !!s.all, xl: s.xl || '', mo: s.mo === 'auto' ? 'auto' : 'host', ai: !!s.ai };
     lockCats = s.r !== '0' || !['lobby', 'pick'].includes(s.ph);
     el.setNote.textContent = s.ph === 'play' ? 'الجولة شغّالة: التعديل يطبّق من الحين.' : '';
     el.setSlot.appendChild(el.settings);
@@ -637,7 +828,7 @@
     const d = draft;
     d.cats = d.cats.map((c) => c.trim()).filter(Boolean).slice(0, MAX_CATS);
     if (!d.cats.length) d.cats = DEFAULT_CATS.slice();
-    const patch = { R: d.R, dl: d.dl, pu: d.pu, pd: d.pd, all: d.all, xl: d.xl };
+    const patch = { R: d.R, dl: d.dl, pu: d.pu, pd: d.pd, all: d.all, xl: d.xl, mo: d.mo, ai: !!d.ai };
     if (!lockCats) patch.cats = d.cats;
     try {
       await NET.update(code + '/s', patch);
@@ -680,7 +871,14 @@
   el.gradeTable.addEventListener('click', (e) => { const c = e.target.closest('.cell'); if (c) cycleCell(c.dataset.pid, +c.dataset.i); });
   el.approveBtn.addEventListener('click', approve);
   el.nextBtn.addEventListener('click', nextRound);
-  el.regradeBtn.addEventListener('click', () => NET.update(code + '/s', { ph: 'grade' }).catch(() => {}));
+  el.regradeBtn.addEventListener('click', () => {
+    regrading = room.s.r; autoApproveFor = '';
+    clearInterval(autoTimer); autoTimer = 0;
+    NET.update(code + '/s', { ph: 'grade' }).catch(() => {});
+  });
+  el.aiRetry.addEventListener('click', () => { aiState = 'idle'; aiTried = new Set(); runAI(); });
+  el.aiReset.addEventListener('click', resetToAI);
+  el.autoPause.addEventListener('click', () => { autoPaused = !autoPaused; S.tongue(0, 0.2); renderAutoBar(room.s, Math.ceil((autoAt - Date.now()) / 1000)); });
   el.finishBtn.addEventListener('click', () => finish(false));
   el.sheetBtn.addEventListener('click', () => { el.roundsTable.innerHTML = roundsTableHTML(); el.sheetModal.hidden = false; FX.flip(); });
   el.sheetClose.addEventListener('click', () => { el.sheetModal.hidden = true; });

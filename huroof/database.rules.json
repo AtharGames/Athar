@@ -21,6 +21,9 @@
           "all": { ".validate": "newData.isBoolean()" },
           "xl": { ".validate": "newData.isString() && newData.val().length <= 40" },
           "used": { ".validate": "newData.isString() && newData.val().length <= 80" },
+          "mo": { ".validate": "newData.isString() && newData.val().matches(/^(host|auto)$/)" },
+          "ai": { ".validate": "newData.isBoolean()" },
+          "aq": { ".validate": "newData.isString() && newData.val().matches(/^(run|ok|err|off)$/)" },
           "cats": {
             "$i": { ".validate": "$i.matches(/^[0-7]$/) && newData.isString() && newData.val().length > 0 && newData.val().length <= 16" }
           },
@@ -72,6 +75,12 @@
                 "$i": { ".validate": "$i.matches(/^[0-7]$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" }
               }
             },
+            "n": {
+              "$pid": {
+                "$i": { ".validate": "$i.matches(/^[0-7]$/) && newData.isString() && newData.val().length <= 80" }
+              }
+            },
+            "by": { ".validate": "newData.isString() && newData.val().matches(/^(host|ai|auto)$/)" },
             "$other": { ".validate": false }
           }
         }

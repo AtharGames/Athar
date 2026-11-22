@@ -17,7 +17,7 @@
     game: $('#game'), stamp: $('#myLetter'), title: $('#statusTitle'), text: $('#statusText'),
     round: $('#myRound'), timer: $('#myTimer'), timebar: $('#myTimebar'), timefill: $('#myTimefill'),
     sheet: $('#sheetForm'), lines: $('#lines'), doneBtn: $('#doneBtn'), doneLabel: $('#doneLabel'), doneHint: $('#doneHint'),
-    result: $('#result'), resRound: $('#resRound'), resTotal: $('#resTotal'), resRank: $('#resRank'),
+    result: $('#result'), resRound: $('#resRound'), resTotal: $('#resTotal'), resRank: $('#resRank'), gradedBy: $('#gradedBy'),
     endCard: $('#endCard'), endKicker: $('#endKicker'), endTitle: $('#endTitle'), endText: $('#endText'),
     paper: $('#myPaper'), paperTable: $('#paperTable'),
     overlay: $('#stopOverlay'), ovWho: $('#ovWho'), confetti: $('#confetti'), leave: $('#leaveBtn')
@@ -183,7 +183,7 @@
     }
     if (ph === 'stop' || ph === 'grade') {
       const mineFirst = f && f.p === me.pid;
-      setStatus(mineFirst ? 'سلّمت أول! 👏' : 'قف! وقفت الأقلام', ph === 'grade' ? 'المقدّم يصحّح الأوراق…' : 'نجمع الأوراق…');
+      setStatus(mineFirst ? 'سلّمت أول! 👏' : 'قف! وقفت الأقلام', ph === 'grade' ? gradingText(s) : 'نجمع الأوراق…');
       if (curR !== s.r) el.sheet.hidden = true;
       el.game.classList.toggle('grading', ph === 'grade');
     } else el.game.classList.remove('grading');
@@ -343,6 +343,18 @@
     if (room.s && room.s.L) el.stamp.textContent = room.s.L;
   }
 
+  // من يصحّح الحين؟
+  function gradingText(s) {
+    if (s.ai && s.aq === 'run') return 'الذكاء الاصطناعي يصحّح الأوراق…';
+    if (s.mo === 'auto') return 'نعتمد التصحيح…';
+    return s.ai ? 'المقدّم يراجع تصحيح الذكاء الاصطناعي…' : 'المقدّم يصحّح الأوراق…';
+  }
+  const BY = {
+    host: 'اعتمدها المقدّم',
+    ai: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.8 5.4L19 9.2l-5.2 1.8L12 16.4l-1.8-5.4L5 9.2l5.2-1.8z"/></svg> صحّحها الذكاء الاصطناعي',
+    auto: 'تصحيح آلي'
+  };
+
   // ---------- نتيجة الجولة ----------
   const markOf = (pts, ans, s) => (!ans ? 'empty' : pts > 0 && pts === s.pu ? 'ok' : pts > 0 && pts === s.pd ? 'dup' : pts > 0 ? 'ok' : 'bad');
 
@@ -361,10 +373,14 @@
         line.dataset.mark = mk;
         line.classList.remove('off-letter', 'filled');
         line.querySelector('.ln-mark').innerHTML = `${mk === 'dup' ? '<em>مكرر</em>' : ''}<i>${mk === 'bad' ? '✗' : mk === 'empty' ? '' : '✓'}</i><b>${ar(p)}</b>`;
-        line.querySelector('.ln-warn').textContent = '';
+        // سبب الخطأ من الذكاء أو المقدّم
+        const why = mk === 'bad' && g && g.n && g.n[me.pid] && g.n[me.pid][i];
+        line.querySelector('.ln-warn').textContent = why || '';
       });
     }
     el.result.hidden = false;
+    el.gradedBy.hidden = !(g && BY[g.by]);
+    if (g && BY[g.by]) el.gradedBy.innerHTML = BY[g.by];
     el.resRound.textContent = pts ? plus(rp) : '—';
     el.resTotal.textContent = ar(meRow ? meRow.total : 0);
     el.resRank.textContent = meRow ? `${ar(meRow.rank)} من ${ar(list.length)}` : '—';

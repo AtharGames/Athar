@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>إنسان حيوان جماد | شاشة المقدّم</title>
-<meta name="description" content="لعبة حرف إنسان حيوان جماد بلاد: المقدّم يفتح غرفة، والمشاركون يكتبون من جوالاتهم، وأول من يسلّم يوقف الباقين، والتصحيح والنقاط عند المقدّم.">
+<meta name="description" content="لعبة حرف إنسان حيوان جماد بلاد: المقدّم يفتح غرفة، والمشاركون يكتبون من جوالاتهم، وأول من يسلّم يوقف الباقين، والذكاء الاصطناعي يصحّح والمقدّم يعتمد، أو تلعبون بدون مقدّم.">
 <meta name="theme-color" content="#0A2463">
 <!-- تطبيق الثيم المحفوظ قبل الرسم لتفادي الوميض -->
 <script>
@@ -83,7 +83,7 @@
           <span class="hero-letter" id="heroLetter">ح</span>
         </div>
         <h1>إنسان حيوان جماد</h1>
-        <p class="lead">حرف واحد، وخانات تعبّونها من جوالاتكم. أول واحد يسلّم يوقف الكل، والمقدّم يصحّح ويحسب النقاط.</p>
+        <p class="lead">حرف واحد، وخانات تعبّونها من جوالاتكم. أول واحد يسلّم يوقف الكل، والذكاء الاصطناعي يصحّح، والمقدّم يعتمد أو تلعبون بدونه.</p>
       </div>
 
       <!-- رجوع لغرفة مفتوحة -->
@@ -98,6 +98,26 @@
       <!-- لوحة الإعدادات (تنتقل لنافذة التعديل داخل الغرفة) -->
       <div class="settings-home" id="settingsHome">
         <div class="settings" id="settings">
+
+          <div class="card mode-card">
+            <div class="card-head"><h2>طريقة اللعب والتصحيح</h2></div>
+            <div class="seg seg-wide" id="segMode" role="group" aria-label="طريقة اللعب">
+              <button data-v="host">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                بمقدّم يعتمد
+              </button>
+              <button data-v="auto">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></svg>
+                بدون مقدّم
+              </button>
+            </div>
+            <p class="mode-hint" id="modeHint"></p>
+            <label class="switch ai-switch">
+              <input type="checkbox" id="aiInput">
+              <span class="track" aria-hidden="true"></span>
+              <span>التصحيح بالذكاء الاصطناعي<small id="aiHint"></small></span>
+            </label>
+          </div>
 
           <div class="card">
             <div class="card-head"><h2>خانات الورقة</h2><span class="muted" id="catsHint">الافتراضي، وتقدر تعدّلها</span></div>
@@ -168,8 +188,10 @@
           <li>اسحب حرفًا عشوائيًا أو اختره بنفسك، ثم ابدأ الجولة.</li>
           <li>كل مشارك يعبّي الخانات بكلمات تبدأ بالحرف (و«ال» التعريف ما تُحسب).</li>
           <li><strong>أول واحد يضغط «سلّمت» يوقف الكل</strong>، وتنقفل أوراقهم على اللي كتبوه.</li>
-          <li>تصحّح أنت: التصحيح الآلي يقترح (صح، مكرر، خطأ) وتقدر تغيّر أي خانة بلمسة.</li>
-          <li>تعتمد النتيجة، فيطلع المجموع في ورقة كل مشارك، وبعد آخر جولة يُعلن الفائز.</li>
+          <li>الذكاء الاصطناعي يصحّح: يحكم على معنى كل كلمة، ويكشف المكرر حتى لو اختلف الإملاء، ويكتب سبب الخطأ.</li>
+          <li><strong>بمقدّم:</strong> تراجع اقتراح الذكاء، وتغيّر أي خانة بلمسة، ثم تعتمد.</li>
+          <li><strong>بدون مقدّم:</strong> الذكاء يعتمد النتيجة بنفسه، والحروف تُسحب والجولات تمشي لحالها، والمقدّم يقدر يلعب معهم من جواله.</li>
+          <li>بعد الاعتماد يطلع المجموع وسبب كل خطأ في ورقة المشارك، وبعد آخر جولة يُعلن الفائز.</li>
         </ul>
       </details>
 
@@ -260,14 +282,25 @@
               <div class="grade-head">
                 <div class="letter-tile small" id="gradeLetter"></div>
                 <div>
-                  <h2>صحّح الأوراق</h2>
-                  <p class="muted">اضغط أي خانة لتغيير تصحيحها: صح ← مكرر ← خطأ.</p>
+                  <h2 id="gradeTitle">صحّح الأوراق</h2>
+                  <p class="muted" id="gradeSub">اضغط أي خانة لتغيير تصحيحها: صح ← مكرر ← خطأ.</p>
                 </div>
+              </div>
+              <!-- شريط حالة الذكاء الاصطناعي -->
+              <div class="ai-bar" id="aiBar" data-state="idle" hidden>
+                <span class="ai-orb" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M12 2l1.8 5.4L19 9.2l-5.2 1.8L12 16.4l-1.8-5.4L5 9.2l5.2-1.8zM19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9z"/></svg>
+                </span>
+                <span class="ai-text" id="aiText" role="status"></span>
+                <button class="btn btn-small" id="aiRetry" hidden>أعد المحاولة</button>
+                <button class="btn btn-small btn-ghost" id="aiReset" hidden>رجّع اقتراح الذكاء</button>
               </div>
               <div class="legend">
                 <span><i class="m ok">✓</i> صح <b id="lgOk"></b></span>
                 <span><i class="m dup">✓</i> مكرر <b id="lgDup"></b></span>
                 <span><i class="m bad">✗</i> خطأ ٠</span>
+                <span id="lgAi"><i class="m ai"><svg viewBox="0 0 24 24"><path d="M12 2l1.8 5.4L19 9.2l-5.2 1.8L12 16.4l-1.8-5.4L5 9.2l5.2-1.8z"/></svg></i> حكم الذكاء</span>
+                <span><i class="m ov">✎</i> عدّلها المقدّم</span>
               </div>
               <div class="table-wrap"><table class="sheet grade" id="gradeTable"></table></div>
               <button class="btn btn-primary btn-big" id="approveBtn">اعتمد وأعلن النتيجة</button>
@@ -280,6 +313,11 @@
                 <div><h2 id="showTitle">نتيجة الجولة</h2><p class="muted" id="showText"></p></div>
               </div>
               <ol class="board" id="board"></ol>
+              <!-- بدون مقدّم: عدّاد الجولة التالية -->
+              <div class="auto-bar" id="autoBar" hidden>
+                <span class="auto-text" id="autoText"></span>
+                <button class="btn btn-small" id="autoPause">انتظر</button>
+              </div>
               <div class="show-actions">
                 <button class="btn btn-primary btn-big" id="nextBtn">الجولة التالية</button>
                 <div class="row-btns">
@@ -367,6 +405,7 @@
 <script src="../assets/athar-sound.js" defer></script>
 <script src="net.js" defer></script>
 <script src="shared.js" defer></script>
+<script src="ai.js" defer></script>
 <script src="lib/qrcode.js" defer></script>
 <script src="app.js" defer></script>
 </body>

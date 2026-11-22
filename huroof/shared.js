@@ -75,6 +75,53 @@ window.HUI = (() => {
     });
     return marks;
   }
+  // ---------- التصحيح مع حكم الذكاء الاصطناعي ----------
+  // verdict: { '<الخانة>|<الإجابة بعد التطبيع>': { ok, key, why } } (من HuroofAI)
+  // ← { marks: { pid: [حالة] }, notes: { pid: [سبب الخطأ] }, ai: { pid: [هل حكم عليها الذكاء؟] } }
+  const aiKey = (i, a) => `${i}|${norm(a)}`;
+  function smartMarks(answers, nCats, letter, verdict) {
+    const marks = {}, notes = {}, ai = {}, count = [], keys = {};
+    for (let i = 0; i < nCats; i++) count.push({});
+    Object.keys(answers || {}).forEach((pid) => {
+      const v = answers[pid] || {};
+      marks[pid] = []; notes[pid] = []; ai[pid] = []; keys[pid] = [];
+      for (let i = 0; i < nCats; i++) {
+        const a = (v[i] || '').trim();
+        notes[pid][i] = ''; ai[pid][i] = false;
+        if (!a) { marks[pid][i] = 'empty'; continue; }
+        if (!startsWith(a, letter)) { marks[pid][i] = 'bad'; notes[pid][i] = `ما تبدأ بحرف «${letter}»`; continue; }
+        const w = verdict && verdict[aiKey(i, a)];
+        if (w) {
+          ai[pid][i] = true;
+          if (!w.ok) { marks[pid][i] = 'bad'; notes[pid][i] = w.why || 'غير صحيحة'; continue; }
+        }
+        marks[pid][i] = 'ok';
+        // التكرار بالصيغة الموحّدة من الذكاء إن وُجدت
+        const k = core((w && w.key) || a) || core(a);
+        keys[pid][i] = k;
+        count[i][k] = (count[i][k] || 0) + 1;
+      }
+    });
+    Object.keys(marks).forEach((pid) => {
+      marks[pid].forEach((m, i) => { if (m === 'ok' && count[i][keys[pid][i]] > 1) marks[pid][i] = 'dup'; });
+    });
+    return { marks, notes, ai };
+  }
+  // الإجابات المختلفة اللي تحتاج حكم الذكاء (تبدأ بالحرف وما حُكم عليها)
+  function aiItems(answers, nCats, letter, verdict) {
+    const seen = new Set(), items = [];
+    Object.keys(answers || {}).forEach((pid) => {
+      const v = answers[pid] || {};
+      for (let i = 0; i < nCats; i++) {
+        const a = (v[i] || '').trim(), k = aiKey(i, a);
+        if (!a || seen.has(k) || !startsWith(a, letter) || (verdict && verdict[k])) continue;
+        seen.add(k);
+        items.push({ id: items.length, c: i, a, k });
+      }
+    });
+    return items;
+  }
+
   const pointsOf = (mark, s) => (mark === 'ok' ? s.pu : mark === 'dup' ? s.pd : 0);
 
   // مجموع كل مشارك من الجولات المعتمدة
@@ -320,7 +367,7 @@ window.HUI = (() => {
 
   return {
     $, $$, S, FX, store, ar, toLatin, esc, plus, clock, LETTERS, HARD, DEFAULT_CATS, SUGGEST, MAX_CATS,
-    norm, core, startsWith, autoMarks, pointsOf, totals, sum, asList, catsOf, roundsDone, ranking, colorOf,
+    norm, core, startsWith, autoMarks, smartMarks, aiItems, aiKey, pointsOf, totals, sum, asList, catsOf, roundsDone, ranking, colorOf,
     rollLetter, initChrome, setTheme, show, toast, confirmBox, confetti, keepAwake, vibrate, MARK
   };
 })();
