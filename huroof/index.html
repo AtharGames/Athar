@@ -100,23 +100,22 @@
         <div class="settings" id="settings">
 
           <div class="card mode-card">
-            <div class="card-head"><h2>طريقة اللعب والتصحيح</h2></div>
-            <div class="seg seg-wide" id="segMode" role="group" aria-label="طريقة اللعب">
+            <div class="card-head"><h2>التصحيح بالذكاء الاصطناعي</h2><span class="muted">مين يعتمد النتيجة؟</span></div>
+            <div class="seg seg-wide seg-3" id="segMode" role="group" aria-label="طريقة اعتماد التصحيح">
               <button data-v="host">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-                بمقدّم يعتمد
+                <span>المقدّم يعتمد<small>تأكيد إلزامي</small></span>
+              </button>
+              <button data-v="opt">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9M12 7v5l3 2"/></svg>
+                <span>تأكيد اختياري<small>للمقدّم مهلة</small></span>
               </button>
               <button data-v="auto">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></svg>
-                بدون مقدّم
+                <span>الذكاء يعتمد<small>بدون مقدّم</small></span>
               </button>
             </div>
             <p class="mode-hint" id="modeHint"></p>
-            <label class="switch ai-switch">
-              <input type="checkbox" id="aiInput">
-              <span class="track" aria-hidden="true"></span>
-              <span>التصحيح بالذكاء الاصطناعي<small id="aiHint"></small></span>
-            </label>
           </div>
 
           <div class="card">
@@ -189,8 +188,9 @@
           <li>كل مشارك يعبّي الخانات بكلمات تبدأ بالحرف (و«ال» التعريف ما تُحسب).</li>
           <li><strong>أول واحد يضغط «سلّمت» يوقف الكل</strong>، وتنقفل أوراقهم على اللي كتبوه.</li>
           <li>الذكاء الاصطناعي يصحّح: يحكم على معنى كل كلمة، ويكشف المكرر حتى لو اختلف الإملاء، ويكتب سبب الخطأ.</li>
-          <li><strong>بمقدّم:</strong> تراجع اقتراح الذكاء، وتغيّر أي خانة بلمسة، ثم تعتمد.</li>
-          <li><strong>بدون مقدّم:</strong> الذكاء يعتمد النتيجة بنفسه، والحروف تُسحب والجولات تمشي لحالها، والمقدّم يقدر يلعب معهم من جواله.</li>
+          <li><strong>المقدّم يعتمد:</strong> تراجع اقتراح الذكاء، وتغيّر أي خانة بلمسة، وما تنحسب النتيجة إلا إذا اعتمدتها.</li>
+          <li><strong>تأكيد اختياري:</strong> الذكاء يصحّح، وعندك مهلة قصيرة تعتمد أو تعدّل، وإذا ما سويت شي تنعتمد تلقائيًا.</li>
+          <li><strong>الذكاء يعتمد:</strong> بدون الرجوع لأحد، والحروف تُسحب والجولات تمشي لحالها، والمقدّم يقدر يلعب معهم من جواله.</li>
           <li>بعد الاعتماد يطلع المجموع وسبب كل خطأ في ورقة المشارك، وبعد آخر جولة يُعلن الفائز.</li>
         </ul>
       </details>
@@ -294,6 +294,14 @@
                 <span class="ai-text" id="aiText" role="status"></span>
                 <button class="btn btn-small" id="aiRetry" hidden>أعد المحاولة</button>
                 <button class="btn btn-small btn-ghost" id="aiReset" hidden>رجّع اقتراح الذكاء</button>
+              </div>
+              <!-- تأكيد اختياري: مهلة للمقدّم قبل الاعتماد التلقائي -->
+              <div class="auto-bar review-bar" id="reviewBar" hidden>
+                <span class="auto-text" id="reviewText"></span>
+                <span class="rv-btns">
+                  <button class="btn btn-small btn-primary" id="reviewNow">اعتمد الحين</button>
+                  <button class="btn btn-small" id="reviewHold">راجع وعدّل</button>
+                </span>
               </div>
               <div class="legend">
                 <span><i class="m ok">✓</i> صح <b id="lgOk"></b></span>

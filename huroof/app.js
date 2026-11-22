@@ -4,7 +4,8 @@
      s : الحالة والإعدادات { c: وقت الإنشاء، ph: المرحلة، r: رقم الجولة (نص)، L: حرف الجولة، at: وقت بدايتها،
                             dl: وقت الجولة بالثواني (٠ بدون)، R: عدد الجولات (٠ مفتوح)، pu/pd: نقاط الوحيدة/المكررة،
                             all: لازم تعبئة كل الخانات قبل التسليم؟، xl: حروف مستبعدة، used: حروف استُخدمت، cats: الخانات،
-                            mo: طريقة اللعب (host بمقدّم يعتمد / auto بدون مقدّم)، ai: التصحيح بالذكاء الاصطناعي؟،
+                            mo: طريقة الاعتماد (host المقدّم يعتمد إلزاميًا / opt تأكيد اختياري للمقدّم / auto الذكاء يعتمد)،
+                            ai: التصحيح بالذكاء الاصطناعي (دائمًا مفعّل)،
                             aq: حالة الذكاء في الجولة (run يصحّح / ok خلص / err ما رد / off) }
        المراحل: lobby انتظار ← pick اختيار الحرف ← play كتابة ← stop قف! ← grade تصحيح ← show نتيجة ← end الفائز
      p : المشاركون { n: الاسم، j: وقت الدخول، on: متصل؟ }
@@ -25,14 +26,16 @@
   const STALE = 12 * 60 * 60 * 1000;   // غرفة أقدم من ١٢ ساعة تُعتبر منتهية
   const GATHER = 3800;                  // مهلة جمع آخر الإجابات بعد «قف!» (القواعد تسمح ٥ ثوانٍ)
   const AUTO_NEXT = 15;                 // بدون مقدّم: ثوانٍ قبل الجولة التالية
-  const AUTO_SHOW = 1600;               // بدون مقدّم: مدة عرض التصحيح قبل الاعتماد
+  const AUTO_SHOW = 1600;               // الذكاء يعتمد: مدة عرض التصحيح قبل الاعتماد
+  const REVIEW = 12;                    // تأكيد اختياري: ثوانٍ يقدر فيها المقدّم يراجع قبل الاعتماد التلقائي
 
   const el = {
     netDot: $('#netDot'), netText: $('#netText'), heroLetter: $('#heroLetter'),
     resumeCard: $('#resumeCard'), resumeCode: $('#resumeCode'), resumeBtn: $('#resumeBtn'),
     settings: $('#settings'), settingsHome: $('#settingsHome'),
     catsList: $('#catsList'), catForm: $('#catForm'), catInput: $('#catInput'), suggest: $('#suggest'), catsReset: $('#catsReset'), catsHint: $('#catsHint'),
-    segMode: $('#segMode'), modeHint: $('#modeHint'), aiInput: $('#aiInput'), aiHint: $('#aiHint'),
+    segMode: $('#segMode'), modeHint: $('#modeHint'),
+    reviewBar: $('#reviewBar'), reviewText: $('#reviewText'), reviewNow: $('#reviewNow'), reviewHold: $('#reviewHold'),
     segR: $('#segR'), segT: $('#segT'), allInput: $('#allInput'), puVal: $('#puVal'), pdVal: $('#pdVal'),
     lettersPick: $('#lettersPick'), lettersHint: $('#lettersHint'),
     createBtn: $('#createBtn'),
@@ -62,7 +65,7 @@
   function loadCfg() {
     try {
       const c = JSON.parse(store.get(CFG_KEY) || 'null');
-      if (c && Array.isArray(c.cats) && c.cats.length) return Object.assign({}, DEFAULT_CFG, c);
+      if (c && Array.isArray(c.cats) && c.cats.length) return Object.assign({}, DEFAULT_CFG, c, { ai: true });
     } catch { /* تجاهل */ }
     return JSON.parse(JSON.stringify(DEFAULT_CFG));
   }
@@ -85,11 +88,11 @@
     el.suggest.innerHTML = lockCats || draft.cats.length >= MAX_CATS ? '' :
       SUGGEST.filter((x) => !draft.cats.includes(x)).slice(0, 8).map((x) => `<button type="button">+ ${esc(x)}</button>`).join('');
     $$('button', el.segMode).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === draft.mo)));
-    el.aiInput.checked = !!draft.ai;
-    el.modeHint.textContent = draft.mo === 'auto'
-      ? 'الشاشة تمشي لحالها: تسحب الحرف، و' + (draft.ai ? 'الذكاء الاصطناعي يصحّح ويعتمد' : 'التصحيح الآلي يعتمد') + '، والمقدّم يقدر يلعب معهم من جواله.'
-      : (draft.ai ? 'الذكاء الاصطناعي يصحّح ويقترح، والمقدّم يراجع ويعتمد.' : 'التصحيح الآلي يقترح، والمقدّم يراجع ويعتمد.');
-    el.aiHint.textContent = draft.ai ? 'يحكم على معنى الكلمة ويكشف المكرر حتى لو اختلف الإملاء' : 'يفحص الحرف والتكرار فقط';
+    el.modeHint.textContent = {
+      host: 'الذكاء الاصطناعي يصحّح، وما تنحسب النتيجة إلا إذا راجعها المقدّم واعتمدها.',
+      opt: `الذكاء يصحّح، والمقدّم عنده ${ar(REVIEW)} ثانية يراجع ويعدّل إذا حب، وإلا تنعتمد تلقائيًا. والجولات تمشي لحالها.`,
+      auto: 'الذكاء يصحّح ويعتمد بدون الرجوع لأحد، والجولات تمشي لحالها، والمقدّم يقدر يلعب معهم من جواله.'
+    }[draft.mo] || '';
     $$('button', el.segR).forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.v === draft.R)));
     $$('button', el.segT).forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.v === draft.dl)));
     el.allInput.checked = !!draft.all;
@@ -122,7 +125,6 @@
     });
     el.catsReset.addEventListener('click', () => { draft.cats = DEFAULT_CATS.slice(); S.whoosh(false); onDraft(); renderSettings(); });
     el.segMode.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; draft.mo = b.dataset.v; S.tongue(0, 0.2); onDraft(); renderSettings(); });
-    el.aiInput.addEventListener('change', () => { draft.ai = el.aiInput.checked; S.tongue(0, 0.2); onDraft(); renderSettings(); });
     el.segR.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; draft.R = +b.dataset.v; S.tongue(0, 0.2); onDraft(); renderSettings(); });
     el.segT.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; draft.dl = +b.dataset.v; S.tongue(0, 0.2); onDraft(); renderSettings(); });
     el.allInput.addEventListener('change', () => { draft.all = el.allInput.checked; S.tongue(0, 0.2); onDraft(); });
@@ -196,7 +198,7 @@
       await NET.set(c + '/s', {
         c: NET.TS, ph: 'lobby', r: '0', L: '', used: '',
         cats: cfg.cats.slice(), R: cfg.R, dl: cfg.dl, pu: cfg.pu, pd: cfg.pd, all: !!cfg.all, xl: cfg.xl,
-        mo: cfg.mo === 'auto' ? 'auto' : 'host', ai: !!cfg.ai
+        mo: ['host', 'opt', 'auto'].includes(cfg.mo) ? cfg.mo : 'host', ai: true
       });
       store.set(HOST_KEY, c);
       S.whoosh(true);
@@ -265,9 +267,11 @@
   const answersOf = (r) => (room.a && room.a[r]) || {};
   const firstOf = (r) => (room.f && room.f[r]) || null;
   const lastRound = (s) => s.R > 0 && +s.r >= s.R;
-  const isAuto = (s) => s.mo === 'auto';
+  // الجولات تمشي لحالها في «الذكاء يعتمد» و«تأكيد اختياري»
+  const isAuto = (s) => s.mo === 'auto' || s.mo === 'opt';
   // هل المقدّم يراجع التصحيح؟ (بمقدّم دائمًا، وبدون مقدّم إذا ضغط «عدّل التصحيح»)
   const hostReview = (s) => !isAuto(s) || regrading === s.r;
+  const canTap = (s) => hostReview(s) || s.mo === 'opt';
   const pool = (s) => {
     const xl = s.xl || '', used = s.used || '';
     let p = LETTERS.filter((L) => !xl.includes(L) && !used.includes(L));
@@ -310,6 +314,7 @@
     clearInterval(autoTimer); autoTimer = 0;
     el.timerPill.hidden = true;
     if (ph !== 'grade' && ph !== 'show') regrading = '';
+    if (ph !== 'grade') stopReview();
     if (ph === 'play') {
       stopping = false; doneSeen.clear();
       autoApproveFor = ''; autoPicked = '';
@@ -531,16 +536,43 @@
   }
   const setAq = (v) => { if (room && room.s.aq !== v) NET.update(code + '/s', { aq: v }).catch(() => {}); };
 
-  // بدون مقدّم: نعرض التصحيح لحظة ثم نعتمده تلقائيًا
-  let autoApproveFor = '';
+  // الاعتماد التلقائي: «الذكاء يعتمد» بعد لحظة، و«تأكيد اختياري» بعد مهلة المراجعة
+  let autoApproveFor = '', reviewTimer = 0, reviewAt = 0;
   function autoApprove() {
     const s = room && room.s;
     if (!s || s.ph !== 'grade' || hostReview(s) || autoApproveFor === s.r) return;
     autoApproveFor = s.r;
-    setTimeout(() => {
-      if (room && room.s.ph === 'grade' && room.s.r === s.r && !hostReview(room.s)) approve();
-      else autoApproveFor = '';
-    }, AUTO_SHOW);
+    const r = s.r, wait = s.mo === 'opt' ? REVIEW * 1000 : AUTO_SHOW;
+    reviewAt = Date.now() + wait;
+    clearInterval(reviewTimer);
+    const step = () => {
+      const cur = room && room.s;
+      if (!cur || cur.ph !== 'grade' || cur.r !== r || hostReview(cur)) { stopReview(); return; }
+      const left = Math.max(0, Math.ceil((reviewAt - Date.now()) / 1000));
+      renderReviewBar(cur, left);
+      if (Date.now() >= reviewAt) { stopReview(); approve(); }
+    };
+    reviewTimer = setInterval(step, 250); step();
+  }
+  function stopReview() {
+    clearInterval(reviewTimer); reviewTimer = 0;
+    el.reviewBar.hidden = true;
+  }
+  function renderReviewBar(s, left) {
+    const show = s.mo === 'opt' && !hostReview(s);
+    el.reviewBar.hidden = !show;
+    if (!show) return;
+    el.reviewText.textContent = `تنعتمد تلقائيًا بعد ${ar(left)} ث`;
+    el.reviewBar.style.setProperty('--k', Math.max(0, Math.min(1, left / REVIEW)));
+  }
+  // المقدّم يمسك التصحيح للمراجعة (يوقف الاعتماد التلقائي)
+  function holdReview() {
+    const s = room && room.s;
+    if (!s || s.ph !== 'grade' || hostReview(s)) return;
+    regrading = s.r;
+    stopReview();
+    S.tongue(0, 0.2);
+    renderGrade(s, catsOf(s));
   }
 
   const AI_ICON = '<svg class="ai-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.8 5.4L19 9.2l-5.2 1.8L12 16.4l-1.8-5.4L5 9.2l5.2-1.8zM19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9z"/></svg>';
@@ -554,10 +586,11 @@
     el.gradeLetter.textContent = s.L;
     el.lgOk.textContent = ar(s.pu); el.lgDup.textContent = ar(s.pd);
     el.lgAi.hidden = !s.ai;
-    el.gradeTitle.textContent = review ? 'صحّح الأوراق' : 'التصحيح التلقائي';
+    el.gradeTitle.textContent = review ? 'صحّح الأوراق' : s.mo === 'opt' ? 'أكّد التصحيح' : 'التصحيح التلقائي';
     el.gradeSub.textContent = review
-      ? (s.ai ? 'الذكاء الاصطناعي يقترح، والاعتماد لك. اضغط أي خانة لتغييرها: صح ← مكرر ← خطأ.' : 'اضغط أي خانة لتغيير تصحيحها: صح ← مكرر ← خطأ.')
-      : (s.ai ? 'الذكاء الاصطناعي يصحّح ويعتمد النتيجة بنفسه.' : 'التصحيح الآلي يعتمد النتيجة بنفسه.');
+      ? 'الذكاء الاصطناعي يقترح، والاعتماد لك. اضغط أي خانة لتغييرها: صح ← مكرر ← خطأ.'
+      : s.mo === 'opt' ? 'صحّحها الذكاء الاصطناعي. اعتمدها الحين، أو اضغط أي خانة لتعديلها قبل ما ينتهي الوقت.'
+        : 'الذكاء الاصطناعي يصحّح ويعتمد النتيجة بنفسه.';
 
     // شريط حالة الذكاء
     const hasOv = Object.keys(ov).some((p) => Object.keys(ov[p] || {}).length);
@@ -589,7 +622,7 @@
             const why = mk === 'bad' && !changed ? notes[p.pid][i] : '';
             const wait = s.ai && aiState === 'run' && a && !ai[p.pid][i] && !why;
             const cls = ['cell', mk, changed ? 'ov' : '', wait ? 'wait' : '', ai[p.pid][i] && !changed ? 'by-ai' : ''].join(' ');
-            return `<td><button type="button" class="${cls}" data-pid="${p.pid}" data-i="${i}" ${mk === 'empty' || !review ? 'disabled' : ''} aria-label="${esc(a || 'فاضية')}: ${MARK[mk].label}${why ? '، ' + esc(why) : ''}">
+            return `<td><button type="button" class="${cls}" data-pid="${p.pid}" data-i="${i}" ${mk === 'empty' || !canTap(s) ? 'disabled' : ''} aria-label="${esc(a || 'فاضية')}: ${MARK[mk].label}${why ? '، ' + esc(why) : ''}">
               <span class="ans">${a ? esc(a) : '—'}</span><span class="mk"><i>${MARK[mk].sym}</i>${ar(pointsOf(mk, s))}${ai[p.pid][i] && !changed ? AI_ICON : ''}${changed ? '<em class="ov-tag">المقدّم</em>' : ''}</span>${why ? `<small class="why">${esc(why)}</small>` : ''}</button></td>`;
           }).join('')
         }<td class="sum"><b>${ar(tot)}</b></td></tr>`;
@@ -599,7 +632,8 @@
 
   function cycleCell(pid, i) {
     const s = room.s, cats = catsOf(s);
-    if (!hostReview(s)) return;
+    if (!canTap(s)) return;
+    if (!hostReview(s)) { regrading = s.r; stopReview(); } // تأكيد اختياري: أول لمسة توقف الاعتماد التلقائي
     const { marks, base } = marksFor(s, cats);
     const cur = marks[pid] && marks[pid][i];
     if (!cur || cur === 'empty') return;
@@ -813,7 +847,7 @@
   // ---------- نافذة الإعدادات داخل الغرفة ----------
   function openSettings() {
     const s = room.s;
-    draft = { cats: catsOf(s), R: s.R || 0, dl: s.dl || 0, pu: s.pu, pd: s.pd, all: !!s.all, xl: s.xl || '', mo: s.mo === 'auto' ? 'auto' : 'host', ai: !!s.ai };
+    draft = { cats: catsOf(s), R: s.R || 0, dl: s.dl || 0, pu: s.pu, pd: s.pd, all: !!s.all, xl: s.xl || '', mo: ['host', 'opt', 'auto'].includes(s.mo) ? s.mo : 'host', ai: true };
     lockCats = s.r !== '0' || !['lobby', 'pick'].includes(s.ph);
     el.setNote.textContent = s.ph === 'play' ? 'الجولة شغّالة: التعديل يطبّق من الحين.' : '';
     el.setSlot.appendChild(el.settings);
@@ -830,7 +864,7 @@
     const d = draft;
     d.cats = d.cats.map((c) => c.trim()).filter(Boolean).slice(0, MAX_CATS);
     if (!d.cats.length) d.cats = DEFAULT_CATS.slice();
-    const patch = { R: d.R, dl: d.dl, pu: d.pu, pd: d.pd, all: d.all, xl: d.xl, mo: d.mo, ai: !!d.ai };
+    const patch = { R: d.R, dl: d.dl, pu: d.pu, pd: d.pd, all: d.all, xl: d.xl, mo: d.mo, ai: true };
     if (!lockCats) patch.cats = d.cats;
     try {
       await NET.update(code + '/s', patch);
@@ -880,6 +914,8 @@
   });
   el.aiRetry.addEventListener('click', () => { aiState = 'idle'; aiTried = new Set(); runAI(); });
   el.aiReset.addEventListener('click', resetToAI);
+  el.reviewNow.addEventListener('click', () => { stopReview(); regrading = room.s.r; approve(); });
+  el.reviewHold.addEventListener('click', holdReview);
   el.autoPause.addEventListener('click', () => { autoPaused = !autoPaused; S.tongue(0, 0.2); renderAutoBar(room.s, Math.ceil((autoAt - Date.now()) / 1000)); });
   el.finishBtn.addEventListener('click', () => finish(false));
   el.sheetBtn.addEventListener('click', () => { el.roundsTable.innerHTML = roundsTableHTML(); el.sheetModal.hidden = false; FX.flip(); });

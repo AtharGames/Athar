@@ -21,7 +21,7 @@
           "all": { ".validate": "newData.isBoolean()" },
           "xl": { ".validate": "newData.isString() && newData.val().length <= 40" },
           "used": { ".validate": "newData.isString() && newData.val().length <= 80" },
-          "mo": { ".validate": "newData.isString() && newData.val().matches(/^(host|auto)$/)" },
+          "mo": { ".validate": "newData.isString() && newData.val().matches(/^(host|opt|auto)$/)" },
           "ai": { ".validate": "newData.isBoolean()" },
           "aq": { ".validate": "newData.isString() && newData.val().matches(/^(run|ok|err|off)$/)" },
           "cats": {
