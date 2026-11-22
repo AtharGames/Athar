@@ -4,7 +4,7 @@
      s : الحالة والإعدادات { c: وقت الإنشاء، ph: المرحلة، r: رقم الجولة (نص)، L: حرف الجولة، at: وقت بدايتها،
                             dl: وقت الجولة بالثواني (٠ بدون)، R: عدد الجولات (٠ مفتوح)، pu/pd: نقاط الوحيدة/المكررة،
                             all: لازم تعبئة كل الخانات قبل التسليم؟، xl: حروف مستبعدة، used: حروف استُخدمت، cats: الخانات،
-                            mo: طريقة الاعتماد (host المقدّم يعتمد إلزاميًا / opt تأكيد اختياري للمقدّم / auto الذكاء يعتمد)،
+                            mo: دور المقدّم (host يدير ويعتمد بدون ما يلعب / المقدّم يلعب: auto اعتماد تلقائي، opt مهلة للمقدّم)،
                             ai: التصحيح بالذكاء الاصطناعي (دائمًا مفعّل)،
                             aq: حالة الذكاء في الجولة (run يصحّح / ok خلص / err ما رد / off) }
        المراحل: lobby انتظار ← pick اختيار الحرف ← play كتابة ← stop قف! ← grade تصحيح ← show نتيجة ← end الفائز
@@ -34,7 +34,8 @@
     resumeCard: $('#resumeCard'), resumeCode: $('#resumeCode'), resumeBtn: $('#resumeBtn'),
     settings: $('#settings'), settingsHome: $('#settingsHome'),
     catsList: $('#catsList'), catForm: $('#catForm'), catInput: $('#catInput'), suggest: $('#suggest'), catsReset: $('#catsReset'), catsHint: $('#catsHint'),
-    segMode: $('#segMode'), modeHint: $('#modeHint'),
+    segMode: $('#segMode'), modeHint: $('#modeHint'), subMode: $('#subMode'), segSub: $('#segSub'), hostName: $('#hostName'),
+    mySheet: $('#mySheet'), myFrame: $('#myFrame'),
     reviewBar: $('#reviewBar'), reviewText: $('#reviewText'), reviewNow: $('#reviewNow'), reviewHold: $('#reviewHold'),
     segR: $('#segR'), segT: $('#segT'), allInput: $('#allInput'), puVal: $('#puVal'), pdVal: $('#pdVal'),
     lettersPick: $('#lettersPick'), lettersHint: $('#lettersHint'),
@@ -61,7 +62,7 @@
   // =========================================================
   // الإعدادات
   // =========================================================
-  const DEFAULT_CFG = { cats: DEFAULT_CATS.slice(), R: 5, dl: 0, pu: 10, pd: 5, all: true, xl: HARD, mo: 'host', ai: true };
+  const DEFAULT_CFG = { cats: DEFAULT_CATS.slice(), R: 5, dl: 0, pu: 10, pd: 5, all: true, xl: HARD, mo: 'host', sub: 'opt', hn: '', ai: true };
   function loadCfg() {
     try {
       const c = JSON.parse(store.get(CFG_KEY) || 'null');
@@ -87,11 +88,15 @@
     el.catsHint.textContent = lockCats ? 'تنقفل بعد أول جولة' : `${ar(draft.cats.length)} من ${ar(MAX_CATS)}`;
     el.suggest.innerHTML = lockCats || draft.cats.length >= MAX_CATS ? '' :
       SUGGEST.filter((x) => !draft.cats.includes(x)).slice(0, 8).map((x) => `<button type="button">+ ${esc(x)}</button>`).join('');
-    $$('button', el.segMode).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === draft.mo)));
+    const plays = draft.mo !== 'host';
+    $$('button', el.segMode).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === (plays ? 'play' : 'manage'))));
+    $$('button', el.segSub).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === draft.mo)));
+    el.subMode.hidden = !plays;
+    if (document.activeElement !== el.hostName) el.hostName.value = draft.hn || '';
     el.modeHint.textContent = {
-      host: 'الذكاء الاصطناعي يصحّح، وما تنحسب النتيجة إلا إذا راجعها المقدّم واعتمدها.',
-      opt: `الذكاء يصحّح، والمقدّم عنده ${ar(REVIEW)} ثانية يراجع ويعدّل إذا حب، وإلا تنعتمد تلقائيًا. والجولات تمشي لحالها.`,
-      auto: 'الذكاء يصحّح ويعتمد بدون الرجوع لأحد، والجولات تمشي لحالها، والمقدّم يقدر يلعب معهم من جواله.'
+      host: 'المقدّم ما يلعب: تظهر له إجابات المشاركين مع تصحيح الذكاء، ويعتمدها أو يغيّر فيها، وما تنحسب إلا باعتماده.',
+      auto: 'المقدّم يلعب معهم، والذكاء يصحّح ويعتمد مباشرة بدون تأكيد. والحروف والجولات تمشي لحالها.',
+      opt: `المقدّم يلعب معهم، والذكاء يصحّح ويعطيه ${ar(REVIEW)} ثانية يعتمد أو يغيّر، وإلا تنعتمد تلقائيًا. والحروف والجولات تمشي لحالها.`
     }[draft.mo] || '';
     $$('button', el.segR).forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.v === draft.R)));
     $$('button', el.segT).forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.v === draft.dl)));
@@ -124,7 +129,17 @@
       const b = e.target.closest('button'); if (b) addCat(b.textContent.replace('+', ''));
     });
     el.catsReset.addEventListener('click', () => { draft.cats = DEFAULT_CATS.slice(); S.whoosh(false); onDraft(); renderSettings(); });
-    el.segMode.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; draft.mo = b.dataset.v; S.tongue(0, 0.2); onDraft(); renderSettings(); });
+    el.segMode.addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      draft.mo = b.dataset.v === 'manage' ? 'host' : (draft.sub === 'auto' ? 'auto' : 'opt');
+      S.tongue(0, 0.2); onDraft(); renderSettings();
+    });
+    el.segSub.addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      draft.mo = draft.sub = b.dataset.v;
+      S.tongue(0, 0.2); onDraft(); renderSettings();
+    });
+    el.hostName.addEventListener('input', () => { draft.hn = el.hostName.value.trim().replace(/\s+/g, ' ').slice(0, 20); onDraft(); });
     el.segR.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; draft.R = +b.dataset.v; S.tongue(0, 0.2); onDraft(); renderSettings(); });
     el.segT.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; draft.dl = +b.dataset.v; S.tongue(0, 0.2); onDraft(); renderSettings(); });
     el.allInput.addEventListener('change', () => { draft.all = el.allInput.checked; S.tongue(0, 0.2); onDraft(); });
@@ -222,6 +237,7 @@
     el.joinUrl.textContent = link.replace(/^https?:\/\//, '').replace(/\?.*$/, '');
     el.qr.innerHTML = qrSVG(link);
     el.bigLetter.textContent = '؟';
+    frameRoom = '';
     show('screen-room');
     if (stopWatch) stopWatch();
     stopWatch = NET.watch(c, onRoom);
@@ -230,6 +246,7 @@
 
   function closeRoom(msg) {
     if (stopWatch) { stopWatch(); stopWatch = null; }
+    setFrame('');
     clearTimeout(gatherTimer); clearInterval(tickTimer); clearInterval(autoTimer);
     code = null; room = null;
     store.del(HOST_KEY);
@@ -254,8 +271,41 @@
     }
     loaded = true;
     room = data;
+    syncHostPlayer();
     render();
   }
+
+  // ---------- المقدّم يلعب: ورقته صفحة مشارك مضمّنة ----------
+  const HOST_ME = 'athar-huroof-me-host';
+  let frameRoom = '';
+  function setFrame(c) {
+    if (c === frameRoom) return;
+    frameRoom = c;
+    if (!c) { el.myFrame.src = 'about:blank'; el.mySheet.hidden = true; return; }
+    const u = new URL('play.html', location.href), q = extra();
+    const src = new URLSearchParams(location.search);
+    if (src.get('ai')) q.set('ai', src.get('ai'));
+    q.set('r', c); q.set('embed', '1'); q.set('n', cfg.hn || 'المقدّم');
+    u.search = q.toString();
+    el.myFrame.src = u.href;
+  }
+  function syncHostPlayer() {
+    const plays = room.s.mo === 'opt' || room.s.mo === 'auto';
+    if (plays) { setFrame(code); return; }
+    if (frameRoom) {
+      // صار المقدّم يدير: نطلّع ورقته من المشاركين
+      setFrame('');
+      try {
+        const me = JSON.parse(store.get(HOST_ME) || 'null');
+        if (me && me.room === code) NET.remove(`${code}/p/${me.pid}`).catch(() => {});
+      } catch { /* تجاهل */ }
+    }
+  }
+  // ارتفاع الورقة يوصل من الصفحة المضمّنة
+  window.addEventListener('message', (e) => {
+    if (e.origin !== location.origin || !e.data || typeof e.data.huroofH !== 'number') return;
+    el.myFrame.style.height = Math.max(240, Math.min(4000, e.data.huroofH)) + 'px';
+  });
 
   // ---------- أدوات قراءة الحالة ----------
   const players = () => {
@@ -416,6 +466,8 @@
   // ---------- الجولة شغّالة ----------
   function renderPlay(s, cats) {
     const ans = answersOf(s.r), ps = players();
+    el.mySheet.hidden = !frameRoom;
+    el.room.classList.toggle('host-plays', !!frameRoom);
     let done = 0;
     el.progress.innerHTML = ps.map((p) => {
       const a = ans[p.pid] || {}, v = a.v || {};
@@ -847,7 +899,7 @@
   // ---------- نافذة الإعدادات داخل الغرفة ----------
   function openSettings() {
     const s = room.s;
-    draft = { cats: catsOf(s), R: s.R || 0, dl: s.dl || 0, pu: s.pu, pd: s.pd, all: !!s.all, xl: s.xl || '', mo: ['host', 'opt', 'auto'].includes(s.mo) ? s.mo : 'host', ai: true };
+    draft = { cats: catsOf(s), R: s.R || 0, dl: s.dl || 0, pu: s.pu, pd: s.pd, all: !!s.all, xl: s.xl || '', mo: ['host', 'opt', 'auto'].includes(s.mo) ? s.mo : 'host', sub: cfg.sub, hn: cfg.hn, ai: true };
     lockCats = s.r !== '0' || !['lobby', 'pick'].includes(s.ph);
     el.setNote.textContent = s.ph === 'play' ? 'الجولة شغّالة: التعديل يطبّق من الحين.' : '';
     el.setSlot.appendChild(el.settings);

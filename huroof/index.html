@@ -100,20 +100,34 @@
         <div class="settings" id="settings">
 
           <div class="card mode-card">
-            <div class="card-head"><h2>التصحيح بالذكاء الاصطناعي</h2><span class="muted">مين يعتمد النتيجة؟</span></div>
-            <div class="seg seg-wide seg-3" id="segMode" role="group" aria-label="طريقة اعتماد التصحيح">
-              <button data-v="host">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-                <span>المقدّم يعتمد<small>تأكيد إلزامي</small></span>
+            <div class="card-head"><h2>دور المقدّم</h2><span class="muted">والذكاء الاصطناعي يصحّح دائمًا</span></div>
+            <div class="seg seg-wide seg-3" id="segMode" role="group" aria-label="دور المقدّم">
+              <button data-v="manage">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
+                <span>المقدّم يدير<small>يراجع ويعتمد بدون ما يلعب</small></span>
               </button>
-              <button data-v="opt">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9M12 7v5l3 2"/></svg>
-                <span>تأكيد اختياري<small>للمقدّم مهلة</small></span>
+              <button data-v="play">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16zM14 7l3 3"/></svg>
+                <span>المقدّم يلعب<small>ورقته في نفس الشاشة</small></span>
               </button>
-              <button data-v="auto">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></svg>
-                <span>الذكاء يعتمد<small>بدون مقدّم</small></span>
-              </button>
+            </div>
+            <!-- إذا المقدّم يلعب: طريقة الاعتماد واسمه -->
+            <div class="sub-mode" id="subMode" hidden>
+              <span class="sub-label">والاعتماد؟</span>
+              <div class="seg seg-wide seg-3" id="segSub" role="group" aria-label="طريقة الاعتماد">
+                <button data-v="auto">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></svg>
+                  <span>تلقائي<small>الذكاء يعتمد مباشرة</small></span>
+                </button>
+                <button data-v="opt">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9M12 7v5l3 2"/></svg>
+                  <span>مهلة للمقدّم<small>يعتمد أو يغيّر قبلها</small></span>
+                </button>
+              </div>
+              <label class="host-name">
+                <span>اسمك في اللعب</span>
+                <input type="text" id="hostName" maxlength="20" placeholder="المقدّم" autocomplete="off">
+              </label>
             </div>
             <p class="mode-hint" id="modeHint"></p>
           </div>
@@ -188,9 +202,8 @@
           <li>كل مشارك يعبّي الخانات بكلمات تبدأ بالحرف (و«ال» التعريف ما تُحسب).</li>
           <li><strong>أول واحد يضغط «سلّمت» يوقف الكل</strong>، وتنقفل أوراقهم على اللي كتبوه.</li>
           <li>الذكاء الاصطناعي يصحّح: يحكم على معنى كل كلمة، ويكشف المكرر حتى لو اختلف الإملاء، ويكتب سبب الخطأ.</li>
-          <li><strong>المقدّم يعتمد:</strong> تراجع اقتراح الذكاء، وتغيّر أي خانة بلمسة، وما تنحسب النتيجة إلا إذا اعتمدتها.</li>
-          <li><strong>تأكيد اختياري:</strong> الذكاء يصحّح، وعندك مهلة قصيرة تعتمد أو تعدّل، وإذا ما سويت شي تنعتمد تلقائيًا.</li>
-          <li><strong>الذكاء يعتمد:</strong> بدون الرجوع لأحد، والحروف تُسحب والجولات تمشي لحالها، والمقدّم يقدر يلعب معهم من جواله.</li>
+          <li><strong>المقدّم يدير:</strong> ما يلعب، تظهر له إجابات المشاركين مع تصحيح الذكاء، ويعتمدها أو يغيّر فيها بلمسة.</li>
+          <li><strong>المقدّم يلعب:</strong> تظهر ورقته في نفس الشاشة ويلعب معهم، والحروف تُسحب والجولات تمشي لحالها. والاعتماد إما <strong>تلقائي</strong> من الذكاء مباشرة، أو <strong>بمهلة</strong> يعتمد فيها المقدّم أو يغيّر قبل الاعتماد التلقائي.</li>
           <li>بعد الاعتماد يطلع المجموع وسبب كل خطأ في ورقة المشارك، وبعد آخر جولة يُعلن الفائز.</li>
         </ul>
       </details>
@@ -253,6 +266,10 @@
 
             <!-- الجولة شغّالة -->
             <div class="panel" id="ph-play">
+              <!-- المقدّم يلعب: ورقته (صفحة المشارك مضمّنة) -->
+              <div class="my-sheet" id="mySheet" hidden>
+                <iframe id="myFrame" title="ورقة المقدّم" src="about:blank"></iframe>
+              </div>
               <div class="play-top">
                 <div class="letter-tile live" id="playLetter"></div>
                 <div class="play-info">

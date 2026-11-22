@@ -9,7 +9,14 @@
   const { $, S, FX, store, ar, toLatin, esc, plus, clock, LETTERS, startsWith, catsOf, sum, ranking, roundsDone,
     rollLetter, initChrome, show, toast, confirmBox, confetti, keepAwake, vibrate } = H;
   const NET = window.HuroofNet;
-  const ME_KEY = 'athar-huroof-me';
+  // embed=1: ورقة المقدّم داخل شاشته (يلعب معهم)، بمعرّف مستقل وبلا أصوات (الشاشة الأم تصدرها)
+  const EMBED = new URLSearchParams(location.search).get('embed') === '1' && window.parent !== window;
+  const ME_KEY = EMBED ? 'athar-huroof-me-host' : 'athar-huroof-me';
+  if (EMBED) {
+    document.documentElement.classList.add('embed');
+    Object.keys(FX).forEach((k) => { FX[k] = () => {}; });
+    ['tongue', 'drop', 'chirp', 'sigh', 'whoosh', 'gust', 'winner'].forEach((k) => { if (typeof S[k] === 'function') S[k] = () => {}; });
+  }
 
   const el = {
     netDot: $('#netDot'), meName: $('#meName'), meRoom: $('#meRoom'),
@@ -484,6 +491,17 @@
 
   // رمز من الرابط أو دخول سابق
   const params = new URLSearchParams(location.search);
+  if (EMBED) {
+    // نبلّغ الشاشة الأم بارتفاع الورقة، ونتبع ثيمها
+    const post = () => { try { parent.postMessage({ huroofH: document.documentElement.scrollHeight }, location.origin); } catch { /* تجاهل */ } };
+    try { new ResizeObserver(post).observe(document.body); } catch { setInterval(post, 800); }
+    window.addEventListener('storage', (e) => { if (e.key === 'athar-theme' && e.newValue) document.documentElement.dataset.theme = e.newValue; });
+    const code = (params.get('r') || '').replace(/\D/g, '').slice(0, 5);
+    const name = (params.get('n') || 'المقدّم').trim().slice(0, 20) || 'المقدّم';
+    const old = loadMe();
+    if (code.length === 5) join(code, name, old && old.room === code ? old.pid : newPid(), false);
+    return;
+  }
   const qr = (params.get('r') || '').replace(/\D/g, '').slice(0, 5);
   const saved = loadMe();
   if (qr) el.code.value = qr;
