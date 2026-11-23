@@ -233,6 +233,25 @@ a.game-card:hover .art-maarek .cloth{transform-box:fill-box; transform-origin:0 
 @keyframes maarekPlant{from{transform:translateY(-24px); opacity:0;} to{transform:none; opacity:1;}}
 @keyframes maarekWave{to{transform:skewY(-8deg) scaleX(.92);}}
 
+/* فزعة: ساحة ليلية، حبل إنارة وجوالات ترتفع نحو نجمة */
+.art-fazaa{background:radial-gradient(80% 70% at 50% 0%,#3A2470,#170F33 70%);}
+.art-fazaa svg{width:100%; height:100%;}
+.art-fazaa .wire{fill:none; stroke:rgba(255,233,200,.45); stroke-width:1.2;}
+.art-fazaa .bulbs circle{fill:#FFD877; filter:drop-shadow(0 0 3px rgba(255,201,74,.8));}
+.art-fazaa .bulbs circle:nth-child(3n+1){fill:#FF8A5B;} .art-fazaa .bulbs circle:nth-child(3n+2){fill:#5CC2F5;}
+.art-fazaa .wave{fill:none; stroke:#FFC94A; stroke-width:1.6; stroke-dasharray:3 4; stroke-linecap:round; opacity:.85;}
+.art-fazaa .star{fill:#FFC94A;}
+.art-fazaa .ph rect:first-child{stroke:rgba(0,0,0,.3);}
+.art-fazaa .p1 rect:first-child{fill:#E8554E;} .art-fazaa .p2 rect:first-child{fill:#E59A1C;} .art-fazaa .p3 rect:first-child{fill:#1FA971;} .art-fazaa .p4 rect:first-child{fill:#8257E5;}
+.art-fazaa .sc{fill:#fff; opacity:.9;}
+a.game-card:hover .art-fazaa .ph{animation:fazaaBob .7s ease-in-out infinite alternate;}
+a.game-card:hover .art-fazaa .p2,a.game-card:hover .art-fazaa .p4{animation-delay:-.35s;}
+a.game-card:hover .art-fazaa .bulbs circle{animation:fazaaChase 1s ease-in-out infinite;}
+a.game-card:hover .art-fazaa .wave{animation:fazaaFlow .8s linear infinite;}
+@keyframes fazaaBob{to{transform:translateY(-6px);}}
+@keyframes fazaaChase{50%{opacity:.35;}}
+@keyframes fazaaFlow{to{stroke-dashoffset:-14;}}
+
 .art-soon span{font-size:4rem; font-weight:700; color:var(--text-2); opacity:.5;}
 
 .game-body{padding:18px 20px 20px; display:flex; flex-direction:column; flex:1;}

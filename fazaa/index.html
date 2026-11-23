@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="fest">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>فزعة | شاشة المقدّم</title>
+<meta name="description" content="فزعة: ساحة فقرات سريعة للفرق، كل مشارك يدخل بجواله، وقائد لكل فريق في الفقرات الجماعية. ١٢ فقرة: كم السعر، سرعة البديهة، عين الصقر، أسئلة السرعة، تحدي الرسم، الألغام وغيرها.">
+<meta name="theme-color" content="#170F33">
+<!-- تطبيق الثيم المحفوظ قبل الرسم لتفادي الوميض (ثيم الساحة الليلي افتراضي) -->
+<script>
+(function(){
+  var t=null;
+  try{ t=localStorage.getItem('athar-fazaa-theme'); }catch(e){}
+  if(['fest','light','navy','blue'].indexOf(t)<0) t='fest';
+  document.documentElement.setAttribute('data-theme',t);
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/athar.css">
+<link rel="stylesheet" href="../assets/athar-quiz.css">
+<link rel="stylesheet" href="style.css">
+<script src="../assets/athar-analytics.js" defer></script>
+</head>
+<body class="host">
+
+<div class="sky" aria-hidden="true"><div class="lights"></div></div>
+
+<!-- ============ الشريط العلوي ============ -->
+<header class="topbar">
+  <a class="brand" href="../" aria-label="الرجوع إلى أثَر للألعاب">
+    <img class="logo logo-main" src="../assets/athar-mark.png" alt="" width="52" height="60">
+    <img class="logo logo-rev" src="../assets/athar-mark-reversed.png" alt="" width="52" height="60">
+    <span class="brand-text"><strong>فزعة</strong><small id="brandSub">شاشة المقدّم</small></span>
+  </a>
+  <div class="top-tools">
+    <span class="net" id="netDot" data-on="false" title="حالة الاتصال"><i></i><b id="netText">يتصل…</b></span>
+    <button class="icon-btn" id="setBtn" aria-label="الإعدادات والفقرات" title="الإعدادات والفقرات">⚙️</button>
+    <button class="icon-btn snd" id="soundBtn" aria-pressed="true" aria-label="المؤثرات الصوتية">
+      <span class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    </button>
+    <div class="theme-switch" role="group" aria-label="ألوان الواجهة">
+      <button class="theme-dot sw-fest" data-set-theme="fest" aria-label="ليل الساحة" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="light" aria-label="الثيم الفاتح" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="navy" aria-label="الثيم الكحلي" aria-pressed="false"></button>
+      <button class="theme-dot" data-set-theme="blue" aria-label="ثيم أزرق أثَر" aria-pressed="false"></button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ ١) البداية ============ -->
+  <section class="screen active" id="screen-intro">
+    <div class="intro">
+      <div class="hero" aria-hidden="true">
+        <svg viewBox="0 0 320 210">
+          <path class="h-rope" d="M6 20 Q160 58 314 20"/>
+          <g class="h-bulbs"><g class="hb" style="--i:0"><path d="M16.3 22.9h4v4h-4z"/><circle cx="18.3" cy="31.9" r="5.5"/></g><g class="hb" style="--i:1"><path d="M42.1 28.2h4v4h-4z"/><circle cx="44.1" cy="37.2" r="5.5"/></g><g class="hb" style="--i:2"><path d="M67.8 32.5h4v4h-4z"/><circle cx="69.8" cy="41.5" r="5.5"/></g><g class="hb" style="--i:3"><path d="M93.6 35.7h4v4h-4z"/><circle cx="95.6" cy="44.7" r="5.5"/></g><g class="hb" style="--i:4"><path d="M119.4 37.8h4v4h-4z"/><circle cx="121.4" cy="46.8" r="5.5"/></g><g class="hb" style="--i:5"><path d="M145.1 38.9h4v4h-4z"/><circle cx="147.1" cy="47.9" r="5.5"/></g><g class="hb" style="--i:6"><path d="M170.9 38.9h4v4h-4z"/><circle cx="172.9" cy="47.9" r="5.5"/></g><g class="hb" style="--i:7"><path d="M196.6 37.8h4v4h-4z"/><circle cx="198.6" cy="46.8" r="5.5"/></g><g class="hb" style="--i:8"><path d="M222.4 35.7h4v4h-4z"/><circle cx="224.4" cy="44.7" r="5.5"/></g><g class="hb" style="--i:9"><path d="M248.2 32.5h4v4h-4z"/><circle cx="250.2" cy="41.5" r="5.5"/></g><g class="hb" style="--i:10"><path d="M273.9 28.2h4v4h-4z"/><circle cx="275.9" cy="37.2" r="5.5"/></g><g class="hb" style="--i:11"><path d="M299.7 22.9h4v4h-4z"/><circle cx="301.7" cy="31.9" r="5.5"/></g></g>
+          <g class="h-spark"><circle r="20" class="glow"/><path d="M0-15l4 10 11 1-8 7 3 11-10-6-10 6 3-11-8-7 11-1z"/></g>
+          <g class="h-waves"><path d="M70 150 Q110 112 150 104"/><path d="M118 140 Q140 116 156 106"/><path d="M202 140 Q180 116 164 106"/><path d="M250 150 Q210 112 170 104"/></g>
+          <g class="h-phone p0"><rect x="-17" y="-30" width="34" height="60" rx="7"/><rect class="scr" x="-12" y="-23" width="24" height="40" rx="3"/><text y="3">💰</text></g>
+          <g class="h-phone p1"><rect x="-17" y="-30" width="34" height="60" rx="7"/><rect class="scr" x="-12" y="-23" width="24" height="40" rx="3"/><text y="3">🎯</text></g>
+          <g class="h-phone p2"><rect x="-17" y="-30" width="34" height="60" rx="7"/><rect class="scr" x="-12" y="-23" width="24" height="40" rx="3"/><text y="3">💣</text></g>
+          <g class="h-phone p3"><rect x="-17" y="-30" width="34" height="60" rx="7"/><rect class="scr" x="-12" y="-23" width="24" height="40" rx="3"/><text y="3">📍</text></g>
+        </svg>
+      </div>
+      <h1>فزعة</h1>
+      <p class="lead">ساحة فقرات سريعة للفرق: كل واحد يدخل بجواله، وفي الفقرات الجماعية يتشاور الفريق ويرسل القائد.</p>
+      <div class="intro-actions">
+        <button class="btn btn-gold tactile big" id="openRoom">افتح الساحة</button>
+        <button class="btn tactile" id="openSet">الفقرات والإعدادات</button>
+      </div>
+      <div class="booths" id="booths"></div>
+      <p class="local-note" id="localNote" hidden>وضع التجربة المحلي: ما رُبطت اللعبة بقاعدة بيانات بعد، فافتح صفحة المشارك في تبويبات على نفس الجهاز للتجربة.</p>
+    </div>
+  </section>
+
+  <!-- ============ ٢) الانتظار وانضمام المشاركين ============ -->
+  <section class="screen" id="screen-lobby">
+    <div class="lobby">
+      <div class="join-card">
+        <small>ادخلوا من الجوال</small>
+        <div class="qr" id="qr"></div>
+        <div class="code" id="roomCode" aria-label="رمز الغرفة">٠٠٠٠٠</div>
+        <a class="join-link" id="joinLink" target="_blank" rel="noopener"></a>
+        <div class="lobby-count"><b id="pCount">٠</b> مشارك</div>
+      </div>
+      <div class="teams-board" id="teamsBoard"></div>
+    </div>
+    <div class="lobby-actions">
+      <span class="playlist-sum" id="plSum"></span>
+      <button class="btn tactile" id="lobbySet">الفقرات والإعدادات</button>
+      <button class="btn btn-gold tactile big" id="startShow">ابدأ الفزعة</button>
+      <button class="btn btn-ghost" id="closeRoom">إغلاق الغرفة</button>
+    </div>
+  </section>
+
+  <!-- ============ ٣) المسرح: تعريف الفقرة واللعب والكشف ============ -->
+  <section class="screen" id="screen-stage">
+    <div class="stage-wrap">
+      <div class="stage-main">
+        <div class="stage-head">
+          <div class="g-title"><span class="g-ico" id="gIco"></span><div><b id="gName"></b><small id="gMeta"></small></div></div>
+          <div class="g-live">
+            <span class="answered" id="answered"></span>
+            <div id="timer"></div>
+          </div>
+        </div>
+        <div class="stage" id="stage"></div>
+        <div class="stage-foot">
+          <button class="btn btn-ghost" id="skipBtn">تخطَّ الفقرة</button>
+          <span class="who" id="whoStrip"></span>
+          <button class="btn btn-gold tactile" id="nextBtn">التالي</button>
+        </div>
+      </div>
+      <aside class="side-score" id="sideScore" aria-label="النتائج"></aside>
+    </div>
+  </section>
+
+  <!-- ============ ٤) النتائج بين الفقرات ============ -->
+  <section class="screen" id="screen-board">
+    <div class="board">
+      <h2 id="boardTitle">النتائج</h2>
+      <p class="board-sub" id="boardSub"></p>
+      <div class="podium-list" id="boardList"></div>
+      <div class="players-top" id="playersTop"></div>
+      <div class="board-actions">
+        <button class="btn btn-gold tactile big" id="boardNext">الفقرة التالية</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ٥) الفائز ============ -->
+  <section class="screen" id="screen-end">
+    <div class="board end">
+      <div class="crown" aria-hidden="true">🏆</div>
+      <h2 id="winTitle"></h2>
+      <div class="podium-list" id="endList"></div>
+      <div class="players-top" id="endPlayers"></div>
+      <div class="board-actions">
+        <button class="btn tactile" id="againBtn">جولة جديدة بنفس الغرفة</button>
+        <button class="btn btn-ghost" id="endClose">إغلاق الغرفة</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
+
+<!-- ============ الإعدادات والفقرات ============ -->
+<div class="modal" id="settingsModal" hidden>
+  <div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <h3 id="setTitle">الفقرات والإعدادات</h3>
+    <div class="modal-body" id="setBody"></div>
+    <div class="modal-actions single"><button class="btn btn-primary tactile" id="setDone">تم</button></div>
+  </div>
+</div>
+
+<!-- ============ قائمة المشارك ============ -->
+<div class="modal" id="pMenu" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="pmName">
+    <h3 id="pmName"></h3>
+    <div class="pm-body" id="pmBody"></div>
+    <div class="modal-actions single"><button class="btn" id="pmClose">إغلاق</button></div>
+  </div>
+</div>
+
+<!-- ============ سؤال من المقدّم ============ -->
+<div class="modal" id="hostQ" hidden>
+  <form class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="hqTitle" id="hqForm" autocomplete="off">
+    <h3 id="hqTitle">سؤال من المقدّم</h3>
+    <label class="field"><span>السؤال</span><textarea id="hqQ" rows="2" required></textarea></label>
+    <div class="hq-opts" id="hqOpts"></div>
+    <p class="hint">اكتب خيارين على الأقل، واختر الصحيح بالدائرة.</p>
+    <div class="modal-actions"><button class="btn btn-primary tactile">اعرض السؤال</button><button class="btn" type="button" id="hqCancel">تخطَّ</button></div>
+  </form>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<div class="modal" id="confirm" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h3 id="confirmTitle"></h3>
+    <p id="confirmText"></p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="confirmYes"></button>
+      <button class="btn" id="confirmNo">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<script src="firebase-config.js" defer></script>
+<script src="../assets/athar-sound.js" defer></script>
+<script src="../diwan/data.js" defer></script>
+<script src="../assets/athar-quiz.js" defer></script>
+<script src="net.js" defer></script>
+<script src="shared.js" defer></script>
+<script src="content.js" defer></script>
+<script src="maps.js" defer></script>
+<script src="scenes.js" defer></script>
+<script src="games.js" defer></script>
+<script src="ai.js" defer></script>
+<script src="lib/qrcode.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>

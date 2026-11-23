@@ -1,0 +1,145 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "fazaa": {
+      "$room": {
+        ".read": "$room.matches(/^[0-9]{5}$/)",
+        ".write": "$room.matches(/^[0-9]{5}$/) && (!newData.exists() || !data.exists())",
+        "s": {
+          ".write": "$room.matches(/^[0-9]{5}$/)",
+          ".validate": "newData.hasChildren(['ph', 'r'])",
+          "c": {
+            ".validate": "newData.isNumber()"
+          },
+          "ph": {
+            ".validate": "newData.isString() && newData.val().matches(/^(lobby|intro|play|lock|reveal|board|end)$/)"
+          },
+          "r": {
+            ".validate": "newData.isString() && newData.val().matches(/^[0-9]{1,6}$/)"
+          },
+          "g": {
+            ".validate": "newData.isString() && newData.val().matches(/^[a-z]{2,10}$/)"
+          },
+          "sub": {
+            ".validate": "newData.isString() && newData.val().matches(/^(place|turn|end)$/)"
+          },
+          "m": {
+            ".validate": "newData.isString() && newData.val().matches(/^(solo|team|duel|turn)$/)"
+          },
+          "gi": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 50"
+          },
+          "gn": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 50"
+          },
+          "ri": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 50"
+          },
+          "rn": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 50"
+          },
+          "at": {
+            ".validate": "newData.isNumber()"
+          },
+          "dl": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 600"
+          },
+          "vw": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 60"
+          },
+          "d": {
+            ".validate": "newData.isString() && newData.val().length <= 6000"
+          },
+          "k": {
+            ".validate": "newData.isString() && newData.val().length <= 60000"
+          },
+          "cur": {
+            ".validate": "newData.isString() && newData.val().length <= 12"
+          },
+          "ak": {
+            ".validate": "newData.isString() && newData.val().length <= 12"
+          },
+          "win": {
+            ".validate": "newData.isString() && newData.val().length <= 2"
+          },
+          "dw": {
+            "$pid": {
+              ".validate": "$pid.matches(/^[a-z0-9]{10}$/) && newData.val() === true"
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "T": {
+          ".write": "$room.matches(/^[0-9]{5}$/)",
+          "$t": {
+            ".validate": "$t.matches(/^[0-5]$/) && newData.hasChildren(['n', 'c'])",
+            "n": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20"
+            },
+            "c": {
+              ".validate": "newData.isString() && newData.val().matches(/^#[0-9A-Fa-f]{6}$/)"
+            },
+            "l": {
+              ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9]{10}$/)"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "p": {
+          "$pid": {
+            ".write": "$room.matches(/^[0-9]{5}$/) && $pid.matches(/^[a-z0-9]{10}$/) && (!newData.exists() || root.child('fazaa').child($room).child('s').exists())",
+            ".validate": "newData.hasChildren(['n', 't', 'j'])",
+            "n": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20"
+            },
+            "t": {
+              ".validate": "newData.isString() && newData.val().matches(/^[0-5]$/)"
+            },
+            "j": {
+              ".validate": "newData.isNumber()"
+            },
+            "on": {
+              ".validate": "newData.isBoolean()"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "a": {
+          ".write": "$room.matches(/^[0-9]{5}$/) && !newData.exists()",
+          "$r": {
+            "$pid": {
+              ".write": "$room.matches(/^[0-9]{5}$/) && $pid.matches(/^[a-z0-9]{10}$/) && newData.exists() && !data.exists() && root.child('fazaa').child($room).child('p').child($pid).exists() && root.child('fazaa').child($room).child('s').child('r').val() === $r && (root.child('fazaa').child($room).child('s').child('ph').val() === 'play' || root.child('fazaa').child($room).child('s').child('ph').val() === 'lock') && now <= root.child('fazaa').child($room).child('s').child('at').val() + root.child('fazaa').child($room).child('s').child('dl').val() * 1000 + 3000 && (root.child('fazaa').child($room).child('s').child('m').val() === 'solo' || (root.child('fazaa').child($room).child('s').child('m').val() === 'team' && root.child('fazaa').child($room).child('T').child(root.child('fazaa').child($room).child('p').child($pid).child('t').val() + '').child('l').val() === $pid) || (root.child('fazaa').child($room).child('s').child('m').val() === 'duel' && root.child('fazaa').child($room).child('s').child('dw').child($pid).val() === true) || (root.child('fazaa').child($room).child('s').child('m').val() === 'turn' && root.child('fazaa').child($room).child('s').child('cur').val() === $pid))",
+              ".validate": "newData.hasChildren(['v', 't']) && newData.child('t').val() === now",
+              "v": {
+                ".validate": "newData.isString() && newData.val().length <= 70000"
+              },
+              "t": {
+                ".validate": "newData.isNumber()"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        },
+        "sc": {
+          ".write": "$room.matches(/^[0-9]{5}$/)"
+        },
+        "cfg": {
+          ".write": "$room.matches(/^[0-9]{5}$/)",
+          ".validate": "newData.isString() && newData.val().length <= 30000"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    }
+  }
+}
