@@ -1,5 +1,5 @@
 /* =========================================================
-   فزعة | التحكيم بالذكاء الاصطناعي (Gemini عبر Firebase AI Logic) — اختياري
+   سِجَال | التحكيم بالذكاء الاصطناعي (Gemini عبر Firebase AI Logic) — اختياري
    يشتغل في شاشة المقدّم فقط، ولو فشل ترجع اللعبة للتحكيم الآلي المحلي.
      FazaaAI.drawings({ title, target, items:[{id, img}] })   ← { id: نسبة التطابق ٠–١٠٠ }
      FazaaAI.descriptions({ scene, items:[{id, text}] })       ← { id: { score, hits } }

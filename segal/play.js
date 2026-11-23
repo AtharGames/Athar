@@ -1,5 +1,5 @@
 /* =========================================================
-   فزعة | جوال المشارك
+   سِجَال | جوال المشارك
    يدخل برمز الغرفة، يختار فريقه، ويعرض الفقرة الجارية حسب دوره
    (فردي: يجاوب بنفسه، جماعي: القائد يرسل والباقي يتشاورون، مواجهة: الرسّام، ألغام: صاحب الدور)
    ========================================================= */
@@ -167,7 +167,7 @@
     if (!force && key === rendered) return;
     rendered = key;
     clearInterval(timer);
-    if (S.ph === 'lobby') return waitView(`<div class="w-ico">⏳</div><h2>أهلًا ${esc(me.name)}</h2><p>أنت في فريق <span class="tchip" style="--tc:${m.color}">${esc(m.teamName)}</span>${m.isLeader ? '<br><b class="lead-badge">👑 أنت قائد الفريق</b>' : ''}</p><p class="muted">انتظر المقدّم يبدأ الفزعة…</p><button class="btn btn-ghost" id="chgTeam">غيّر فريقي</button>`, () => { $('#chgTeam').onclick = () => { watchers.forEach((w) => w()); watchers = []; teamScreen(true); }; });
+    if (S.ph === 'lobby') return waitView(`<div class="w-ico">⏳</div><h2>أهلًا ${esc(me.name)}</h2><p>أنت في فريق <span class="tchip" style="--tc:${m.color}">${esc(m.teamName)}</span>${m.isLeader ? '<br><b class="lead-badge">👑 أنت قائد الفريق</b>' : ''}</p><p class="muted">انتظر المقدّم يبدأ السِجَال…</p><button class="btn btn-ghost" id="chgTeam">غيّر فريقي</button>`, () => { $('#chgTeam').onclick = () => { watchers.forEach((w) => w()); watchers = []; teamScreen(true); }; });
     if (S.ph === 'intro') return introView(m);
     if (S.ph === 'board') return boardView(m);
     if (S.ph === 'end') return endView(m);
@@ -335,7 +335,7 @@
   function endView(m) {
     const st = standings();
     const won = S.win != null && String(S.win) === m.team;
-    waitView(`<div class="w-ico">${won ? '🏆' : '👏'}</div><h2>${won ? 'فزتوا!' : 'انتهت الفزعة'}</h2>
+    waitView(`<div class="w-ico">${won ? '🏆' : '👏'}</div><h2>${won ? 'فزتوا!' : 'انتهى السِّجال'}</h2>
       <ol class="mini-rank">${st.map((x) => `<li style="--tc:${x.c}" class="${x.t === m.team ? 'mine' : ''}"><b>${esc(x.n)}</b><span>${num(x.pts)}</span></li>`).join('')}</ol>`);
     if (won) { window.AtharSound.winner(); F.confetti($('#confetti')); } else FX.clap(6);
   }

@@ -1,5 +1,5 @@
 /* =========================================================
-   فزعة | شاشة المقدّم
+   سِجَال | شاشة المقدّم
    المقدّم هو المرجع: يفتح الغرفة، يجهّز كل جولة، يحسب النقاط ويكتبها.
    مسارات الغرفة (fazaa/<الرمز>/):
      s   حالة العرض (المرحلة، الفقرة، الجولة، البيانات العامة، الكشف)
@@ -716,7 +716,7 @@
     const st = standings();
     const w = st[0];
     setState({ ph: 'end', r: S.r, win: w ? w.t : null });
-    $('#winTitle').innerHTML = w && w.pts > 0 ? `الفائز: <span style="color:${T[w.t].c}">${esc(T[w.t].n)}</span>` : 'انتهت الفزعة';
+    $('#winTitle').innerHTML = w && w.pts > 0 ? `الفائز: <span style="color:${T[w.t].c}">${esc(T[w.t].n)}</span>` : 'انتهى السِّجال';
     boardList($('#endList'), st);
     playersTop($('#endPlayers'));
     F.show('screen-end');
