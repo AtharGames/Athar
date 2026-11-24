@@ -12,7 +12,7 @@ window.FZ_SCENE = (() => {
   const EMO = 'font-family="Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif"';
   const COLORS = { 'أحمر': '#D94841', 'أزرق': '#2F6FD6', 'أخضر': '#2E9E5B', 'أصفر': '#F2C21B', 'بني': '#8B5A2B', 'أبيض': '#F7F4EC', 'بنفسجي': '#7E57C2', 'برتقالي': '#EE8A2A' };
   const CNAMES = Object.keys(COLORS);
-  const SIGNS = ['تمور', 'عطارة', 'بخور', 'قهوة', 'خيّاط', 'حلويات', 'بهارات', 'عسل', 'سجاد', 'فخّار'];
+  const SIGNS = ['تمور', 'عطارة', 'بخور', 'قهوة', 'خيّاط', 'حلويات', 'بهارات', 'عسل', 'سجاد', 'فخّار', 'عود', 'أقمشة', 'خبز', 'حلاوة', 'دلال', 'مشالح', 'سبح', 'كتب', 'فواكه', 'ورد'];
 
   // كلمات للبحث في الوصف (بعد التطبيع)
   const W = {
@@ -348,7 +348,36 @@ window.FZ_SCENE = (() => {
       ...palm(r.int(40, 70), 168), ...palm(r.int(230, 260), 160)
     ]
   };
-  const TARGET_TITLES = { beach: 'شاطئ ونخلة', night: 'ليلة وخيمة', house: 'بيت وشجرة', mountains: 'جبال وشمس', boat: 'قارب وقت الغروب', oasis: 'واحة ونخلتين' };
+  Object.assign(TARGETS, {
+    mosque: (r) => {
+      const x = r.int(110, 150);
+      return [
+        { t: 'rect', x: 0, y: 0, w: 300, h: 225, f: '#F9C784' }, { t: 'rect', x: 0, y: 170, w: 300, h: 55, f: '#F2D38B' },
+        { t: 'ell', x, y: 112, rx: 36, ry: 34, f: '#2E9E5B' }, { t: 'rect', x: x - 50, y: 110, w: 100, h: 62, f: '#FFFFFF' },
+        { t: 'rect', x: x + 62, y: 62, w: 16, h: 110, f: '#FFFFFF' }, { t: 'poly', p: [[x + 60, 64], [x + 70, 40], [x + 80, 64]], f: '#2E9E5B' },
+        { t: 'rect', x: x - 12, y: 140, w: 24, h: 32, f: '#8B5A2B' }, { t: 'rect', x: x - 38, y: 124, w: 14, h: 18, f: '#8FD3F7' }, { t: 'rect', x: x + 24, y: 124, w: 14, h: 18, f: '#8FD3F7' }, { t: 'circ', x: 250, y: 40, r: 18, f: '#F2683C' }
+      ];
+    },
+    rainbow: (r) => {
+      const cx = r.int(130, 170);
+      return [
+        { t: 'rect', x: 0, y: 0, w: 300, h: 225, f: '#BFE6FA' },
+        { t: 'circ', x: cx, y: 200, r: 120, f: '#D94841' }, { t: 'circ', x: cx, y: 200, r: 104, f: '#F59E0B' }, { t: 'circ', x: cx, y: 200, r: 88, f: '#FFD34D' },
+        { t: 'circ', x: cx, y: 200, r: 72, f: '#2E9E5B' }, { t: 'circ', x: cx, y: 200, r: 56, f: '#1E6FE0' }, { t: 'circ', x: cx, y: 200, r: 40, f: '#BFE6FA' },
+        { t: 'rect', x: 0, y: 185, w: 300, h: 40, f: '#6CC070' }, { t: 'ell', x: 60, y: 40, rx: 34, ry: 14, f: '#FFFFFF' }
+      ];
+    },
+    apples: (r) => {
+      const x = r.int(130, 170);
+      return [
+        { t: 'rect', x: 0, y: 0, w: 300, h: 225, f: '#9ED8F5' }, { t: 'rect', x: 0, y: 180, w: 300, h: 45, f: '#6CC070' },
+        { t: 'rect', x: x - 10, y: 110, w: 20, h: 75, f: '#8B5A2B' }, { t: 'circ', x, y: 90, r: 58, f: '#2E9E5B' },
+        { t: 'circ', x: x - 25, y: 75, r: 8, f: '#D94841' }, { t: 'circ', x: x + 22, y: 70, r: 8, f: '#D94841' }, { t: 'circ', x: x + 5, y: 105, r: 8, f: '#D94841' },
+        { t: 'circ', x: x - 30, y: 110, r: 8, f: '#D94841' }, { t: 'circ', x: 260, y: 36, r: 18, f: '#FFD34D' }
+      ];
+    }
+  });
+  const TARGET_TITLES = { mosque: 'مسجد وقت الغروب', rainbow: 'قوس المطر', apples: 'شجرة تفاح', beach: 'شاطئ ونخلة', night: 'ليلة وخيمة', house: 'بيت وشجرة', mountains: 'جبال وشمس', boat: 'قارب وقت الغروب', oasis: 'واحة ونخلتين' };
   function palm(x, base) {
     return [
       { t: 'poly', p: [[x - 5, base], [x + 5, base], [x + 3, base - 80], [x - 1, base - 80]], f: '#8B5A2B' },

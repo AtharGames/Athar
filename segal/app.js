@@ -10,7 +10,7 @@
   'use strict';
   const F = window.FZ, Net = window.FazaaNet, GM = window.FZ_GAMES, AI = window.FazaaAI;
   const { $, $$, esc, ar, num, plus, FX, store, R } = F;
-  const G = GM.GAMES;
+  const G = GM.GAMES, C = window.FZ_CONTENT;
 
   // ---------- الإعدادات (تُحفظ على هذا الجهاز) ----------
   const SET_KEY = 'fazaa-settings';
@@ -18,7 +18,7 @@
     teams: 3, names: F.TEAM_NAMES.slice(),
     playlist: GM.ORDER.map((id) => ({ id, on: true, rounds: G[id].rounds })),
     speed: 1, agg: 'avg', cup: false, rotate: false,
-    mines: { unit: 'team', size: 4 }, maps: ['sa', 'arab'], ai: false,
+    mines: { unit: 'team', size: 4 }, cats: {}, levels: [0, 1, 2], ai: false,
     prices: [], numbers: []
   });
   function loadSettings() {
@@ -27,6 +27,9 @@
     const have = new Set(s.playlist.map((x) => x.id));
     GM.ORDER.forEach((id) => { if (!have.has(id)) s.playlist.push({ id, on: true, rounds: G[id].rounds }); });
     s.playlist = s.playlist.filter((x) => G[x.id]);
+    // خرائط الإصدار الأول صارت تصنيفات «ثبّت الدبوس»
+    if (Array.isArray(s.maps)) { s.cats = Object.assign({ pin: s.maps }, s.cats || {}); delete s.maps; }
+    s.cats = s.cats || {}; if (!Array.isArray(s.levels) || !s.levels.length) s.levels = [0, 1, 2];
     return s;
   }
   let SET = loadSettings();
@@ -89,14 +92,23 @@
         <p class="hint">مع «كل مشارك» تكبر اللوحة تلقائيًا إذا كثر العدد.</p>
       </section>
 
-      <section class="set-sec"><h4>📍 خرائط ثبّت الدبوس</h4>
-        <div class="row-set"><span>الخرائط</span><span class="seg multi" data-k="maps">${[['sa', 'المملكة'], ['arab', 'الوطن العربي']].map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="${SET.maps.includes(v)}">${t}</button>`).join('')}</span></div>
+      <section class="set-sec"><h4>📚 محتوى الفقرات</h4>
+        <div class="row-set"><span>المستوى</span><span class="seg multi" data-k="levels">${C.LEVELS.map((t, v) => `<button type="button" data-v="${v}" aria-pressed="${SET.levels.includes(v)}">${t}</button>`).join('')}</span></div>
+        <p class="hint">اختر التصنيفات لكل فقرة (بدون اختيار = الكل)، والرقم عدد العناصر المتاحة بالمستوى المختار.</p>
+        <div class="bank-cats">${GM.BANKED.map((gid) => {
+          const B = C.BANK[gid], sel = SET.cats[gid] || [];
+          return `<div class="bc-row"><b>${G[gid].ico} ${esc(G[gid].name)}</b><div class="bc-chips">${Object.keys(B.cats).map((k) => {
+            const n = B.items.filter((it) => it.cat === k && SET.levels.includes(it.lvl)).length;
+            return `<button type="button" class="chip cat ${sel.includes(k) ? 'on' : ''}" data-g="${gid}" data-c="${k}">${esc(B.cats[k])} <small>${ar(n)}</small></button>`;
+          }).join('')}</div></div>`;
+        }).join('')}</div>
+        <button type="button" class="btn tactile" id="openBank">📚 استعرض بنك الفقرات</button>
       </section>
 
       <section class="set-sec"><h4>⚡ أسئلة السرعة</h4><div id="quizBox"></div></section>
 
       <section class="set-sec"><h4>💰 منتجات «كم السعر؟»</h4>
-        <p class="hint">الأسعار الجاهزة تقريبية، فأضف منتجاتك بأسعارها الحالية: سطر لكل منتج بالشكل: <code>المنتج | المتجر | السعر</code></p>
+        <p class="hint">أسعار البنك الموثّقة من نوفمبر ٢٠٢٦، وتصنيف «تقديرية» أسعاره تقريبية. أضف منتجاتك بأسعارها الحالية: سطر لكل منتج بالشكل: <code>المنتج | المتجر | السعر</code></p>
         <textarea id="pricesTa" rows="4" placeholder="آيفون ١٧ برو | مكتبة جرير | 5199">${esc(SET.prices.map((x) => x.slice(0, 3).join(' | ')).join('\n'))}</textarea>
       </section>
       <section class="set-sec"><h4>🔢 أسئلة «قرّب من الرقم»</h4>
@@ -138,12 +150,19 @@
       if (k === 'agg') SET.agg = v;
       if (k === 'unit') SET.mines.unit = v;
       if (k === 'size') SET.mines.size = v;
-      if (k === 'maps') { const has = SET.maps.includes(v); if (has && SET.maps.length === 1) return; SET.maps = has ? SET.maps.filter((x) => x !== v) : SET.maps.concat(v); }
+      if (k === 'levels') { const has = SET.levels.includes(v); if (has && SET.levels.length === 1) return; SET.levels = has ? SET.levels.filter((x) => x !== v) : SET.levels.concat(v).sort(); saveSettings(); settingsUI(); return; }
       saveSettings();
       if (seg.classList.contains('multi')) $$('button', seg).forEach((x) => x.setAttribute('aria-pressed', String(SET[k].includes(isNaN(+x.dataset.v) ? x.dataset.v : +x.dataset.v))));
       else $$('button', seg).forEach((x) => x.setAttribute('aria-pressed', String(x === btn)));
       FX.tick(0.15);
     }));
+    // تصنيفات المحتوى
+    $$('.chip.cat', b).forEach((ch) => ch.addEventListener('click', () => {
+      const g = ch.dataset.g, k = ch.dataset.c, cur = SET.cats[g] || [];
+      SET.cats[g] = cur.includes(k) ? cur.filter((x) => x !== k) : cur.concat(k);
+      ch.classList.toggle('on'); saveSettings(); FX.tick(0.12);
+    }));
+    $('#openBank', b).addEventListener('click', () => openBank());
     $('#cupChk', b).addEventListener('change', (e) => { SET.cup = e.target.checked; saveSettings(); });
     $('#rotChk', b).addEventListener('change', (e) => { SET.rotate = e.target.checked; saveSettings(); });
     $('#aiChk', b).addEventListener('change', (e) => { SET.ai = e.target.checked; saveSettings(); });
@@ -159,6 +178,46 @@
       saveSettings();
     });
   }
+  // =========================================================
+  // بنك الفقرات: استعراض المحتوى بالتصنيف والمستوى والبحث
+  // =========================================================
+  const bankView = { g: 'number', cat: '', lvl: -1, q: '' };
+  function bankRow(gid, it) {
+    const cat = `<span class="bk-cat">${esc(C.BANK[gid].cats[it.cat] || '')}</span><span class="bk-lvl l${it.lvl}">${C.LEVELS[it.lvl]}</span>`;
+    if (gid === 'price') return `<li><span class="bk-emo">${it.e}</span><div><b>${esc(it.n)}</b><small>${esc(it.st)}</small></div><strong>${num(it.v)} ر.س${it.est ? ' ≈' : ''}</strong>${cat}</li>`;
+    if (gid === 'number') return `<li><div><b>${esc(it.q)}</b></div><strong>${num(it.v)} <small>${esc(it.u)}</small></strong>${cat}</li>`;
+    if (gid === 'order') return `<li><div><b>${esc(it.t)}</b><small>${it.items.map(esc).join(' ← ')}</small></div>${cat}</li>`;
+    if (gid === 'odd') return `<li><div><b>${it.w.map((w, i) => (i === it.ans ? `<mark>${esc(w)}</mark>` : esc(w))).join('، ')}</b><small>${esc(it.why)}</small></div>${cat}</li>`;
+    if (gid === 'proverb') return `<li><div><small>${esc(it.kd)}</small><b>${esc(it.t).replace('……', `<mark>${esc(it.a)}</mark>`).replace(' … ', ' ✦ ')}</b></div>${cat}</li>`;
+    if (gid === 'pin') return `<li><span class="bk-emo">📍</span><div><b>${esc(it.p)}</b><small>${ar(it.lat.toFixed(2))}° ، ${ar(it.lon.toFixed(2))}°</small></div>${cat}</li>`;
+    return '';
+  }
+  function bankUI() {
+    const B = C.BANK[bankView.g];
+    const items = B.items.filter((it) => (!bankView.cat || it.cat === bankView.cat) && (bankView.lvl < 0 || it.lvl === bankView.lvl)
+      && (!bankView.q || JSON.stringify(it).includes(bankView.q)));
+    $('#bankTabs').innerHTML = GM.BANKED.map((gid) => `<button type="button" class="bk-tab ${gid === bankView.g ? 'on' : ''}" data-g="${gid}">${G[gid].ico} ${esc(G[gid].name)} <small>${ar(C.BANK[gid].items.length)}</small></button>`).join('');
+    $('#bankFilters').innerHTML = `<button type="button" class="chip ${!bankView.cat ? 'on' : ''}" data-c="">الكل</button>${Object.keys(B.cats).map((k) => `<button type="button" class="chip ${bankView.cat === k ? 'on' : ''}" data-c="${k}">${esc(B.cats[k])} <small>${ar(B.items.filter((x) => x.cat === k).length)}</small></button>`).join('')}
+      <span class="bk-sep"></span><button type="button" class="chip ${bankView.lvl < 0 ? 'on' : ''}" data-l="-1">كل المستويات</button>${C.LEVELS.map((t, i) => `<button type="button" class="chip ${bankView.lvl === i ? 'on' : ''}" data-l="${i}">${t}</button>`).join('')}`;
+    $('#bankCount').textContent = `${ar(items.length)} عنصر`;
+    $('#bankList').innerHTML = items.map((it) => bankRow(bankView.g, it)).join('') || '<li class="empty">ما فيه نتائج</li>';
+  }
+  function openBank(gid) {
+    if (gid) bankView.g = gid;
+    bankView.cat = ''; bankView.lvl = -1; bankView.q = ''; $('#bankSearch').value = '';
+    bankUI(); $('#bankModal').hidden = false;
+  }
+  $('#bankTabs').addEventListener('click', (e) => { const b = e.target.closest('.bk-tab'); if (!b) return; bankView.g = b.dataset.g; bankView.cat = ''; bankUI(); FX.tick(0.12); });
+  $('#bankFilters').addEventListener('click', (e) => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    if (b.dataset.c != null) bankView.cat = b.dataset.c;
+    if (b.dataset.l != null) bankView.lvl = +b.dataset.l;
+    bankUI();
+  });
+  $('#bankSearch').addEventListener('input', (e) => { bankView.q = e.target.value.trim(); bankUI(); });
+  $('#bankClose').addEventListener('click', () => { $('#bankModal').hidden = true; });
+  $('#bankModal').addEventListener('click', (e) => { if (e.target.id === 'bankModal') $('#bankModal').hidden = true; });
+
   function openSettings() { settingsUI(); $('#settingsModal').hidden = false; }
   function closeSettings() {
     // نقرأ النصوص حتى لو ما تحرك المؤشر منها
@@ -409,10 +468,12 @@
     if (id === 'quick' && !hostQ && quiz && quiz.src === 'host') { askHostQ(); return; }
     run.ri++;
     const seed = (Math.random() * 2 ** 31) >>> 0;
-    const pick = (gid, list) => {
+    const pick = (gid, list, ok = () => true) => {
       const used = run.used[gid] = run.used[gid] || [];
-      let free = list.map((_, i) => i).filter((i) => !used.includes(i));
-      if (!free.length) { run.used[gid] = []; free = list.map((_, i) => i); }
+      let elig = list.map((_, i) => i).filter((i) => ok(list[i]));
+      if (!elig.length) elig = list.map((_, i) => i);
+      let free = elig.filter((i) => !used.includes(i));
+      if (!free.length) { run.used[gid] = used.filter((i) => !elig.includes(i)); free = elig; }
       const i = free[Math.floor(Math.random() * free.length)];
       run.used[gid].push(i);
       return [i, list[i]];
@@ -732,6 +793,7 @@
   // =========================================================
   $('#openRoom').addEventListener('click', () => { FX.unlock(); openRoom(); });
   $('#openSet').addEventListener('click', openSettings);
+  $('#openBankIntro').addEventListener('click', () => openBank());
   $('#setBtn').addEventListener('click', openSettings);
   $('#lobbySet').addEventListener('click', openSettings);
   $('#setDone').addEventListener('click', closeSettings);

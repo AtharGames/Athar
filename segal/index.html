@@ -71,6 +71,7 @@
       <div class="intro-actions">
         <button class="btn btn-gold tactile big" id="openRoom">افتح الساحة</button>
         <button class="btn tactile" id="openSet">الفقرات والإعدادات</button>
+        <button class="btn btn-ghost" id="openBankIntro">📚 بنك الفقرات</button>
       </div>
       <div class="booths" id="booths"></div>
       <p class="local-note" id="localNote" hidden>وضع التجربة المحلي: ما رُبطت اللعبة بقاعدة بيانات بعد، فافتح صفحة المشارك في تبويبات على نفس الجهاز للتجربة.</p>
@@ -155,6 +156,18 @@
     <h3 id="setTitle">الفقرات والإعدادات</h3>
     <div class="modal-body" id="setBody"></div>
     <div class="modal-actions single"><button class="btn btn-primary tactile" id="setDone">تم</button></div>
+  </div>
+</div>
+
+<!-- ============ بنك الفقرات ============ -->
+<div class="modal" id="bankModal" hidden>
+  <div class="modal-card wide bank" role="dialog" aria-modal="true" aria-labelledby="bankTitle">
+    <h3 id="bankTitle">📚 بنك الفقرات</h3>
+    <div class="bk-tabs" id="bankTabs"></div>
+    <div class="bk-tools"><input type="search" id="bankSearch" placeholder="ابحث في البنك…" autocomplete="off"><span id="bankCount"></span></div>
+    <div class="bk-filters" id="bankFilters"></div>
+    <ul class="bk-list" id="bankList"></ul>
+    <div class="modal-actions single"><button class="btn" id="bankClose">إغلاق</button></div>
   </div>
 </div>
 

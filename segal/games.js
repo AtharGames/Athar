@@ -14,6 +14,16 @@ window.FZ_GAMES = (() => {
   const tag = (T, id) => `<span class="tchip" style="--tc:${teamColor(T, id)}">${esc(teamName(T, id))}</span>`;
   const pname = (P, pid) => (P[pid] && P[pid].n) || '؟';
 
+  // سحب عنصر من بنك الفقرة حسب التصنيفات والمستويات المختارة (وعناصر المقدّم الخاصة أولًا)
+  function fromBank(c, gid, custom = []) {
+    const B = C.BANK[gid];
+    const sel = (c.cfg.cats && c.cfg.cats[gid]) || [];
+    const lv = c.cfg.levels && c.cfg.levels.length ? c.cfg.levels : [0, 1, 2];
+    const all = custom.concat(B.items);
+    const ok = (it) => it.cat === 'mine' || ((!sel.length || sel.includes(it.cat)) && lv.includes(it.lvl));
+    return c.pick(gid, all, ok)[1];
+  }
+
   // ---------- أدوات مشتركة ----------
   // خيارات متعددة على الجوال
   function mcPhone(el, opts, c, { big = false } = {}) {
@@ -134,19 +144,19 @@ window.FZ_GAMES = (() => {
       idea: 'خمّنوا سعر المنتج، والأقرب يكسب',
       how: 'يظهر منتج من متجر معيّن. تشاوروا في سعره الحقيقي، والقائد يرسل الرقم. الأقرب ١٠٠ والثاني ٧٠ وهكذا، والإصابة الدقيقة +٣٠.',
       make(c) {
-        const list = (c.cfg.prices && c.cfg.prices.length ? c.cfg.prices : []).concat(C.price);
-        const [, it] = c.pick('price', list);
-        return { d: { n: it[0], st: it[1], e: it[3] || '🏷️' }, k: { v: +it[2] } };
+        const mine = (c.cfg.prices || []).map((r) => ({ n: r[0], st: r[1], v: +r[2], e: r[3] || '🏷️', cat: 'mine', lvl: 1 }));
+        const it = fromBank(c, 'price', mine);
+        return { d: { n: it.n, st: it.st, e: it.e || '🏷️', est: it.est ? 1 : 0 }, k: { v: +it.v } };
       },
       score: (c) => closeness(c, c.k.v, (v) => { const x = parseFloat(v); return isNaN(x) ? null : Math.abs(x - c.k.v) / c.k.v; }, (e) => e <= 0.02),
       card: (d) => `<div class="product"><span class="p-emo">${d.e}</span><div><b>${esc(d.n)}</b><small>${esc(d.st)}</small></div><span class="tagprice">؟ ريال</span></div>`,
       host(el, c) { el.innerHTML = this.card(c.d); },
       reveal(el, c) {
-        el.innerHTML = `<div class="truth"><small>السعر الحقيقي</small><b>${num(c.rev.k)} <i>ريال</i></b></div>`;
+        el.innerHTML = `<div class="truth"><small>${c.d.est ? 'السعر التقريبي' : 'السعر الحقيقي'}</small><b>${num(c.rev.k)} <i>ريال</i></b></div>`;
         closenessReveal(el, c, (v) => num(+v), (r) => `فرق ${num(Math.round(r.err * 100))}٪`);
       },
       phone(el, c) { el.innerHTML = this.card(c.d); numPhone(el, c, { unit: 'ريال', ph: 'السعر' }); },
-      phoneRev(el, c) { el.innerHTML = `<div class="truth"><small>السعر الحقيقي</small><b>${num(c.rev.k)} <i>ريال</i></b></div>`; }
+      phoneRev(el, c) { el.innerHTML = `<div class="truth"><small>${c.d.est ? 'السعر التقريبي' : 'السعر الحقيقي'}</small><b>${num(c.rev.k)} <i>ريال</i></b></div>`; }
     },
 
     // ---------- ٢) سرعة البديهة ----------
@@ -303,9 +313,9 @@ window.FZ_GAMES = (() => {
       idea: 'قدّروا الرقم أو الإحصائية',
       how: 'سؤال جوابه رقم (عدد، مسافة، سنة…). تشاوروا والقائد يرسل التقدير، والأقرب يكسب أكثر.',
       make(c) {
-        const list = (c.cfg.numbers && c.cfg.numbers.length ? c.cfg.numbers : []).concat(C.number);
-        const [, it] = c.pick('number', list);
-        return { d: { q: it[0], u: it[2] || '' }, k: { v: +it[1] } };
+        const mine = (c.cfg.numbers || []).map((r) => ({ q: r[0], v: +r[1], u: r[2] || '', cat: 'mine', lvl: 1 }));
+        const it = fromBank(c, 'number', mine);
+        return { d: { q: it.q, u: it.u || '' }, k: { v: +it.v } };
       },
       score: (c) => closeness(c, c.k.v, (v) => { const x = parseFloat(v); return isNaN(x) ? null : Math.abs(x - c.k.v) / Math.max(Math.abs(c.k.v), 1e-9); }, (e) => e <= 0.005),
       host(el, c) { el.innerHTML = `<div class="q-big">${esc(c.d.q)}</div><div class="unit-tag">الإجابة بـ «${esc(c.d.u)}»</div>`; },
@@ -377,11 +387,11 @@ window.FZ_GAMES = (() => {
       idea: 'حدّدوا المكان على الخريطة',
       how: 'تظهر خريطة واسم مكان. تشاوروا والقائد يضع الدبوس، والأقرب بالكيلومترات يكسب أكثر، والإصابة الدقيقة +٣٠.',
       make(c) {
-        const [, it] = c.pick('pin', C.pin.filter((x) => (c.cfg.maps || ['sa', 'arab']).includes(x[0])));
-        return { d: { m: it[0], p: it[1] }, k: { lat: it[2], lon: it[3] } };
+        const it = fromBank(c, 'pin');
+        return { d: { m: it.cat, p: it.p }, k: { lat: it.lat, lon: it.lon } };
       },
       score(c) {
-        const ex = c.d.m === 'sa' ? 25 : 80;
+        const ex = { sa: 25, arab: 80, world: 150 }[c.d.m] || 80;
         const r = closeness(c, [c.k.lat, c.k.lon], (v) => { const [a, b] = String(v).split(',').map(Number); return isNaN(a) || isNaN(b) ? null : km(a, b, c.k.lat, c.k.lon); }, (e) => e <= ex);
         return r;
       },
@@ -432,10 +442,10 @@ window.FZ_GAMES = (() => {
       idea: 'رتّب البطاقات حسب المعيار',
       how: 'تظهر ٤ بطاقات بترتيب عشوائي ومعيار (من الأقدم للأحدث، من الشمال للجنوب…). اسحبها للترتيب الصحيح من الأعلى للأسفل واضغط تأكيد. الترتيب الصحيح كاملًا = نقاط، والأسرع أكثر.',
       make(c) {
-        const [, it] = c.pick('order', C.order);
+        const it = fromBank(c, 'order');
         let order = window.FZ.shuffle([0, 1, 2, 3]);
         if (order.every((v, i) => v === i)) order = [1, 0, 3, 2];
-        return { d: { t: it[0], items: order.map((i) => it[1][i]) }, k: { right: order.map((_, j) => order.indexOf(j)) } };
+        return { d: { t: it.t, items: order.map((i) => it.items[i]) }, k: { right: order.map((_, j) => order.indexOf(j)) } };
       },
       score(c) { const want = c.k.right.join(','); return soloMC(c, (v) => v === want); },
       host(el, c) { el.innerHTML = `<div class="q-big">${esc(c.d.t)}</div><ol class="cards-row">${c.d.items.map((x) => `<li class="ocard">${esc(x)}</li>`).join('')}</ol>`; },
@@ -492,9 +502,9 @@ window.FZ_GAMES = (() => {
       idea: 'اكتشف الكلمة اللي ما تنتمي للباقي',
       how: 'تظهر ٤ كلمات يجمعها رابط خفي إلا واحدة. اضغط الدخيلة بأسرع ما يمكن خلال ١٠ ثوانٍ، والخطأ صفر.',
       make(c) {
-        const [, it] = c.pick('odd', C.odd);
+        const it = fromBank(c, 'odd');
         const order = window.FZ.shuffle([0, 1, 2, 3]);
-        return { d: { w: order.map((i) => it[0][i]) }, k: { ans: order.indexOf(it[1]), why: it[2] } };
+        return { d: { w: order.map((i) => it.w[i]) }, k: { ans: order.indexOf(it.ans), why: it.why } };
       },
       score: (c) => soloMC(c, (v) => +v === c.k.ans),
       host(el, c) { el.innerHTML = `<div class="q-big">وش الدخيلة؟</div>${mcHost(c.d.w)}`; },
@@ -514,9 +524,9 @@ window.FZ_GAMES = (() => {
       idea: 'أكملوا المثل أو بيت الشعر',
       how: 'يظهر مثل أو بيت شعر (فصيح ونبطي) ناقص آخره. تشاوروا ٢٥ ثانية، والقائد يختار التكملة. الصح ١٠٠، ولو أصاب أكثر من فريق فالأسرع +٢٠.',
       make(c) {
-        const [, it] = c.pick('proverb', C.proverb);
-        const opts = window.FZ.shuffle([it[2], ...it[3]]);
-        return { d: { kd: it[0], t: it[1], o: opts }, k: { correct: opts.indexOf(it[2]) } };
+        const it = fromBank(c, 'proverb');
+        const opts = window.FZ.shuffle([it.a, ...it.o]);
+        return { d: { kd: it.kd, t: it.t, o: opts }, k: { correct: opts.indexOf(it.a) } };
       },
       score: (c) => teamMC(c),
       line: (d, fill) => `<span class="q-cat">${esc(d.kd)}</span><blockquote class="verse">${esc(d.t).replace('……', fill ? `<mark>${esc(fill)}</mark>` : '<span class="gap">……</span>').replace(' … ', '<br>')}</blockquote>`,
@@ -632,5 +642,7 @@ window.FZ_GAMES = (() => {
 
   const ORDER = ['price', 'reflex', 'hawk', 'quick', 'draw', 'number', 'describe', 'pin', 'order', 'odd', 'proverb', 'mines'];
   const MODE_LABEL = { team: 'جماعي — القائد يرسل', solo: 'فردي — الكل من جواله', duel: 'مواجهة — رسّام من كل فريق', mines: 'بالدور — لغم لكل فريق' };
-  return { GAMES, ORDER, MODE_LABEL, minesBoard, pinSvg, tag, teamColor, teamName, pname, mcHost };
+  // فقرات لها بنك محتوى يُستعرض ويُصفّى
+  const BANKED = ['price', 'number', 'order', 'odd', 'proverb', 'pin'];
+  return { GAMES, ORDER, BANKED, MODE_LABEL, minesBoard, pinSvg, tag, teamColor, teamName, pname, mcHost };
 })();
