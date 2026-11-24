@@ -48,7 +48,7 @@ window.HuroofAI = (() => {
             if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
             const AC = await import(SDK + 'firebase-app-check.js');
             try {
-              AC.initializeAppCheck(app, { provider: new AC.ReCaptchaV3Provider(FB.appCheckSiteKey), isTokenAutoRefreshEnabled: true });
+              AC.initializeAppCheck(app, { provider: (FB.appCheckProvider === 'enterprise' ? new AC.ReCaptchaEnterpriseProvider(FB.appCheckSiteKey) : new AC.ReCaptchaV3Provider(FB.appCheckSiteKey)), isTokenAutoRefreshEnabled: true });
             } catch (e) { /* مفعّل من قبل */ }
           }
           const ai = AI.getAI(app, { backend: new AI.GoogleAIBackend() });

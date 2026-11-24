@@ -21,7 +21,7 @@ window.FazaaAI = (() => {
         const app = A.getApps().find((a) => a.name === 'athar-fazaa') || A.initializeApp(FB, 'athar-fazaa');
         if (FB.appCheckSiteKey) {
           const AC = await import(SDK + 'firebase-app-check.js');
-          try { AC.initializeAppCheck(app, { provider: new AC.ReCaptchaV3Provider(FB.appCheckSiteKey), isTokenAutoRefreshEnabled: true }); } catch { /* مفعّل */ }
+          try { AC.initializeAppCheck(app, { provider: (FB.appCheckProvider === 'enterprise' ? new AC.ReCaptchaEnterpriseProvider(FB.appCheckSiteKey) : new AC.ReCaptchaV3Provider(FB.appCheckSiteKey)), isTokenAutoRefreshEnabled: true }); } catch { /* مفعّل */ }
         }
         const ai = AI.getAI(app, { backend: new AI.GoogleAIBackend() });
         const S = AI.Schema;
