@@ -15,7 +15,7 @@ window.HUROOF_FIREBASE = window.HUROOF_FIREBASE || {
   appId: "1:686127627460:web:ebd80d61bc42c29dd71d91",
   // التصحيح بالذكاء الاصطناعي (Firebase AI Logic): مفتاح موقع reCAPTCHA v3 المسجّل في App Check
   // (فارغ = الطلب يمشي بدون App Check، ويفشل إذا كان App Check مفروضًا على AI Logic)
-  appCheckSiteKey: "",
+  appCheckSiteKey: "6Ley5jEuAAAAAGDue8EQ85RvusAooRRB07Z7Rvz4",
   // نوع المفتاح: "v3" لمفتاح reCAPTCHA v3 العادي، أو "enterprise" لمفتاح reCAPTCHA Enterprise
   appCheckProvider: "v3",
   aiModel: "gemini-3.5-flash-lite"
