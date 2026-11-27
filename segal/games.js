@@ -33,6 +33,41 @@ window.FZ_GAMES = (() => {
   // سبب الرجوع للحكم الآلي (يظهر صغيرًا تحت النتيجة للمقدّم)
   const aiNote = (rev) => (rev.by === 'ai' || !rev.aiErr ? '' : rev.aiErr === 'off' ? '<small class="ai-why"> — الذكاء مطفأ من الإعدادات</small>' : `<small class="ai-why"> — تعذّر الذكاء: ${esc(rev.aiErr)}</small>`);
 
+  // ---------- عين الصقر: الصورة والكشف بالبقعة الضوئية ----------
+  const hawkPic = (d, extra = '') => `<div class="hk-wrap look" style="aspect-ratio:${d.w}/${d.h}"><img src="img/hawk/${d.img}.jpg" alt="${esc(d.t)}" draggable="false">${extra}</div>`;
+  function hawkReveal(el, c, { done, host, mine } = {}) {
+    const d = c.d, rv = c.rev || {}, hl = rv.hl || [], ok = rv.k, ar2 = d.w / d.h;
+    const mid = 'hkm' + Math.random().toString(36).slice(2, 8);
+    const holes = hl.map(([x, y, r]) => `<ellipse class="hole" cx="${x}" cy="${y}" rx="${r}" ry="${r * ar2}" fill="#000"/>`).join('');
+    const rings = hl.map(([x, y, r]) => `<ellipse class="ring" cx="${x}" cy="${y}" rx="${r}" ry="${r * ar2}" fill="none" stroke="#FFD66B" stroke-width="0.8" vector-effect="non-scaling-stroke"/>`).join('');
+    el.innerHTML = `<div class="hk-rev"><div class="q-big small">${esc(d.q)}</div>
+      <div class="hk-wrap rev" style="aspect-ratio:${d.w}/${d.h}"><img src="img/hawk/${d.img}.jpg" alt="${esc(d.t)}" draggable="false">
+        <svg class="hk-spot" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><mask id="${mid}"><rect width="100" height="100" fill="#fff"/>${holes}</mask></defs>
+        <rect class="dim" width="100" height="100" fill="#07041A" mask="url(#${mid})"/>${rings}</svg></div>
+      <div class="hk-ans" hidden>✓ ${esc((d.opts || [])[ok] || '')}</div><div class="hk-res"></div></div>`;
+    const root = $('.hk-rev', el), wrap = $('.hk-wrap', root);
+    const alive = () => root.isConnected;
+    const wait = (ms) => new Promise((r) => setTimeout(r, window.FZ.reduced() ? Math.min(ms, 80) : ms));
+    (async () => {
+      await wait(500);
+      if (!alive()) return;
+      wrap.classList.add('spot'); FX.swoosh && FX.swoosh();
+      await wait(1000);
+      if (!alive()) return;
+      const a = $('.hk-ans', root); a.hidden = false; FX.pop(820);
+      await wait(500);
+      if (!alive()) return;
+      if (host) teamMCReveal($('.hk-res', root), c, d.opts);
+      else if (mine) {
+        const my = (rv.ans || {})[mine.unit];
+        $('.hk-res', root).innerHTML = my ? (my.ok ? `<p class="rx-me ok">✓ ${mine.ind ? 'جاوبت صح' : 'فريقك جاوب صح'}${my.fast ? ' والأسرع!' : ''}</p>` : `<p class="rx-me no">✗ ${mine.ind ? 'جوابك' : 'جواب فريقك'}: ${esc(d.opts[my.v] || '')}</p>`) : '<p class="rx-me none">ما وصل جواب</p>';
+      }
+      if (Object.values(rv.ans || {}).some((x) => x.ok)) FX.clap(3); else FX.wrong();
+      await wait(1300);
+      if (alive() && done) done();
+    })();
+  }
+
   // ---------- سرعة البديهة: الحساب والكشف المتحرك للجميع ----------
   const secs = (ms) => ar((Math.max(0, ms) / 1000).toFixed(2)).replace('.', '٫') + ' ث';
   function reflexScore(c) {
@@ -384,32 +419,29 @@ window.FZ_GAMES = (() => {
 
     // ---------- ٣) عين الصقر ----------
     hawk: {
-      name: 'عين الصقر', ico: '👁️', mode: 'team', rounds: 3, time: 20, view: 8,
-      idea: 'ركّزوا في المشهد، ثم جاوبوا عن تفاصيله',
-      how: 'يظهر مشهد (واحة، سوق شعبي، قرية تراثية، ساحل) لثوانٍ ثم يختفي، ويأتي سؤال عن تفصيلة صغيرة. اجمعوا ما لاحظه كل واحد، والقائد يرسل. الصح ١٠٠ والأسرع +٢٠.',
-      howSolo: 'يظهر مشهد لثوانٍ ثم يختفي، ويأتي سؤال عن تفصيلة صغيرة فيه. كل واحد يجاوب من جواله: الصح ١٠٠ والأسرع بين المصيبين +٢٠.',
-      make(c) { const seed = c.seed, sc = SC.scene(seed), q = SC.ask(sc, seed); return { d: { s: seed }, k: { correct: q.correct } }; },
-      score: (c) => teamMC(c),
+      name: 'عين الصقر', ico: '👁️', mode: 'team', rounds: 3, time: 20, view: 8, anim: true,
+      idea: 'ركّزوا في الصورة، ثم جاوبوا عن تفاصيلها',
+      how: 'تظهر صورة حقيقية (مطبخ، سوق خضار، ملعب، مواقف…) لثوانٍ ثم تختفي، ويأتي سؤال عن تفصيلة فيها. اجمعوا ما لاحظه كل واحد، والقائد يرسل. الصح ١٠٠ والأسرع +٢٠.',
+      howSolo: 'تظهر صورة حقيقية لثوانٍ ثم تختفي، ويأتي سؤال عن تفصيلة فيها. كل واحد يجاوب من جواله: الصح ١٠٠ والأسرع بين المصيبين +٢٠.',
+      make(c) {
+        const it = fromBank(c, 'hawk');
+        const r = rng(c.seed);
+        const q = it.qs[r.int(0, it.qs.length - 1)];
+        const order = r.shuffle(q[1].map((_, i) => i));
+        return { d: { img: it.img, t: it.t, w: it.w, h: it.h, q: q[0], opts: order.map((i) => q[1][i]) }, k: { correct: order.indexOf(q[2]), hl: q[3] } };
+      },
+      score(c) { const r = teamMC(c); r.rev.hl = c.k.hl; return r; },
       host(el, c) {
-        const sc = SC.scene(c.d.s), q = SC.ask(sc, c.d.s);
-        el.innerHTML = c.view ? `<div class="scene-wrap look">${sc.svg}<span class="look-tag">ركّزوا! 👁️</span></div>`
-          : `<div class="q-big">${esc(q.q)}</div>${mcHost(q.opts)}`;
+        el.innerHTML = c.view ? hawkPic(c.d, '<span class="look-tag">ركّزوا! 👁️</span>')
+          : `<div class="q-big">${esc(c.d.q)}</div>${mcHost(c.d.opts)}`;
       },
-      reveal(el, c) {
-        const sc = SC.scene(c.d.s), q = SC.ask(sc, c.d.s);
-        el.innerHTML = `<div class="q-big small">${esc(q.q)}</div><div class="scene-wrap mini">${sc.svg}</div>`;
-        teamMCReveal(el, c, q.opts);
-      },
+      reveal(el, c) { hawkReveal(el, c, { done: c.done, host: true }); },
       phone(el, c) {
-        const sc = SC.scene(c.d.s), q = SC.ask(sc, c.d.s);
-        if (c.view) { el.innerHTML = `<div class="scene-wrap look">${sc.svg}<span class="look-tag">ركّز!</span></div>`; return; }
-        el.innerHTML = `<div class="q-big">${esc(q.q)}</div>`;
-        mcPhone(el, q.opts, c);
+        if (c.view) { el.innerHTML = hawkPic(c.d, '<span class="look-tag">ركّز!</span>'); return; }
+        el.innerHTML = `<div class="q-big">${esc(c.d.q)}</div>`;
+        mcPhone(el, c.d.opts, c);
       },
-      phoneRev(el, c) {
-        const sc = SC.scene(c.d.s), q = SC.ask(sc, c.d.s);
-        el.innerHTML = `<div class="scene-wrap mini">${sc.svg}</div><div class="truth"><small>${esc(q.q)}</small><b>${esc(q.opts[q.correct])}</b></div>`;
-      }
+      phoneRev(el, c) { hawkReveal(el, c, { done: c.done, mine: c.me }); }
     },
 
     // ---------- ٤) أسئلة السرعة ----------
@@ -841,6 +873,6 @@ window.FZ_GAMES = (() => {
   const effMode = (g, ind) => (ind ? (g.mode === 'mines' ? 'mines' : 'solo') : g.mode);
   const MODE_LABEL = { team: 'جماعي — القائد يرسل', solo: 'فردي — الكل من جواله', duel: 'مواجهة — رسّام من كل فريق', mines: 'بالدور — لغم لكل فريق' };
   // فقرات لها بنك محتوى يُستعرض ويُصفّى
-  const BANKED = ['price', 'number', 'order', 'odd', 'proverb', 'pin'];
+  const BANKED = ['price', 'hawk', 'number', 'order', 'odd', 'proverb', 'pin'];
   return { GAMES, ORDER, BANKED, MODE_LABEL, effMode, howOf, modeLabel, minesBoard, pinSvg, tag, teamColor, teamName, pname, mcHost };
 })();
