@@ -275,7 +275,7 @@ window.FZ_GAMES = (() => {
             const res = await c.ai.drawings({ title: t.title, target: t, items: ids.map((pid) => ({ id: pid, img: c.A[pid].v })) });
             ids.forEach((pid) => { if (res[pid] != null) sims[pid] = res[pid]; });
             if (Object.keys(sims).length) by = 'ai'; else aiErr = 'ما رجعت نتيجة';
-          } catch (e) { aiErr = String((e && e.message) || e).slice(0, 120); console.warn('[segal-ai]', aiErr); }
+          } catch (e) { aiErr = String((e && e.message) || e).slice(0, 260); console.warn('[segal-ai]', aiErr); }
         } else if (ids.length) aiErr = c.ai === null ? 'off' : '';
         for (const pid of ids) {
           if (sims[pid] != null) continue;
@@ -357,7 +357,7 @@ window.FZ_GAMES = (() => {
             const res = await c.ai.descriptions({ scene: sc, items: ids.map((pid) => ({ id: pid, text: c.A[pid].v })) });
             ids.forEach((pid) => { if (res[pid]) { pp[pid] = res[pid].score; hits[pid] = res[pid].hits || []; } });
             if (Object.keys(pp).length) by = 'ai'; else aiErr = 'ما رجعت نتيجة';
-          } catch (e) { aiErr = String((e && e.message) || e).slice(0, 120); console.warn('[segal-ai]', aiErr); }
+          } catch (e) { aiErr = String((e && e.message) || e).slice(0, 260); console.warn('[segal-ai]', aiErr); }
         } else if (ids.length) aiErr = c.ai === null ? 'off' : '';
         ids.forEach((pid) => {
           if (pp[pid] != null) return;

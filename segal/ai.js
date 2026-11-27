@@ -15,14 +15,14 @@ window.FazaaAI = (() => {
   const MODELS = [FB.aiModel || 'gemini-3.5-flash-lite', 'gemini-3.6-flash'].filter((m, i, a) => a.indexOf(m) === i);
   const MODE = params.get('ai') === 'mock' ? 'mock' : (FB.ai && FB.databaseURL ? 'gemini' : 'off');
 
-  let ready = null;
+  let ready = null, AC = null, appCheck = null;
   function load() {
     if (!ready) {
       ready = Promise.all([import(SDK + 'firebase-app.js'), import(SDK + 'firebase-ai.js')]).then(async ([A, AI]) => {
         const app = A.getApps().find((a) => a.name === 'athar-fazaa') || A.initializeApp(FB, 'athar-fazaa');
         if (FB.appCheckSiteKey) {
-          const AC = await import(SDK + 'firebase-app-check.js');
-          try { AC.initializeAppCheck(app, { provider: (FB.appCheckProvider === 'enterprise' ? new AC.ReCaptchaEnterpriseProvider(FB.appCheckSiteKey) : new AC.ReCaptchaV3Provider(FB.appCheckSiteKey)), isTokenAutoRefreshEnabled: true }); } catch { /* مفعّل */ }
+          AC = await import(SDK + 'firebase-app-check.js');
+          try { appCheck = AC.initializeAppCheck(app, { provider: (FB.appCheckProvider === 'enterprise' ? new AC.ReCaptchaEnterpriseProvider(FB.appCheckSiteKey) : new AC.ReCaptchaV3Provider(FB.appCheckSiteKey)), isTokenAutoRefreshEnabled: true }); } catch { /* مفعّل */ }
         }
         const ai = AI.getAI(app, { backend: new AI.GoogleAIBackend() });
         const S = AI.Schema;
@@ -53,7 +53,13 @@ window.FazaaAI = (() => {
         return data.results || [];
       } catch (e) { last = e; console.warn('[segal-ai]', e && e.message); }
     }
-    throw last || new Error('ai-failed');
+    // تشخيص: نختصر رسالة الخطأ ونفحص رمز App Check
+    let msg = String((last && last.message) || last || 'ai-failed').replace(/Error fetching from \S+/g, '').replace(/\s+/g, ' ').trim();
+    if (appCheck && AC) {
+      try { const t = await AC.getToken(appCheck, false); msg += t && t.token ? ' | AppCheck: رمز موجود' : ' | AppCheck: بلا رمز'; }
+      catch (e) { msg += ' | AppCheck: ' + String((e && e.message) || e).slice(0, 90); }
+    } else if (FB.appCheckSiteKey) msg += ' | AppCheck: لم يبدأ';
+    throw new Error(msg);
   }
 
   async function drawings({ title, target, items }) {
