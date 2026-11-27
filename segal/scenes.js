@@ -441,10 +441,12 @@ window.FZ_SCENE = (() => {
   function reflex(seed) {
     const r = rng(seed);
     const C = window.FZ_CONTENT.reflex;
-    const mode = r.pick(['shape', 'shape', 'object', 'ink']);
+    const ART = window.FZ_RXART;
+    const mode = r.pick(ART ? ['shape', 'image', 'image', 'ink', 'count', 'count'] : ['shape', 'shape', 'object', 'ink']);
     const n = 9, ans = r.int(0, n - 1);
     const cells = [];
     let cmd;
+    if (mode === 'count') return reflexCount(r, C);
     if (mode === 'shape') {
       const tc = r.pick(C.colors), ts = r.pick(C.shapes);
       cmd = `اضغط: ${tc[0]} + ${ts}`;
@@ -457,6 +459,17 @@ window.FZ_SCENE = (() => {
         if (c[0] === tc[0] && s === ts) s = C.shapes[(C.shapes.indexOf(ts) + 1) % C.shapes.length];
         cells.push({ s, c: c[1] });
       }
+    } else if (mode === 'image') {
+      // صور من نفس العائلة (فنجال بين بيالة وكوب وصحن…) وصورة من عائلة ثانية
+      const fams = Object.keys(ART.fam), fk = r.pick(fams), F = ART.fam[fk].items;
+      const pool = r.shuffle(F.slice());
+      const target = pool[0];
+      const others = pool.slice(1, n - 1);
+      const extraFam = ART.fam[r.pick(fams.filter((x) => x !== fk))].items;
+      others.push(r.pick(extraFam));
+      const order = r.shuffle(others);
+      cmd = `اضغط: ${target[1]}`;
+      for (let i = 0, j = 0; i < n; i++) cells.push(i === ans ? { img: target[0] } : { img: order[j++][0] });
     } else if (mode === 'object') {
       const objs = r.shuffle(C.objects).slice(0, n);
       cmd = `اضغط: ${objs[ans][0]}`;
@@ -474,11 +487,71 @@ window.FZ_SCENE = (() => {
     }
     return { cmd, mode, cells, ans };
   }
+  // عدّ سريع: نجوم بين أشكال، أو أشكال بلون معيّن، أو خطوط
+  function reflexCount(r, C) {
+    const W = 300, H = 190;
+    const kind = r.pick(['star', 'star', 'color', 'tri', 'lines']);
+    const N = kind === 'lines' ? r.int(4, 9) : r.int(5, 12);
+    const items = [], lines = [];
+    let cmd;
+    if (kind === 'lines') {
+      cmd = 'كم خط في الصورة؟';
+      const cols = r.shuffle(C.colors.map((c) => c[1]));
+      for (let i = 0; i < N; i++) {
+        let x1, y1, x2, y2, tries = 0;
+        do {
+          x1 = r.int(14, W - 14); y1 = r.int(14, H - 14);
+          const ang = r() * Math.PI, len = r.int(70, 170);
+          x2 = Math.round(x1 + Math.cos(ang) * len); y2 = Math.round(y1 + Math.sin(ang) * len);
+          tries++;
+        } while ((x2 < 10 || x2 > W - 10 || y2 < 10 || y2 > H - 10 || lines.some((l) => Math.hypot(l.x1 - x1, l.y1 - y1) < 30 || Math.hypot(l.x2 - x2, l.y2 - y2) < 30)) && tries < 200);
+        lines.push({ x1, y1, x2, y2, c: cols[i % cols.length], t: 1 });
+      }
+    } else {
+      const tc = r.pick(C.colors);
+      const target = kind === 'star' ? 'نجمة' : kind === 'tri' ? 'مثلث' : null;
+      cmd = kind === 'color' ? `كم شكل ${tc[0]}؟` : kind === 'star' ? 'كم نجمة في الصورة؟' : 'كم مثلث في الصورة؟';
+      const total = N + r.int(6, 10);
+      const pts = [];
+      for (let i = 0; i < total; i++) {
+        let x, y, tries = 0;
+        do { x = r.int(24, W - 24); y = r.int(22, H - 22); tries++; } while (pts.some((p) => Math.hypot(p[0] - x, p[1] - y) < 30) && tries < 300);
+        pts.push([x, y]);
+      }
+      r.shuffle(pts).forEach(([x, y], i) => {
+        const hit = i < N;
+        let s, c;
+        if (kind === 'color') {
+          c = hit ? tc[1] : r.pick(C.colors.filter((k) => k[0] !== tc[0]))[1];
+          s = r.pick(C.shapes);
+        } else {
+          s = hit ? target : r.pick(C.shapes.filter((k) => k !== target));
+          c = r.pick(C.colors)[1];
+        }
+        items.push({ x, y, s, c, z: r.int(20, 28), rot: r.int(-25, 25), t: hit ? 1 : 0 });
+      });
+    }
+    const set = new Set([N]);
+    const cand = r.shuffle([N - 2, N - 1, N + 1, N + 2, N + 3].filter((v) => v > 0));
+    while (set.size < 4 && cand.length) set.add(cand.pop());
+    const opts = r.shuffle([...set]);
+    return { cmd, mode: 'count', kind, N, items, lines, W, H, opts, ans: opts.indexOf(N), cells: opts.map((v) => ({ num: v })) };
+  }
+  function reflexField(g) {
+    const body = g.lines.length
+      ? g.lines.map((l, i) => `<line class="${l.t ? 'tg' : ''}" data-k="${i}" x1="${l.x1}" y1="${l.y1}" x2="${l.x2}" y2="${l.y2}" stroke="${l.c}" stroke-width="6" stroke-linecap="round"/>`).join('')
+      : g.items.map((it, i) => `<g class="${it.t ? 'tg' : ''}" data-k="${i}" transform="translate(${it.x - it.z / 2} ${it.y - it.z / 2}) rotate(${it.rot} ${it.z / 2} ${it.z / 2}) scale(${it.z / 40})"><path d="${SHAPE_D[it.s]}" fill="${it.c}" stroke="rgba(0,0,0,.3)" stroke-width="2"/></g>`).join('');
+    return `<svg class="rx-fsvg" viewBox="0 0 ${g.W} ${g.H}" aria-hidden="true"><rect width="${g.W}" height="${g.H}" rx="14" fill="#fff"/>${body}<g class="nums"></g></svg>`;
+  }
+  // موضع كل عنصر مطلوب (لترقيمه عند الكشف)
+  const reflexTargets = (g) => (g.lines.length ? g.lines.map((l) => ({ x: (l.x1 + l.x2) / 2, y: (l.y1 + l.y2) / 2 })) : g.items.filter((it) => it.t).map((it) => ({ x: it.x, y: it.y })));
   function reflexCell(c) {
+    if (c.num != null) return `<span class="rx-num">${String(c.num).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d])}</span>`;
+    if (c.img) return window.FZ_RXART ? window.FZ_RXART.svg(c.img) : '';
     if (c.e) return `<span class="rx-emo">${c.e}</span>`;
     if (c.w) return `<span class="rx-word" style="color:${c.c}">${c.w}</span>`;
     return `<svg viewBox="0 0 40 40" aria-hidden="true"><path d="${SHAPE_D[c.s]}" fill="${c.c}" stroke="rgba(0,0,0,.25)" stroke-width="1.5"/></svg>`;
   }
 
-  return { scene, ask, describeScore, target, paint, similarity, reflex, reflexCell, norm, COLORS };
+  return { scene, ask, describeScore, target, paint, similarity, reflex, reflexCell, reflexField, reflexTargets, norm, COLORS };
 })();

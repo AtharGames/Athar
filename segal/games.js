@@ -33,6 +33,79 @@ window.FZ_GAMES = (() => {
   // سبب الرجوع للحكم الآلي (يظهر صغيرًا تحت النتيجة للمقدّم)
   const aiNote = (rev) => (rev.by === 'ai' || !rev.aiErr ? '' : rev.aiErr === 'off' ? '<small class="ai-why"> — الذكاء مطفأ من الإعدادات</small>' : `<small class="ai-why"> — تعذّر الذكاء: ${esc(rev.aiErr)}</small>`);
 
+  // ---------- سرعة البديهة: الحساب والكشف المتحرك للجميع ----------
+  const secs = (ms) => ar((Math.max(0, ms) / 1000).toFixed(2)).replace('.', '٫') + ' ث';
+  function reflexScore(c) {
+    const pp = {}, tm = {}, fast = [];
+    let right = 0;
+    Object.keys(c.A || {}).forEach((pid) => {
+      const a = c.A[pid], ok = +a.v === c.k.ans;
+      pp[pid] = ok ? speedPts(a.t, c.at, c.dl) : 0;
+      if (ok) { right++; tm[pid] = Math.max(0, a.t - c.at); fast.push(pid); }
+    });
+    fast.sort((x, y) => tm[x] - tm[y]);
+    return { pp, rev: { k: c.k, right, n: Object.keys(c.A || {}).length, top: fast.slice(0, 5), tm, picks: Object.fromEntries(Object.keys(c.A || {}).map((p) => [p, +c.A[p].v])) } };
+  }
+  function reflexReveal(el, c, { done, mine } = {}) {
+    const G0 = GAMES.reflex, g = SC.reflex(c.d.s), rv = c.rev || {}, ans = (rv.k || {}).ans;
+    const counts = {};
+    Object.values(rv.picks || {}).forEach((v) => { counts[v] = (counts[v] || 0) + 1; });
+    el.innerHTML = `<div class="rx-rev">${G0.grid(c.d)}<div class="rx-ann" aria-live="polite"></div></div>`;
+    const root = $('.rx-rev', el), ann = $('.rx-ann', root);
+    $$('.rx-cell', root).forEach((b) => { b.disabled = true; });
+    const alive = () => root.isConnected;
+    const fast = window.FZ.reduced();
+    const wait = (ms) => new Promise((r) => setTimeout(r, fast ? Math.min(ms, 80) : ms));
+    const myPid = mine && mine.pid;
+    (async () => {
+      await wait(350);
+      // ١) العدّ: نرقّم العناصر المطلوبة واحد واحد
+      if (g.mode === 'count') {
+        const svg = $('.rx-fsvg', root), nums = $('.nums', svg);
+        $('.rx-field', root).classList.add('show');
+        const T = SC.reflexTargets(g);
+        const step = Math.max(110, Math.min(300, 2400 / T.length));
+        for (let i = 0; i < T.length && alive(); i++) {
+          nums.insertAdjacentHTML('beforeend', `<g transform="translate(${T[i].x} ${T[i].y})"><g class="nb"><circle r="11" fill="#0A2463" stroke="#fff" stroke-width="2"/><text y="4.5" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">${ar(i + 1)}</text></g></g>`);
+          FX.tick(0.2);
+          await wait(step);
+        }
+      }
+      if (!alive()) return;
+      // ٢) الجواب الصحيح وعدد اللي اختار كل خانة
+      $$('.rx-cell', root).forEach((b, i) => {
+        b.classList.add(i === ans ? 'is-right' : 'is-dim');
+        if (counts[i]) b.insertAdjacentHTML('beforeend', `<b class="cnt">${ar(counts[i])}</b>`);
+        if (myPid != null && rv.picks && rv.picks[myPid] === i && i !== ans) b.classList.add('my-wrong');
+      });
+      FX.pop(820);
+      await wait(700);
+      if (!alive()) return;
+      // ٣) الإعلان: الأسرع ووقته
+      const top = rv.top || [];
+      const tag = (pid) => `<span class="tchip" style="--tc:${window.FZ.pcolor(pid)}">${esc(pname(c.P, pid))}</span>${whoTag(c, pid)}`;
+      let mineLine = '';
+      if (myPid != null) {
+        const pick = rv.picks ? rv.picks[myPid] : undefined;
+        mineLine = pick === undefined ? '<p class="rx-me none">ما ضغطت هالمرة</p>'
+          : pick === ans ? `<p class="rx-me ok">✓ صح! وقتك ${secs(rv.tm[myPid])}</p>` : '<p class="rx-me no">✗ اخترت غلط</p>';
+      }
+      if (!top.length) {
+        ann.innerHTML = `<div class="rx-ban none">😮 ما أحد جابها!</div>${mineLine}`;
+        FX.wrong();
+      } else {
+        const f = top[0];
+        ann.innerHTML = `<div class="rx-ban"><small>⚡ الأسرع</small><div class="who">${tag(f)}</div><b class="time">${secs(rv.tm[f])}</b><em>${plus((c.pp || rv.pp || {})[f] || 0)}</em></div>
+          <ol class="rx-podium">${top.slice(1, 3).map((pid, i) => `<li style="--d:${i}"><i>${ar(i + 2)}</i>${tag(pid)}<span>${secs(rv.tm[pid])}</span></li>`).join('')}</ol>
+          <p class="rx-sum">أصاب <b>${ar(rv.right || 0)}</b> من ${ar(rv.n || 0)}</p>${mineLine}`;
+        FX.whistle && FX.whistle();
+        if (myPid == null || top[0] === myPid) setTimeout(() => FX.clap(4), 250);
+      }
+      await wait(1600);
+      if (alive() && done) done();
+    })();
+  }
+
   // ---------- كم السعر؟ النطاقات والكشف بالدور ----------
   // بالضبط (فرق ≤ ٠٫٥٪) ثم الأحمر (قريب جدًا) ثم الأصفر ثم الأزرق (في المدى)، وخارجها صفر. الصعب نطاقاته أوسع
   const PRICE_BANDS = [{ r: 0.15, y: 0.45, g: 0.9 }, { r: 0.30, y: 0.9, g: 1.5 }];
@@ -280,24 +353,20 @@ window.FZ_GAMES = (() => {
 
     // ---------- ٢) سرعة البديهة ----------
     reflex: {
-      name: 'سرعة البديهة', ico: '🎯', mode: 'solo', rounds: 5, time: 8,
-      idea: 'اضغط العنصر المطلوب قبل غيرك',
-      how: 'تظهر شبكة أشكال وألوان، والمطلوب مكتوب فوقها (مثل: أزرق + مربع). اضغط الصحيح بأسرع ما يمكن، والخطأ صفر.',
+      name: 'سرعة البديهة', ico: '🎯', mode: 'solo', rounds: 5, time: 8, anim: true,
+      idea: 'اضغط المطلوب قبل غيرك',
+      how: 'يظهر أمر وفوقه صور أو أشكال أو ألوان، أو صورة تعدّ فيها بسرعة (كم نجمة؟ كم خط؟). اضغط الصحيح بأسرع ما يمكن: الأسرع ياخذ أكثر، والخطأ صفر.',
       make(c) { const seed = c.seed; return { d: { s: seed }, k: { ans: SC.reflex(seed).ans } }; },
-      score: (c) => soloMC(c, (v) => +v === c.k.ans),
+      score: (c) => reflexScore(c),
       grid(d, ans = -1, counts = null) {
         const g = SC.reflex(d.s);
-        return `<div class="rx-cmd">${esc(g.cmd)}</div><div class="rx-grid">${g.cells.map((cell, i) =>
-          `<button class="rx-cell tactile ${ans === i ? 'is-right' : ans >= 0 ? 'is-dim' : ''}" data-i="${i}">${SC.reflexCell(cell)}${counts ? `<b class="cnt">${ar(counts[i] || 0)}</b>` : ''}</button>`).join('')}</div>`;
+        const cells = g.cells.map((cell, i) =>
+          `<button class="rx-cell tactile ${g.mode === 'count' ? 'rx-opt' : ''} ${ans === i ? 'is-right' : ans >= 0 ? 'is-dim' : ''}" data-i="${i}">${SC.reflexCell(cell)}${counts ? `<b class="cnt">${ar(counts[i] || 0)}</b>` : ''}</button>`).join('');
+        if (g.mode === 'count') return `<div class="rx-cmd">${esc(g.cmd)}</div><div class="rx-field">${SC.reflexField(g)}</div><div class="rx-opts">${cells}</div>`;
+        return `<div class="rx-cmd">${esc(g.cmd)}</div><div class="rx-grid ${g.mode === 'image' ? 'rx-img' : ''}">${cells}</div>`;
       },
       host(el, c) { el.innerHTML = this.grid(c.d); $$('.rx-cell', el).forEach((b) => { b.disabled = true; }); },
-      reveal(el, c) {
-        const counts = {};
-        Object.values(c.A || {}).forEach((a) => { counts[a.v] = (counts[a.v] || 0) + 1; });
-        el.innerHTML = this.grid(c.d, c.rev.k.ans, counts);
-        $$('.rx-cell', el).forEach((b) => { b.disabled = true; });
-        soloTop(el, c);
-      },
+      reveal(el, c) { reflexReveal(el, c, { done: c.done }); },
       phone(el, c) {
         el.innerHTML = this.grid(c.d);
         $$('.rx-cell', el).forEach((b) => {
@@ -310,7 +379,7 @@ window.FZ_GAMES = (() => {
           });
         });
       },
-      phoneRev(el, c) { el.innerHTML = this.grid(c.d, c.rev.k.ans); $$('.rx-cell', el).forEach((b) => { b.disabled = true; }); }
+      phoneRev(el, c) { reflexReveal(el, c, { done: c.done, mine: c.me }); }
     },
 
     // ---------- ٣) عين الصقر ----------
