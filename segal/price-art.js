@@ -76,9 +76,6 @@ window.FZ_ART = (() => {
     // كتاب/مصحف
     book: `<path d="M30 30c18-6 34-4 50 6v68c-16-10-32-12-50-6z" fill="#146B45"/><path d="M130 30c-18-6-34-4-50 6v68c16-10 32-12 50-6z" fill="#1A7D52"/>
       <path d="M80 36v68" stroke="#0F5236" stroke-width="3"/><path d="M40 46c12-3 24-2 32 3M88 49c8-5 20-6 32-3" stroke="#E8C66B" stroke-width="2.5" fill="none"/><circle cx="56" cy="70" r="8" fill="none" stroke="#E8C66B" stroke-width="2.5"/><circle cx="104" cy="70" r="8" fill="none" stroke="#E8C66B" stroke-width="2.5"/>`,
-    // كرة
-    ball: `<circle cx="80" cy="62" r="42" fill="#fff" stroke="#D5DBE3" stroke-width="3"/><path d="m80 46 15 11-6 18H71l-6-18z" fill="#2B2F3A"/>
-      <path d="M80 20v26M95 57l26-8M89 75l14 22M71 75 57 97M65 57l-26-8" stroke="#2B2F3A" stroke-width="3"/><path d="M58 24l10 10M102 24 92 34M122 72l-12-2M38 72l12-2" stroke="#2B2F3A" stroke-width="3"/>`,
     // شنطة مدرسية
     backpack: `<path d="M50 40c0-16 60-16 60 0v58c0 6-4 10-10 10H60c-6 0-10-4-10-10z" fill="#1E6FE0"/><path d="M66 26c0-10 28-10 28 0" fill="none" stroke="#174FA8" stroke-width="6"/>
       <rect x="58" y="66" width="44" height="30" rx="6" fill="#5CC2F5"/><path d="M58 76h44" stroke="#174FA8" stroke-width="3"/><rect x="76" y="72" width="8" height="8" rx="2" fill="#FFD66B"/>`,
@@ -153,20 +150,10 @@ window.FZ_ART = (() => {
     // ديناصور
     dino: `<path d="M24 92c10-30 30-40 56-40 14 0 24-6 32-14 8-8 22-8 28 0 4 6 0 12-8 12h-12c-6 8-8 18-10 28l-2 18h-10l-2-16H66l-4 16H52l-2-18c-10 0-18 6-26 14z" fill="#8FB3A0"/>
       <g fill="#E8554E"><path d="M50 56l6-14 6 12z"/><path d="M64 52l7-16 6 14z"/><path d="M78 50l7-14 5 14z"/><path d="M92 46l6-12 4 12z"/></g><circle cx="128" cy="40" r="2.5" fill="#2B2F3A"/>`,
-    // بطاقة لاعب
-    tradingcard: `<rect x="48" y="12" width="64" height="94" rx="6" fill="#fff" stroke="#E2E6EC" stroke-width="2" transform="rotate(-6 80 60)"/><g transform="rotate(-6 80 60)">
-      <rect x="54" y="18" width="52" height="62" fill="#5CC2F5"/><circle cx="80" cy="42" r="10" fill="#D9A77A"/><path d="M62 80c2-18 34-18 36 0z" fill="#E8554E"/><path d="M70 34c4-6 16-6 20 0" fill="#2B2F3A"/>
-      <rect x="56" y="86" width="48" height="12" rx="2" fill="#1E6FE0"/><text x="80" y="95.5" font-size="8" font-weight="700" text-anchor="middle" fill="#fff" font-family="sans-serif">1952</text></g>`,
-    // حذاء
-    sneaker: `<path d="M18 86c0-12 6-20 14-24l26-24c6 8 16 12 28 12l8 14c22 2 44 8 48 22v6H18z" fill="#fff" stroke="#D5DBE3" stroke-width="2"/>
-      <path d="M58 38c6 8 16 12 28 12l8 14H54z" fill="#E8554E"/><path d="M18 92h124v8H18z" fill="#2B2F3A"/><path d="M70 60l8-4M74 66l8-4M78 72l8-4" stroke="#2B2F3A" stroke-width="3" stroke-linecap="round"/><path d="M100 74c10 0 20 2 28 8" stroke="#E8554E" stroke-width="5" fill="none"/>`,
     // بيتزا
     pizza: `<path d="M24 34c38-14 74-14 112 0L80 108z" fill="#F5C26B"/><path d="M28 34c36-12 68-12 104 0l-6 8c-30-10-62-10-92 0z" fill="#C8752E"/>
       <g fill="#E8554E"><circle cx="66" cy="56" r="7"/><circle cx="94" cy="58" r="7"/><circle cx="80" cy="80" r="6"/></g><g fill="#7DC254"><circle cx="78" cy="50" r="3"/><circle cx="72" cy="70" r="3"/><circle cx="92" cy="74" r="3"/></g>
       <circle cx="128" cy="86" r="16" fill="#F59E0B"/><text x="128" y="92" font-size="17" font-weight="800" text-anchor="middle" fill="#fff" font-family="sans-serif">₿</text>`,
-    // قميص لاعب
-    jersey: `<path d="M50 20 34 30l-14 24 18 8 6-10v54h72V52l6 10 18-8-14-24-16-10c-4 10-14 14-30 14s-26-4-30-14z" fill="#F2C21B"/>
-      <path d="M50 20c4 10 14 14 30 14s26-4 30-14" fill="none" stroke="#1E6FE0" stroke-width="5"/><text x="80" y="82" font-size="30" font-weight="800" text-anchor="middle" fill="#1E6FE0" font-family="sans-serif">10</text>`,
     // صفقة/شركة
     building: `<rect x="34" y="24" width="46" height="84" fill="#3B98EA"/><rect x="80" y="44" width="46" height="64" fill="#1E6FE0"/>
       <g fill="#BFE3FC">${[0, 1, 2, 3, 4, 5].map((r) => [0, 1, 2].map((c) => `<rect x="${40 + c * 13}" y="${32 + r * 12}" width="8" height="7" rx="1"/>`).join('')).join('')}${[0, 1, 2, 3].map((r) => [0, 1, 2].map((c) => `<rect x="${86 + c * 13}" y="${52 + r * 12}" width="8" height="7" rx="1"/>`).join('')).join('')}</g>
