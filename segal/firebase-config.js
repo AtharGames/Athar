@@ -18,7 +18,7 @@ window.FAZAA_FIREBASE = window.FAZAA_FIREBASE || {
   // تحكيم الرسم والوصف بالذكاء الاصطناعي (Firebase AI Logic)
   ai: true,
   // مفتاح reCAPTCHA v3 نفسه المستخدم في إنسان حيوان جماد (نفس النطاق athargames.github.io)
-  appCheckSiteKey: "6Ley5jEuAAAAAGDue8EQ85RvusAooRRB07Z7Rvz4",
+  appCheckSiteKey: "6LcSmjUuAAAAAFcG1xqA5-xUaCO9CZl0MMHtHn1v",
   appCheckProvider: "enterprise",
   aiModel: "gemini-3.5-flash-lite"
 };
