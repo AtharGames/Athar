@@ -829,3 +829,39 @@ html.embed{background:var(--bg-paint); background-attachment:scroll;}
 html.embed .topbar,html.embed #leaveBtn,html.embed #myPaper{display:none !important;}
 html.embed body{min-height:0;}
 html.embed body::before{display:none;}
+.auto-pick-hint{margin:10px 0 0; font-size:.85rem; font-weight:700; color:var(--text-2);}
+/* خانة تنتظر تصحيح المقدّم (تعطل الذكاء) */
+.cell.todo{border:2px dashed var(--ai); background:var(--ai-soft);}
+.cell.todo .mk i{color:var(--ai); font-style:normal;}
+
+/* ---------- لوحة الجولة في جوال المشارك ---------- */
+.live-board{padding:14px; display:flex; flex-direction:column; gap:12px;}
+.lb-top{display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+.lb-top h2{margin:0; font-size:1.15rem;}
+.lb-top .muted{font-size:.8rem;}
+.lb-rank-wrap h3{margin:0 0 8px; font-size:.95rem;}
+.lb-rank{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px;}
+.lb-rank li{display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:12px; background:var(--cell); font-weight:700;}
+.lb-rank li b{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.lb-rank .rk{width:28px; height:28px; border-radius:50%; display:grid; place-items:center; background:var(--surface); border:1px solid var(--line); font-size:.85rem;}
+.lb-rank li.top .rk{background:#F59E0B; color:#3B2300; border-color:#F59E0B;}
+.lb-rank li.me{outline:2px solid var(--accent); outline-offset:-2px;}
+.lb-rank .tt{font-size:1.05rem;}
+.lb-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px;}
+.lb-row{padding:10px 12px; border-radius:14px; background:var(--surface); border:1px solid var(--line);}
+.lb-row.me{border:2px solid var(--accent);}
+.lb-head{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px;}
+.lb-head small{font-weight:500; color:var(--text-2);}
+.lb-pts{min-width:38px; text-align:center; padding:2px 10px; border-radius:999px; background:var(--cell); font-weight:800;}
+.lb-ans{display:flex; flex-wrap:wrap; gap:6px;}
+.ch{display:inline-flex; align-items:center; flex-wrap:wrap; gap:4px; padding:4px 9px; border-radius:10px; font-weight:700; font-size:.9rem; background:var(--cell); border:1.5px solid transparent; max-width:100%;}
+.ch small{font-weight:500; font-size:.7rem; color:var(--text-2);}
+.ch i{font-style:normal; font-size:.85rem;}
+.ch em{flex-basis:100%; font-style:normal; font-size:.7rem; color:var(--bad);}
+.ch.ok{border-color:color-mix(in srgb, var(--ok) 55%, transparent);} .ch.ok i{color:var(--ok);}
+.ch.dup{border-color:color-mix(in srgb, #E59A1C 60%, transparent);} .ch.dup i{color:#E59A1C;}
+.ch.bad{border-color:color-mix(in srgb, var(--bad) 55%, transparent);} .ch.bad i{color:var(--bad);} .ch.bad > span{text-decoration:line-through; text-decoration-thickness:1.5px;}
+.ch.todo,.ch.wait{border-style:dashed; border-color:var(--ai-line);} .ch.todo i{color:var(--ai);}
+.ch.wait > span{opacity:.8;}
+.ch.empty{opacity:.55;}
+[data-theme="blue"] .ch em{color:#FFE4E4;}

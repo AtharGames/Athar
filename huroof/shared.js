@@ -362,6 +362,7 @@ window.HUI = (() => {
     ok: { sym: '✓', label: 'صح' },
     dup: { sym: '✓', label: 'مكرر' },
     bad: { sym: '✗', label: 'خطأ' },
+    todo: { sym: '؟', label: 'تحتاج تصحيح' },
     empty: { sym: '—', label: 'فاضي' }
   };
 

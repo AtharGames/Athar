@@ -24,6 +24,7 @@
     game: $('#game'), stamp: $('#myLetter'), title: $('#statusTitle'), text: $('#statusText'),
     round: $('#myRound'), timer: $('#myTimer'), timebar: $('#myTimebar'), timefill: $('#myTimefill'),
     sheet: $('#sheetForm'), lines: $('#lines'), doneBtn: $('#doneBtn'), doneLabel: $('#doneLabel'), doneHint: $('#doneHint'),
+    board: $('#liveBoard'), lbTitle: $('#lbTitle'), lbSub: $('#lbSub'), lbList: $('#lbList'), lbRankWrap: $('#lbRankWrap'), lbRank: $('#lbRank'),
     result: $('#result'), resRound: $('#resRound'), resTotal: $('#resTotal'), resRank: $('#resRank'), gradedBy: $('#gradedBy'),
     endCard: $('#endCard'), endKicker: $('#endKicker'), endTitle: $('#endTitle'), endText: $('#endText'),
     paper: $('#myPaper'), paperTable: $('#paperTable'),
@@ -51,7 +52,8 @@
     return s;
   };
   const loadMe = () => { try { return JSON.parse(store.get(ME_KEY) || 'null'); } catch { return null; } };
-  const draftKey = (r) => `athar-huroof-draft-${me.room}-${r}`;
+  let curAt = 0;                 // وقت بداية الجولة الحالية (يميّز الجولة ١ في لعبة جديدة عن السابقة)
+  const draftKey = (r) => `athar-huroof-draft-${me.room}-${r}-${curAt}`;
 
   // =========================================================
   // الدخول والخروج
@@ -104,6 +106,7 @@
 
   function exit(msg) {
     stops.forEach((f) => f()); stops = [];
+    watchBoard(null);
     clearInterval(tickTimer); clearInterval(rollTimer); clearTimeout(draftTimer);
     tickTimer = 0; rollTimer = 0;
     const last = me;
@@ -170,7 +173,7 @@
     }
 
     if (ph === 'play') {
-      if (curR !== s.r) setupRound(s, cats);
+      if (curR !== s.r || curAt !== (s.at || 0)) setupRound(s, cats);
       el.sheet.hidden = false;
       el.doneBtn.hidden = false;
       if (!f) {
@@ -195,8 +198,14 @@
       el.game.classList.toggle('grading', ph === 'grade');
     } else el.game.classList.remove('grading');
 
+    if (ph === 'lobby' || s.r === '0') { Object.keys(myAns).forEach((k) => delete myAns[k]); }
+
     if (ph === 'show') renderShow(s, cats, entered);
     if (ph === 'end') renderEnd(entered);
+
+    // لوحة الجولة: التصحيح وهو يصير، ثم الإجابات والترتيب
+    watchBoard(ph === 'grade' || ph === 'show' ? s.r : null);
+    renderBoard(s, cats, ph);
 
     // ورقتي: كل الجولات المعتمدة
     const rs = roundsDone(room);
@@ -227,7 +236,7 @@
   }
 
   function setupRound(s, cats) {
-    curR = s.r; locked = false; submitted = false; finalSent = null;
+    curR = s.r; curAt = s.at || 0; locked = false; submitted = false; finalSent = null;
     try { vals = JSON.parse(store.get(draftKey(s.r)) || '[]') || []; } catch { vals = []; }
     el.lines.dataset.sig = '';
     buildLines(cats, s.L, false);
@@ -396,6 +405,63 @@
     if (entered && pts) { if (rp) S.chirp(0.1); else S.sigh(0.1); FX.scribble(3, 0.2); }
   }
 
+  // ---------- لوحة الجولة للمشاركين ----------
+  let boardR = null, boardStops = [], ra = null, rd = null;
+  function watchBoard(r) {
+    if (boardR === r) return;
+    boardStops.forEach((f) => f()); boardStops = [];
+    boardR = r; ra = null; rd = null;
+    if (r == null || !me) return;
+    boardStops.push(NET.watch(`${me.room}/a/${r}`, (v) => { ra = v; schedule(); }));
+    boardStops.push(NET.watch(`${me.room}/d/${r}`, (v) => { rd = v; schedule(); }));
+  }
+  const CODE_MARK = { o: 'ok', d: 'dup', b: 'bad', t: 'todo', e: 'empty' };
+  const SYM = { ok: '✓', dup: '✓', bad: '✗', todo: '؟', empty: '' };
+
+  function renderBoard(s, cats, ph) {
+    const show = ph === 'grade' || ph === 'show' || ph === 'end';
+    el.board.hidden = !show;
+    if (!show) return;
+    const players = Object.keys(room.p || {}).map((pid) => ({ pid, name: room.p[pid].n }));
+    const g = room.g && room.g[s.r];
+    const rows = ph === 'end' ? [] : players.map((p) => {
+      const v = (ra && ra[p.pid] && ra[p.pid].v) || {};
+      let marks, notes, pts;
+      if (ph === 'show' && g) {
+        const sc = (g.s && g.s[p.pid]) || {};
+        marks = cats.map((_, i) => markOf(+sc[i] || 0, (v[i] || '').trim(), s));
+        pts = cats.map((_, i) => +sc[i] || 0);
+        notes = (g.n && g.n[p.pid]) || {};
+      } else {
+        const code = rd && rd.m && rd.m[p.pid];
+        marks = cats.map((_, i) => (code ? CODE_MARK[code[i]] : null) || ((v[i] || '').trim() ? 'wait' : 'empty'));
+        pts = marks.map((m) => (m === 'ok' ? s.pu : m === 'dup' ? s.pd : 0));
+        notes = (rd && rd.n && rd.n[p.pid]) || {};
+      }
+      return { ...p, v, marks, notes, tot: pts.reduce((a, b) => a + b, 0) };
+    }).sort((a, b) => b.tot - a.tot);
+
+    const grading = ph === 'grade';
+    el.lbTitle.textContent = ph === 'end' ? 'الترتيب النهائي' : grading ? 'التصحيح يصير الحين' : `إجابات جولة «${s.L}»`;
+    el.lbSub.textContent = grading
+      ? (rd ? (s.mo === 'host' ? 'تصحيح الذكاء، والمقدّم يقدر يغيّر قبل الاعتماد' : 'تصحيح الذكاء قبل الاعتماد') : 'نجهّز التصحيح…')
+      : ph === 'show' ? 'النتيجة المعتمدة' : '';
+    el.lbList.hidden = ph === 'end';
+    el.lbList.innerHTML = rows.map((r) => `
+      <li class="lb-row${r.pid === me.pid ? ' me' : ''}">
+        <div class="lb-head"><b>${esc(r.name)}${r.pid === me.pid ? ' <small>(أنت)</small>' : ''}</b><span class="lb-pts">${ar(r.tot)}</span></div>
+        <div class="lb-ans">${cats.map((c, i) => {
+          const a = (r.v[i] || '').trim(), m = r.marks[i], why = m === 'bad' ? r.notes[i] : '';
+          return `<span class="ch ${m}"><small>${esc(c)}</small><span>${a ? esc(a) : '—'}</span>${SYM[m] ? `<i>${SYM[m]}</i>` : ''}${why ? `<em>${esc(why)}</em>` : ''}</span>`;
+        }).join('')}</div>
+      </li>`).join('');
+
+    // الترتيب الكلي بعد الاعتماد
+    const list = ranking(room);
+    el.lbRankWrap.hidden = grading || !list.length;
+    el.lbRank.innerHTML = list.map((x) => `<li class="${x.pid === me.pid ? 'me' : ''}${x.rank === 1 ? ' top' : ''}"><span class="rk">${ar(x.rank)}</span><b>${esc(x.name)}</b><span class="tt">${ar(x.total)}</span></li>`).join('');
+  }
+
   // ---------- الفائز ----------
   function renderEnd(entered) {
     const list = ranking(room), meRow = list.find((x) => x.pid === me.pid);
@@ -422,8 +488,7 @@
       if (String(r) === curR) myAns[r] = vals.slice();
       else if (!(r in myAns) && !fetching.has(r)) {
         fetching.add(r);
-        let local = null;
-        try { local = JSON.parse(store.get(draftKey(r)) || 'null'); } catch { /* تجاهل */ }
+        const local = null; // مسودات الجولات السابقة مربوطة بوقتها، فنعتمد على قاعدة البيانات
         NET.get(`${me.room}/a/${r}/${me.pid}/v`).then((v) => {
           myAns[r] = v ? cats.map((_, i) => v[i] || '') : (local || []);
           schedule();

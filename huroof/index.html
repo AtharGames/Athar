@@ -256,6 +256,7 @@
                     </button>
                     <button class="btn btn-go" id="startBtn" disabled>ابدأ الجولة</button>
                   </div>
+                  <p class="auto-pick-hint" id="autoPickHint" hidden>تبي حرف ثاني؟ اسحب من جديد أو اختر حرفًا بنفسك، ويوقف البدء التلقائي.</p>
                 </div>
               </div>
               <details class="pick-manual">
@@ -311,6 +312,7 @@
                 <span class="ai-text" id="aiText" role="status"></span>
                 <button class="btn btn-small" id="aiRetry" hidden>أعد المحاولة</button>
                 <button class="btn btn-small btn-ghost" id="aiReset" hidden>رجّع اقتراح الذكاء</button>
+                <button class="btn btn-small" id="allOk" hidden>اعتبر الباقي صح</button>
               </div>
               <!-- تأكيد اختياري: مهلة للمقدّم قبل الاعتماد التلقائي -->
               <div class="auto-bar review-bar" id="reviewBar" hidden>

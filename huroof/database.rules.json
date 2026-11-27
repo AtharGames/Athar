@@ -65,6 +65,21 @@
             "$other": { ".validate": false }
           }
         },
+        "d": {
+          ".write": "$room.matches(/^[0-9]{5}$/)",
+          "$r": {
+            ".validate": "$r.matches(/^[0-9]{1,3}$/)",
+            "m": {
+              "$pid": { ".validate": "newData.isString() && newData.val().matches(/^[odbte]{0,8}$/)" }
+            },
+            "n": {
+              "$pid": {
+                "$i": { ".validate": "$i.matches(/^[0-7]$/) && newData.isString() && newData.val().length <= 80" }
+              }
+            },
+            "$other": { ".validate": false }
+          }
+        },
         "g": {
           ".write": "$room.matches(/^[0-9]{5}$/)",
           "$r": {

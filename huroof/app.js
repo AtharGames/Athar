@@ -43,12 +43,12 @@
     room: $('#room'), joinbar: $('#joinbar'), qr: $('#qr'), joinUrl: $('#joinUrl'), roomCode: $('#roomCode'),
     copyBtn: $('#copyBtn'), settingsBtn: $('#settingsBtn'), endBtn: $('#endBtn'),
     stage: $('#stage'), roundPill: $('#roundPill'), timerPill: $('#timerPill'),
-    bigLetter: $('#bigLetter'), pickTitle: $('#pickTitle'), pickText: $('#pickText'), rollBtn: $('#rollBtn'), startBtn: $('#startBtn'), lettersManual: $('#lettersManual'),
+    autoPickHint: $('#autoPickHint'), bigLetter: $('#bigLetter'), pickTitle: $('#pickTitle'), pickText: $('#pickText'), rollBtn: $('#rollBtn'), startBtn: $('#startBtn'), lettersManual: $('#lettersManual'),
     playLetter: $('#playLetter'), playText: $('#playText'), timebar: $('#timebar'), timefill: $('#timefill'), progress: $('#progress'), forceStopBtn: $('#forceStopBtn'),
     stopWho: $('#stopWho'), stopText: $('#stopText'),
     gradeLetter: $('#gradeLetter'), gradeTable: $('#gradeTable'), approveBtn: $('#approveBtn'), lgOk: $('#lgOk'), lgDup: $('#lgDup'),
     gradeTitle: $('#gradeTitle'), gradeSub: $('#gradeSub'), lgAi: $('#lgAi'),
-    aiBar: $('#aiBar'), aiText: $('#aiText'), aiRetry: $('#aiRetry'), aiReset: $('#aiReset'),
+    aiBar: $('#aiBar'), aiText: $('#aiText'), aiRetry: $('#aiRetry'), aiReset: $('#aiReset'), allOk: $('#allOk'),
     autoBar: $('#autoBar'), autoText: $('#autoText'), autoPause: $('#autoPause'),
     showLetter: $('#showLetter'), showTitle: $('#showTitle'), showText: $('#showText'), board: $('#board'),
     nextBtn: $('#nextBtn'), regradeBtn: $('#regradeBtn'), sheetBtn: $('#sheetBtn'), finishBtn: $('#finishBtn'),
@@ -320,7 +320,9 @@
   // الجولات تمشي لحالها في «الذكاء يعتمد» و«تأكيد اختياري»
   const isAuto = (s) => s.mo === 'auto' || s.mo === 'opt';
   // هل المقدّم يراجع التصحيح؟ (بمقدّم دائمًا، وبدون مقدّم إذا ضغط «عدّل التصحيح»)
-  const hostReview = (s) => !isAuto(s) || regrading === s.r;
+  // إذا تعطل الذكاء: المقدّم يصحّح يدويًا وإجباريًا في كل الأوضاع
+  const aiFailed = () => aiState === 'err' || aiState === 'off';
+  const hostReview = (s) => !isAuto(s) || regrading === s.r || (s.ph === 'grade' && aiFailed());
   const canTap = (s) => hostReview(s) || s.mo === 'opt';
   const pool = (s) => {
     const xl = s.xl || '', used = s.used || '';
@@ -409,7 +411,11 @@
     info.push(catsOf(s).join(' · '));
     el.pickText.textContent = info.join('  •  ');
     el.startBtn.disabled = !chosen || !ps.length || rolling;
-    el.startBtn.textContent = chosen ? `ابدأ الجولة ${ar(nextR)} بحرف «${chosen}»` : 'ابدأ الجولة';
+    const autoLeft = autoStartFor === s.r ? Math.max(0, Math.ceil((autoStartAt - Date.now()) / 1000)) : 0;
+    el.startBtn.textContent = chosen
+      ? (autoLeft ? `تبدأ الجولة بحرف «${chosen}» بعد ${ar(autoLeft)} ث` : `ابدأ الجولة ${ar(nextR)} بحرف «${chosen}»`)
+      : 'ابدأ الجولة';
+    el.autoPickHint.hidden = !autoLeft;
     el.rollBtn.disabled = rolling;
     // بدون مقدّم: من الجولة الثانية تُسحب الحروف وتبدأ لحالها
     if (isAuto(s) && s.ph === 'pick' && s.r !== '0' && !chosen && !rolling && autoPicked !== s.r && ps.length) {
@@ -427,8 +433,9 @@
     }
   }
 
-  async function roll() {
+  async function roll(auto) {
     if (rolling || !room) return;
+    if (auto !== true) cancelAutoStart(); // المقدّم يسحب بنفسه: يلغي البدء التلقائي
     rolling = true; renderPick(room.s);
     const p = pool(room.s);
     if (p.length === LETTERS.length - (room.s.xl || '').length && (room.s.used || '').length) toast('خلصت الحروف، نرجع نسحب من البداية');
@@ -440,6 +447,7 @@
 
   function pickManual(L) {
     if (rolling) return;
+    cancelAutoStart(); // اختار حرف بنفسه: يبدأ الجولة بيده
     chosen = L;
     el.bigLetter.textContent = L;
     el.bigLetter.classList.remove('landed'); void el.bigLetter.offsetWidth; el.bigLetter.classList.add('landed');
@@ -547,7 +555,12 @@
 
   function marksFor(s, cats) {
     const all = answersAll(s);
-    const sm = smartMarks(all, cats.length, s.L, s.ai ? verdict : null);
+    const sm = smartMarks(all, cats.length, s.L, verdict);
+    // كل إجابة ما حكم عليها الذكاء تنتظر تصحيح المقدّم (لا تصحيح آلي بالحرف)
+    Object.keys(sm.marks).forEach((pid) => {
+      sm.marks[pid] = sm.marks[pid].map((m, i) => (m !== 'empty' && !sm.ai[pid][i] ? 'todo' : m));
+      sm.notes[pid] = sm.notes[pid].map((n, i) => (sm.ai[pid][i] ? n : ''));
+    });
     const out = {};
     Object.keys(sm.marks).forEach((pid) => {
       out[pid] = sm.marks[pid].map((m, i) => (m !== 'empty' && ov[pid] && ov[pid][i]) || m);
@@ -559,7 +572,7 @@
   async function runAI() {
     if (!room || room.s.ph !== 'grade') return;
     const s = room.s, cats = catsOf(s), r = s.r;
-    if (!s.ai || !AI) { aiState = 'off'; renderGrade(s, cats); return autoApprove(); }
+    if (!AI) { aiState = 'off'; setAq('err'); renderGrade(s, cats); return; }
     const items = pendingAI(s, cats);
     items.forEach((x) => aiTried.add(x.k));
     if (!items.length) {
@@ -582,7 +595,8 @@
       aiState = 'err'; setAq('err');
       const c = String((e && (e.code || e.message)) || '');
       aiWhy = /api-not-enabled|no-config/.test(c) ? 'setup' : /app-check|appcheck|permission|403/i.test(c) ? 'check' : '';
-      if (!isAuto(room.s) || regrading === r) toast('الذكاء الاصطناعي ما رد، التصحيح الآلي البسيط شغّال');
+      toast('الذكاء الاصطناعي ما رد، صحّح الأوراق بنفسك');
+      S.sigh(0.05);
     }
     if (room && room.s.ph === 'grade') { renderGrade(room.s, catsOf(room.s)); autoApprove(); }
   }
@@ -627,41 +641,70 @@
     renderGrade(s, catsOf(s));
   }
 
+  // المشاركون يشوفون التصحيح وهو يصير: { m: { pid: 'odbte' }, n: { pid: {i: سبب} } }
+  const MC = { ok: 'o', dup: 'd', bad: 'b', todo: 't', empty: 'e' };
+  let draftSig = '', draftTimer = 0;
+  function publishDraft(s, marks, notes) {
+    const m = {}, n = {};
+    Object.keys(marks).forEach((pid) => {
+      m[pid] = marks[pid].map((x) => MC[x] || 'e').join('');
+      marks[pid].forEach((x, i) => {
+        const w = x === 'bad' ? (ov[pid] && ov[pid][i] ? 'رفضها المقدّم' : notes[pid][i]) : '';
+        if (w) { n[pid] = n[pid] || {}; n[pid][i] = w.slice(0, 80); }
+      });
+    });
+    const body = { m }; if (Object.keys(n).length) body.n = n;
+    const sig = s.r + JSON.stringify(body);
+    if (sig === draftSig) return;
+    draftSig = sig;
+    clearTimeout(draftTimer);
+    const r = s.r;
+    draftTimer = setTimeout(() => { if (code) NET.set(`${code}/d/${r}`, body).catch(() => {}); }, 300);
+  }
+
   const AI_ICON = '<svg class="ai-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.8 5.4L19 9.2l-5.2 1.8L12 16.4l-1.8-5.4L5 9.2l5.2-1.8zM19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9z"/></svg>';
 
   function renderGrade(s, cats) {
     const { all, marks, notes, ai } = marksFor(s, cats), ps = players(), f = firstOf(s.r);
     const review = hostReview(s);
     // إجابات وصلت متأخرة بعد حكم الذكاء: نطلب حكمها
-    if (s.ai && aiState === 'ok' && pendingAI(s, cats, all).length) setTimeout(runAI, 0);
+    if (aiState === 'ok' && pendingAI(s, cats, all).length) setTimeout(runAI, 0);
+    const todo = ps.reduce((k, p) => k + (marks[p.pid] || []).filter((m) => m === 'todo').length, 0);
+    publishDraft(s, marks, notes);
 
     el.gradeLetter.textContent = s.L;
     el.lgOk.textContent = ar(s.pu); el.lgDup.textContent = ar(s.pd);
     el.lgAi.hidden = !s.ai;
     el.gradeTitle.textContent = review ? 'صحّح الأوراق' : s.mo === 'opt' ? 'أكّد التصحيح' : 'التصحيح التلقائي';
-    el.gradeSub.textContent = review
+    el.gradeSub.textContent = aiFailed()
+      ? 'الذكاء ما رد، فالتصحيح عليك: اضغط كل خانة عليها «؟» لتصحيحها: صح ← مكرر ← خطأ.'
+      : review
       ? 'الذكاء الاصطناعي يقترح، والاعتماد لك. اضغط أي خانة لتغييرها: صح ← مكرر ← خطأ.'
+      : aiState === 'run' ? 'الذكاء الاصطناعي يصحّح الحين…'
       : s.mo === 'opt' ? 'صحّحها الذكاء الاصطناعي. اعتمدها الحين، أو اضغط أي خانة لتعديلها قبل ما ينتهي الوقت.'
         : 'الذكاء الاصطناعي يصحّح ويعتمد النتيجة بنفسه.';
 
     // شريط حالة الذكاء
     const hasOv = Object.keys(ov).some((p) => Object.keys(ov[p] || {}).length);
-    el.aiBar.hidden = !s.ai;
+    el.aiBar.hidden = false;
     el.aiBar.dataset.state = aiState;
     el.aiText.textContent = {
       run: 'الذكاء الاصطناعي يراجع الإجابات…',
       ok: review ? 'راجعها الذكاء الاصطناعي. راجعها أنت واعتمد.' : 'راجعها الذكاء الاصطناعي.',
-      err: aiWhy === 'setup' ? 'التصحيح بالذكاء غير مفعّل في Firebase بعد (AI Logic)، والتصحيح الحين بالحرف والتكرار فقط.'
-        : aiWhy === 'check' ? 'Firebase رفض الطلب (App Check)، والتصحيح الحين بالحرف والتكرار فقط.'
-        : 'الذكاء الاصطناعي ما رد، والتصحيح الحين بالحرف والتكرار فقط.',
-      off: 'التصحيح بالذكاء متوقف.',
+      err: (aiWhy === 'setup' ? 'التصحيح بالذكاء غير مفعّل في Firebase (AI Logic).'
+        : aiWhy === 'check' ? 'Firebase رفض طلب الذكاء (App Check).'
+        : 'الذكاء الاصطناعي ما رد.') + ' صحّح الأوراق بنفسك.',
+      off: 'الذكاء غير متاح، صحّح الأوراق بنفسك.',
       idle: 'نجهّز التصحيح…'
     }[aiState] || '';
-    el.aiRetry.hidden = aiState !== 'err' || !review;
+    el.aiRetry.hidden = aiState !== 'err';
+    el.allOk.hidden = !todo;
+    el.allOk.textContent = `اعتبر الباقي صح (${ar(todo)})`;
     el.aiReset.hidden = !review || !hasOv;
 
     el.approveBtn.hidden = !review;
-    el.approveBtn.textContent = aiState === 'run' ? 'اعتمد بدون انتظار الذكاء' : 'اعتمد وأعلن النتيجة';
+    el.approveBtn.disabled = aiState === 'run' || todo > 0;
+    el.approveBtn.textContent = aiState === 'run' ? 'انتظر تصحيح الذكاء…' : todo ? `باقي ${ar(todo)} خانة تحتاج تصحيح` : 'اعتمد وأعلن النتيجة';
 
     el.gradeTable.innerHTML = `<thead><tr><th class="who">الاسم</th>${cats.map((c) => `<th>${esc(c)}</th>`).join('')}<th class="sum">مجموع</th></tr></thead><tbody>${
       ps.map((p) => {
@@ -689,7 +732,7 @@
     const { marks, base } = marksFor(s, cats);
     const cur = marks[pid] && marks[pid][i];
     if (!cur || cur === 'empty') return;
-    const next = { ok: 'dup', dup: 'bad', bad: 'ok' }[cur];
+    const next = { todo: 'ok', ok: 'dup', dup: 'bad', bad: 'ok' }[cur];
     ov[pid] = ov[pid] || {};
     // إذا رجعت الخانة لاقتراح الذكاء نشيل التعديل
     if (next === base[pid][i]) delete ov[pid][i]; else ov[pid][i] = next;
@@ -708,6 +751,7 @@
     if (busy || !room || room.s.ph !== 'grade') return;
     const s = room.s, cats = catsOf(s);
     const { marks, notes } = marksFor(s, cats);
+    if (aiState === 'run' || Object.values(marks).some((m) => m.includes('todo'))) return;
     const sc = {}, n = {};
     Object.keys(marks).forEach((pid) => {
       sc[pid] = marks[pid].map((m) => pointsOf(m, s));
@@ -718,10 +762,10 @@
         if (why) { n[pid] = n[pid] || {}; n[pid][i] = why.slice(0, 80); }
       });
     });
-    const by = hostReview(s) ? 'host' : (s.ai && aiState === 'ok' ? 'ai' : 'auto');
+    const by = hostReview(s) ? 'host' : 'ai';
     const body = { L: s.L, s: sc, by };
     if (Object.keys(n).length) body.n = n;
-    busy = true; el.approveBtn.disabled = true;
+    busy = true;
     aiRun++; // أي رد متأخر من الذكاء ما يغيّر النتيجة المعتمدة
     try {
       await NET.set(`${code}/g/${s.r}`, body);
@@ -730,7 +774,7 @@
       console.warn('[huroof] approve', e && e.message);
       toast('ما قدرنا نحفظ النتيجة، جرّب مرة ثانية');
       autoApproveFor = '';
-    } finally { busy = false; el.approveBtn.disabled = false; }
+    } finally { busy = false; if (room && room.s.ph === 'grade') renderGrade(room.s, catsOf(room.s)); }
   }
 
   // ---------- بدون مقدّم: الجولة التالية تلقائيًا ----------
@@ -757,12 +801,26 @@
     el.autoBar.style.setProperty('--k', autoPaused ? 1 : Math.max(0, Math.min(1, left / AUTO_NEXT)));
   }
 
-  // بدون مقدّم: سحب الحرف وبدء الجولة تلقائيًا (من الجولة الثانية)
+  // المقدّم يلعب: سحب الحرف تلقائيًا (من الجولة الثانية) ثم عدّ تنازلي قبل البدء،
+  // وأي لمسة على «اسحب» أو على حرف تلغي البدء التلقائي فيبدأ المقدّم بيده
+  const AUTO_START = 6;
+  let autoStartFor = '', autoStartAt = 0, autoStartTimer = 0;
+  function cancelAutoStart() {
+    clearInterval(autoStartTimer); autoStartTimer = 0;
+    autoStartFor = '';
+    if (room) renderPick(room.s);
+  }
   async function autoRoll(r) {
-    await roll();
-    setTimeout(() => {
-      if (room && room.s.ph === 'pick' && room.s.r === r && chosen && isAuto(room.s)) startRound();
-    }, 1500);
+    await roll(true);
+    if (!room || room.s.ph !== 'pick' || room.s.r !== r || !chosen) return;
+    autoStartFor = r; autoStartAt = Date.now() + AUTO_START * 1000;
+    clearInterval(autoStartTimer);
+    autoStartTimer = setInterval(() => {
+      if (!room || room.s.ph !== 'pick' || room.s.r !== r || autoStartFor !== r || !chosen) { clearInterval(autoStartTimer); autoStartTimer = 0; return; }
+      if (Date.now() >= autoStartAt) { clearInterval(autoStartTimer); autoStartTimer = 0; autoStartFor = ''; startRound(); return; }
+      renderPick(room.s);
+    }, 250);
+    renderPick(room.s);
   }
 
   // ---------- نتيجة الجولة ----------
@@ -865,7 +923,7 @@
       Object.keys(localStorage).filter((k) => k.startsWith(`athar-huroof-ov-${code}-`) || k.startsWith(`athar-huroof-ai-${code}-`)).forEach((k) => store.del(k));
     } catch { /* تجاهل */ }
     try {
-      await NET.remove(code + '/a'); await NET.remove(code + '/f'); await NET.remove(code + '/g');
+      await NET.remove(code + '/a'); await NET.remove(code + '/f'); await NET.remove(code + '/g'); await NET.remove(code + '/d').catch(() => {});
       await NET.update(code + '/s', { ph: 'lobby', r: '0', L: '', used: '' });
       chosen = null; el.bigLetter.textContent = '؟';
       S.whoosh(true);
@@ -952,8 +1010,8 @@
   NET.offset((v) => { offset = v; });
 
   el.createBtn.addEventListener('click', createRoom);
-  el.rollBtn.addEventListener('click', roll);
-  el.startBtn.addEventListener('click', startRound);
+  el.rollBtn.addEventListener('click', () => roll());
+  el.startBtn.addEventListener('click', () => { cancelAutoStart(); startRound(); });
   el.lettersManual.addEventListener('click', (e) => { const b = e.target.closest('.lt'); if (b) pickManual(b.dataset.l); });
   el.forceStopBtn.addEventListener('click', forceStop);
   el.gradeTable.addEventListener('click', (e) => { const c = e.target.closest('.cell'); if (c) cycleCell(c.dataset.pid, +c.dataset.i); });
@@ -966,6 +1024,13 @@
   });
   el.aiRetry.addEventListener('click', () => { aiState = 'idle'; aiTried = new Set(); runAI(); });
   el.aiReset.addEventListener('click', resetToAI);
+  // تعطل الذكاء: كل خانة ما صُحّحت تصير صح دفعة وحدة
+  el.allOk.addEventListener('click', () => {
+    const s = room.s, { marks } = marksFor(s, catsOf(s));
+    Object.keys(marks).forEach((pid) => marks[pid].forEach((m, i) => { if (m === 'todo') { ov[pid] = ov[pid] || {}; ov[pid][i] = 'ok'; } }));
+    saveOv(s.r); FX.scribble(3, 0, 0.18);
+    renderGrade(s, catsOf(s));
+  });
   el.reviewNow.addEventListener('click', () => { stopReview(); regrading = room.s.r; approve(); });
   el.reviewHold.addEventListener('click', holdReview);
   el.autoPause.addEventListener('click', () => { autoPaused = !autoPaused; S.tongue(0, 0.2); renderAutoBar(room.s, Math.ceil((autoAt - Date.now()) / 1000)); });
