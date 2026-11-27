@@ -544,7 +544,7 @@ window.FZ_SCENE = (() => {
     return `<svg class="rx-fsvg" viewBox="0 0 ${g.W} ${g.H}" aria-hidden="true"><rect width="${g.W}" height="${g.H}" rx="14" fill="#fff"/>${body}<g class="nums"></g></svg>`;
   }
   // موضع كل عنصر مطلوب (لترقيمه عند الكشف)
-  const reflexTargets = (g) => (g.lines.length ? g.lines.map((l) => ({ x: (l.x1 + l.x2) / 2, y: (l.y1 + l.y2) / 2 })) : g.items.filter((it) => it.t).map((it) => ({ x: it.x, y: it.y })));
+  const reflexTargets = (g) => (g.lines.length ? g.lines.map((l, i) => { const f = [0.28, 0.72, 0.5][i % 3]; return { x: l.x1 + (l.x2 - l.x1) * f, y: l.y1 + (l.y2 - l.y1) * f }; }) : g.items.filter((it) => it.t).map((it) => ({ x: it.x, y: it.y })));
   function reflexCell(c) {
     if (c.num != null) return `<span class="rx-num">${String(c.num).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d])}</span>`;
     if (c.img) return window.FZ_RXART ? window.FZ_RXART.svg(c.img) : '';
