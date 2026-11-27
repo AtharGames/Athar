@@ -30,6 +30,8 @@
     // خرائط الإصدار الأول صارت تصنيفات «ثبّت الدبوس»
     if (Array.isArray(s.maps)) { s.cats = Object.assign({ pin: s.maps }, s.cats || {}); delete s.maps; }
     s.cats = s.cats || {}; if (!Array.isArray(s.levels) || !s.levels.length) s.levels = [0, 1, 2];
+    // الإعدادات المحفوظة قبل تفعيل الذكاء كان التحكيم فيها مطفأً: نشغّله مرة وحدة
+    if (!s.aiV) { s.ai = true; s.aiV = 1; }
     return s;
   }
   let SET = loadSettings();
@@ -599,7 +601,7 @@
       const leaders = new Set(teamIds().map((t) => T[t].l));
       Object.keys(A).forEach((pid) => { if (!leaders.has(pid)) delete A[pid]; });
     }
-    const c = Object.assign(ctxBase(), { A, ai: SET.ai && AI.ready ? AI : null });
+    const c = Object.assign(ctxBase(), { A, ai: SET.ai && AI.ready ? AI : (AI.ready ? null : undefined) });
     let res;
     try { res = await g.score(c); } catch (e) { console.error(e); res = { pp: {}, rev: {} }; }
     // الفردي: نقاط فقرات «الأقرب» ترجع بمفتاح المشارك

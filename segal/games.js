@@ -30,6 +30,9 @@ window.FZ_GAMES = (() => {
     return c.pick(gid, all, ok)[1];
   }
 
+  // سبب الرجوع للحكم الآلي (يظهر صغيرًا تحت النتيجة للمقدّم)
+  const aiNote = (rev) => (rev.by === 'ai' || !rev.aiErr ? '' : rev.aiErr === 'off' ? '<small class="ai-why"> — الذكاء مطفأ من الإعدادات</small>' : `<small class="ai-why"> — تعذّر الذكاء: ${esc(rev.aiErr)}</small>`);
+
   // ---------- أدوات مشتركة ----------
   // خيارات متعددة على الجوال
   function mcPhone(el, opts, c, { big = false } = {}) {
@@ -264,16 +267,16 @@ window.FZ_GAMES = (() => {
       async score(c) {
         const t = SC.target(c.d.s);
         const sims = {};
-        let by = 'local';
+        let by = 'local', aiErr = '';
         const ids = Object.keys(c.A || {});
         // التحكيم بالذكاء إن كان مفعّلًا، وإلا المقارنة الآلية
         if (c.ai && ids.length) {
           try {
             const res = await c.ai.drawings({ title: t.title, target: t, items: ids.map((pid) => ({ id: pid, img: c.A[pid].v })) });
             ids.forEach((pid) => { if (res[pid] != null) sims[pid] = res[pid]; });
-            if (Object.keys(sims).length) by = 'ai';
-          } catch (e) { console.warn('[fazaa-ai]', e && e.message); }
-        }
+            if (Object.keys(sims).length) by = 'ai'; else aiErr = 'ما رجعت نتيجة';
+          } catch (e) { aiErr = String((e && e.message) || e).slice(0, 120); console.warn('[segal-ai]', aiErr); }
+        } else if (ids.length) aiErr = c.ai === null ? 'off' : '';
         for (const pid of ids) {
           if (sims[pid] != null) continue;
           sims[pid] = await new Promise((res) => {
@@ -286,7 +289,7 @@ window.FZ_GAMES = (() => {
         const rows = rankBy(ids.map((pid) => ({ pid, err: -sims[pid] })), 'err');
         const pp = {}, tp = {};
         rows.forEach((r) => { pp[r.pid] = sims[r.pid] > 0 ? (RANK_PTS[r.rank] || 10) : 0; if (!c.ind && c.P[r.pid]) tp[String(c.P[r.pid].t)] = pp[r.pid]; });
-        return { pp, tp, rev: { sim: sims, by, rank: Object.fromEntries(rows.map((r) => [r.pid, r.rank])) } };
+        return { pp, tp, rev: { sim: sims, by, aiErr, rank: Object.fromEntries(rows.map((r) => [r.pid, r.rank])) } };
       },
       host(el, c) {
         const t = SC.target(c.d.s);
@@ -299,7 +302,7 @@ window.FZ_GAMES = (() => {
         el.innerHTML = `<div class="gallery"><figure class="frame orig">${t.svg}<figcaption>الأصل</figcaption></figure>${ids.map((pid) => `
           <figure class="frame ${c.rev.rank[pid] === 0 ? 'win' : ''}" style="--tc:${c.P[pid] ? (c.ind ? window.FZ.pcolor(pid) : teamColor(c.T, c.P[pid].t)) : '#888'}"><img src="${c.A[pid] ? c.A[pid].v : ''}" alt="رسمة ${esc(pname(c.P, pid))}">
           <figcaption>${esc(pname(c.P, pid))}<span class="sim">تطابق ${ar(c.rev.sim[pid])}٪</span><b>${plus(c.pp[pid] || 0)}</b></figcaption></figure>`).join('')}</div>
-          <p class="judge">${c.rev.by === 'ai' ? '🤖 حكم الذكاء الاصطناعي' : '🔍 حكم آلي بمقارنة الألوان والأماكن'}</p>`;
+          <p class="judge">${c.rev.by === 'ai' ? '🤖 حكم الذكاء الاصطناعي' : '🔍 حكم آلي بمقارنة الألوان والأماكن'}${aiNote(c.rev)}</p>`;
       },
       phone(el, c) {
         const t = SC.target(c.d.s);
@@ -347,29 +350,29 @@ window.FZ_GAMES = (() => {
       async score(c) {
         const sc = SC.scene(c.d.s);
         const pp = {}, hits = {};
-        let by = 'local';
+        let by = 'local', aiErr = '';
         const ids = Object.keys(c.A || {});
         if (c.ai && ids.length) {
           try {
             const res = await c.ai.descriptions({ scene: sc, items: ids.map((pid) => ({ id: pid, text: c.A[pid].v })) });
             ids.forEach((pid) => { if (res[pid]) { pp[pid] = res[pid].score; hits[pid] = res[pid].hits || []; } });
-            if (Object.keys(pp).length) by = 'ai';
-          } catch (e) { console.warn('[fazaa-ai]', e && e.message); }
-        }
+            if (Object.keys(pp).length) by = 'ai'; else aiErr = 'ما رجعت نتيجة';
+          } catch (e) { aiErr = String((e && e.message) || e).slice(0, 120); console.warn('[segal-ai]', aiErr); }
+        } else if (ids.length) aiErr = c.ai === null ? 'off' : '';
         ids.forEach((pid) => {
           if (pp[pid] != null) return;
           const r = SC.describeScore(c.A[pid].v, sc.facts);
           pp[pid] = r.score; hits[pid] = r.hits;
         });
         const top = ids.sort((a, b) => pp[b] - pp[a]).slice(0, 3);
-        return { pp, rev: { hits, top, by } };
+        return { pp, rev: { hits, top, by, aiErr } };
       },
       host(el, c) { el.innerHTML = `<div class="scene-wrap big">${SC.scene(c.d.s).svg}</div>`; },
       reveal(el, c) {
         el.innerHTML = `<div class="desc-rev"><div class="scene-wrap mini">${SC.scene(c.d.s).svg}</div><ol class="desc-top">${(c.rev.top || []).map((pid, i) =>
           `<li><header><i>${ar(i + 1)}</i>${esc(pname(c.P, pid))}${whoTag(c, pid)}<b>${plus(c.pp[pid] || 0)}</b></header>
           <p>${esc((c.A[pid] && c.A[pid].v) || '')}</p><small>${(c.rev.hits[pid] || []).map(esc).join('، ')}</small></li>`).join('') || '<li class="empty">ما أرسل أحد</li>'}</ol></div>
-          <p class="judge">${c.rev.by === 'ai' ? '🤖 حكم الذكاء الاصطناعي' : '🔍 حكم آلي يطابق العناصر والأعداد والألوان'}</p>`;
+          <p class="judge">${c.rev.by === 'ai' ? '🤖 حكم الذكاء الاصطناعي' : '🔍 حكم آلي يطابق العناصر والأعداد والألوان'}${aiNote(c.rev)}</p>`;
       },
       phone(el, c) {
         el.innerHTML = `<div class="scene-wrap">${SC.scene(c.d.s).svg}</div>`;

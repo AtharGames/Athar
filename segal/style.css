@@ -680,3 +680,4 @@ body.play main{padding:10px 12px 22px;}
 .teams-board.solo{grid-template-columns:1fr;}
 .solo-col .chips{min-height:120px; gap:8px;}
 .solo-col .pchip{font-size:1rem; padding:6px 14px; border-color:var(--tc); background:color-mix(in srgb, var(--tc) 18%, transparent);}
+.ai-why{display:block; color:var(--bad); font-size:.78rem; margin-top:2px;}
