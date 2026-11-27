@@ -19,6 +19,6 @@ window.FAZAA_FIREBASE = window.FAZAA_FIREBASE || {
   ai: true,
   // مفتاح reCAPTCHA v3 نفسه المستخدم في إنسان حيوان جماد (نفس النطاق athargames.github.io)
   appCheckSiteKey: "6Ley5jEuAAAAAGDue8EQ85RvusAooRRB07Z7Rvz4",
-  appCheckProvider: "v3",
+  appCheckProvider: "enterprise",
   aiModel: "gemini-3.5-flash-lite"
 };
