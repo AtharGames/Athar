@@ -34,16 +34,16 @@ window.FZ_GAMES = (() => {
   const aiNote = (rev) => (rev.by === 'ai' || !rev.aiErr ? '' : rev.aiErr === 'off' ? '<small class="ai-why"> — الذكاء مطفأ من الإعدادات</small>' : `<small class="ai-why"> — تعذّر الذكاء: ${esc(rev.aiErr)}</small>`);
 
   // ---------- كم السعر؟ النطاقات والكشف بالدور ----------
-  // بالضبط (فرق ≤ ٠٫٥٪) ثم الأحمر (قريب جدًا) ثم الأصفر، وخارجها صفر. الصعب نطاقاته أوسع
-  const PRICE_BANDS = [{ r: 0.05, y: 0.15 }, { r: 0.10, y: 0.30 }];
+  // بالضبط (فرق ≤ ٠٫٥٪) ثم الأحمر (قريب جدًا) ثم الأصفر ثم الأزرق (في المدى)، وخارجها صفر. الصعب نطاقاته أوسع
+  const PRICE_BANDS = [{ r: 0.15, y: 0.45, g: 0.9 }, { r: 0.30, y: 0.9, g: 1.5 }];
   const PRICE_EXACT = 0.005;
-  const PRICE_PTS = { ex: 150, r: 80, y: 40, o: 0 };
-  const BAND_TXT = { ex: '🎯 بالضبط', r: 'قريب جدًا', y: 'قريب', o: 'بعيد' };
+  const PRICE_PTS = { ex: 150, r: 90, y: 50, g: 20, o: 0 };
+  const BAND_TXT = { ex: '🎯 بالضبط', r: 'قريب جدًا', y: 'قريب', g: 'في المدى', o: 'بعيد' };
   const pct = (x) => ar(x >= 0.1 ? Math.round(x * 100) : Math.round(x * 1000) / 10).replace('.', '٫') + '٪';
   const iso = (t) => `\u2066${t}\u2069`;
   const priceArt = (d) => (window.FZ_ART && FZ_ART(d.art || 'tag')) || `<span class="p-emo">${d.e || '🏷️'}</span>`;
   function priceLegend(b) {
-    return `<div class="pc-bands"><span class="bd b-ex">🎯 بالضبط <b>${plus(PRICE_PTS.ex)}</b></span><span class="bd b-r">${iso('±' + pct(b.r))} <b>${plus(PRICE_PTS.r)}</b></span><span class="bd b-y">${iso('±' + pct(b.y))} <b>${plus(PRICE_PTS.y)}</b></span></div>`;
+    return `<div class="pc-bands"><span class="bd b-ex">🎯 بالضبط <b>${plus(PRICE_PTS.ex)}</b></span><span class="bd b-r">${iso('±' + pct(b.r))} <b>${plus(PRICE_PTS.r)}</b></span><span class="bd b-y">${iso('±' + pct(b.y))} <b>${plus(PRICE_PTS.y)}</b></span>${b.g ? `<span class="bd b-g">${iso('±' + pct(b.g))} <b>${plus(PRICE_PTS.g)}</b></span>` : ''}</div>`;
   }
   function priceCard(d, big = false) {
     const b = d.b || PRICE_BANDS[0];
@@ -58,7 +58,7 @@ window.FZ_GAMES = (() => {
       const x = parseFloat(c.A[pid].v);
       if (isNaN(x)) return;
       const se = (x - v) / v, e = Math.abs(se);
-      const band = e <= PRICE_EXACT ? 'ex' : e <= b.r ? 'r' : e <= b.y ? 'y' : 'o';
+      const band = e <= PRICE_EXACT ? 'ex' : e <= b.r ? 'r' : e <= b.y ? 'y' : b.g && e <= b.g ? 'g' : 'o';
       const tid = unitKey(c, pid);
       tp[tid] = PRICE_PTS[band];
       ans[tid] = { v: x, se: Math.round(se * 10000) / 10000, b: band, pts: PRICE_PTS[band], t: c.A[pid].t || 0 };
@@ -70,13 +70,13 @@ window.FZ_GAMES = (() => {
     const d = c.d, b = d.b || PRICE_BANDS[0], v = +c.rev.k, u = d.u || 'ريال';
     const rows = Object.keys(c.rev.ans || {}).map((tid) => Object.assign({ tid }, c.rev.ans[tid]))
       .sort((a, z) => Math.abs(z.se) - Math.abs(a.se) || (z.t || 0) - (a.t || 0));
-    const span = b.y * 2.2;
+    const span = (b.g || b.y) * 1.15;
     const pos = (se) => 50 + Math.max(-1, Math.min(1, se / span)) * 46;
     const dec = String(v).includes('.') ? String(v).split('.')[1].length : 0;
     el.innerHTML = `<div class="pr-rev">
       <div class="pr-top"><div class="pr-art">${priceArt(d)}</div><div class="pr-name"><b>${esc(d.n)}</b><small>${esc(d.st)}</small></div></div>
       <div class="pr-truth"><small>${d.est ? 'السعر التقريبي' : 'السعر الحقيقي'}</small><b><span class="odo">${num(0)}</span> <i>${esc(u)}</i></b></div>
-      <div class="pr-gauge"><div class="zone b-y" style="left:${pos(-b.y)}%;right:${100 - pos(b.y)}%"></div><div class="zone b-r" style="left:${pos(-b.r)}%;right:${100 - pos(b.r)}%"></div>
+      <div class="pr-gauge">${b.g ? `<div class="zone b-g" style="left:${pos(-b.g)}%;right:${100 - pos(b.g)}%"></div>` : ''}<div class="zone b-y" style="left:${pos(-b.y)}%;right:${100 - pos(b.y)}%"></div><div class="zone b-r" style="left:${pos(-b.r)}%;right:${100 - pos(b.r)}%"></div>
         <div class="mid"></div><span class="lab lo">أقل</span><span class="lab hi">أعلى</span><div class="marks"></div></div>
       ${priceLegend(b)}
       <ol class="pr-list"></ol></div>`;
@@ -86,7 +86,7 @@ window.FZ_GAMES = (() => {
     const wait = (ms) => new Promise((r) => setTimeout(r, fast ? Math.min(ms, 120) : ms));
     const fmt = (x) => num(dec ? Math.round(x * 10 ** dec) / 10 ** dec : Math.round(x));
     const diffTxt = (r) => (r.se === 0 ? 'بالضبط' : Math.abs(r.se) < 0.01 ? `${r.se > 0 ? 'أعلى' : 'أقل'} بأقل من ${ar(1)}٪` : `${r.se > 0 ? 'أعلى' : 'أقل'} بـ${ar(Math.round(Math.abs(r.se) * 100))}٪`);
-    const bandFx = (bd) => { if (bd === 'ex') { FX.clap(5); window.FZ.confetti(document.getElementById('confetti'), { count: 90 }); } else if (bd === 'r') FX.right(); else if (bd === 'y') FX.pop(760); else FX.wrong(); };
+    const bandFx = (bd) => { if (bd === 'ex') { FX.clap(5); window.FZ.confetti(document.getElementById('confetti'), { count: 90 }); } else if (bd === 'r') FX.right(); else if (bd === 'y') FX.pop(760); else if (bd === 'g') FX.pop(560); else FX.wrong(); };
     (async () => {
       // ١) العدّاد
       const T0 = performance.now(), dur = fast ? 150 : 1500;
@@ -263,8 +263,8 @@ window.FZ_GAMES = (() => {
     price: {
       name: 'كم السعر؟', ico: '💰', mode: 'team', rounds: 3, time: 30, anim: true,
       idea: 'خمّنوا السعر، وكل ما قربتوا زادت نقاطكم',
-      how: 'تظهر سلعة أو صفقة. تشاوروا في سعرها، والقائد يرسل الرقم. بالضبط ١٥٠، والنطاق الأحمر (قريب جدًا) ٨٠، والأصفر ٤٠، واللي برّا النطاقين صفر.',
-      howSolo: 'تظهر سلعة أو صفقة، وكل واحد يكتب تقديره من جواله. بالضبط ١٥٠، والنطاق الأحمر (قريب جدًا) ٨٠، والأصفر ٤٠، واللي برّا النطاقين صفر.',
+      how: 'تظهر سلعة أو صفقة. تشاوروا في سعرها، والقائد يرسل الرقم. بالضبط ١٥٠، والنطاق الأحمر (قريب جدًا) ٩٠، والأصفر ٥٠، والأزرق (في المدى) ٢٠، واللي برّا النطاقات صفر.',
+      howSolo: 'تظهر سلعة أو صفقة، وكل واحد يكتب تقديره من جواله. بالضبط ١٥٠، والنطاق الأحمر (قريب جدًا) ٩٠، والأصفر ٥٠، والأزرق (في المدى) ٢٠، واللي برّا النطاقات صفر.',
       make(c) {
         const mine = (c.cfg.prices || []).map((r) => ({ n: r[0], st: r[1], v: +r[2], e: r[3] || '🏷️', cat: 'mine', lvl: 1, art: 'tag', u: 'ريال' }));
         const it = fromBank(c, 'price', mine);

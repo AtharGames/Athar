@@ -172,6 +172,7 @@
     if (!force && key === rendered) return;
     rendered = key;
     clearInterval(timer);
+    if (S.ph !== 'reveal' && window.FZ_BANK) FZ_BANK.close();
     if (S.ph === 'lobby' && m.ind) return waitView(`<div class="w-ico">⏳</div><h2>أهلًا ${esc(me.name)}</h2><p><span class="tchip" style="--tc:${m.color}">👤 تلعب لنفسك</span></p><p class="muted">انتظر المقدّم يبدأ السِّجال…</p>`);
     if (S.ph === 'lobby') return waitView(`<div class="w-ico">⏳</div><h2>أهلًا ${esc(me.name)}</h2><p>أنت في فريق <span class="tchip" style="--tc:${m.color}">${esc(m.teamName)}</span>${m.isLeader ? '<br><b class="lead-badge">👑 أنت قائد الفريق</b>' : ''}</p><p class="muted">انتظر المقدّم يبدأ السِجَال…</p><button class="btn btn-ghost" id="chgTeam">غيّر فريقي</button>`, () => { $('#chgTeam').onclick = () => { watchers.forEach((w) => w()); watchers = []; teamScreen(true); }; });
     if (S.ph === 'intro') return introView(m);
@@ -269,16 +270,20 @@
     $('#pTimer').innerHTML = '';
     const d = parse(S.d) || {}, rev = parse(S.k) || {};
     const el = $('#pgame');
-    // الكشف المتحرك ما يُعاد رسمه مع كل تحديث (حتى ما يرجع من البداية)
+    // الكشف المتحرك والحصالة ما يُعاد رسمهما مع كل تحديث (حتى ما يرجعان من البداية)
+    const bank = !m.ind && rev.bank && window.FZ_BANK ? rev.bank : null;
+    const keep = g.anim || !!bank;
     const rk = S.r + '|' + S.g + '|' + (S.k || '').length;
-    if (g.anim && el.dataset.rk === rk && $('.pg-body.reveal', el)) return;
-    el.dataset.rk = g.anim ? rk : '';
+    if (keep && el.dataset.rk === rk && $('.pg-body.reveal', el)) return;
+    el.dataset.rk = keep ? rk : '';
     el.innerHTML = '<div class="pg-body reveal"></div>';
     const body = $('.pg-body', el);
     const got = (rev.pp && rev.pp[me.pid]) || (g.mode !== 'solo' && rev.tp && rev.tp[m.team]);
     const fin = () => { if (body.isConnected) body.insertAdjacentHTML('afterbegin', myPts(m, rev)); };
-    try { g.phoneRev(body, { d, rev, me: m, P, T, ind: m.ind, done: g.anim ? fin : null }); } catch (e) { console.error(e); }
+    const after = () => (bank ? FZ_BANK.show({ info: bank, T, me: m.team, done: fin }) : fin());
+    try { g.phoneRev(body, { d, rev, me: m, P, T, ind: m.ind, done: g.anim ? after : null }); } catch (e) { console.error(e); }
     if (g.anim) return;
+    if (bank) { setTimeout(() => { if (body.isConnected && S.ph === 'reveal') after(); else fin(); }, 1500); return; }
     fin();
     if (got > 0) FX.right(); else FX.wrong();
   }

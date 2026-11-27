@@ -18,7 +18,7 @@
     play: 'solo', teams: 3, names: F.TEAM_NAMES.slice(),
     playlist: GM.ORDER.map((id) => ({ id, on: true, rounds: G[id].rounds })),
     speed: 1, agg: 'avg', cup: false, rotate: false,
-    mines: { unit: 'team', size: 4 }, cats: {}, levels: [0, 1, 2], ai: true,
+    mines: { unit: 'team', size: 4 }, cats: {}, levels: [0, 1, 2], ai: true, bank: true,
     prices: [], numbers: []
   });
   function loadSettings() {
@@ -90,6 +90,7 @@
         <p class="hint">المتوسط عادل إذا اختلفت أعداد الفرق.</p>
         <label class="row-set chk"><span>نظام البطولة: الفائز بكل فقرة ٣ نقاط والثاني ٢ والثالث ١ (والتعادل بمجموع النقاط)</span><input type="checkbox" id="cupChk" ${SET.cup ? 'checked' : ''}></label>
         <label class="row-set chk" ${SET.play === 'teams' ? '' : 'hidden'}><span>القائد يتبدّل كل فقرة</span><input type="checkbox" id="rotChk" ${SET.rotate ? 'checked' : ''}></label>
+        <label class="row-set chk" ${SET.play === 'teams' ? '' : 'hidden'}><span>🐷 الحصالة: ${esc(window.FZ_BANK ? FZ_BANK.RULES : '')}</span><input type="checkbox" id="bankChk" ${SET.bank !== false ? 'checked' : ''}></label>
         <label class="row-set chk"><span>تحكيم الرسم والوصف بالذكاء الاصطناعي ${AI.ready ? '' : '<small>(يحتاج تفعيل AI Logic في Firebase)</small>'}</span><input type="checkbox" id="aiChk" ${SET.ai && AI.ready ? 'checked' : ''} ${AI.ready ? '' : 'disabled'}></label>
       </section>
 
@@ -153,7 +154,7 @@
     $$('.seg', b).forEach((seg) => seg.addEventListener('click', (e) => {
       const btn = e.target.closest('button'); if (!btn) return;
       const k = seg.dataset.k, raw = btn.dataset.v, v = isNaN(+raw) ? raw : +raw;
-      if (k === 'play') { if (room) return; SET.play = v; saveSettings(); settingsUI(); return; }
+      if (k === 'play') { if (room) return; SET.play = v; saveSettings(); settingsUI(); paintMode(); return; }
       if (k === 'speed') SET.speed = v;
       if (k === 'agg') SET.agg = v;
       if (k === 'unit') SET.mines.unit = v;
@@ -173,6 +174,7 @@
     $('#openBank', b).addEventListener('click', () => openBank());
     $('#cupChk', b).addEventListener('change', (e) => { SET.cup = e.target.checked; saveSettings(); });
     $('#rotChk', b).addEventListener('change', (e) => { SET.rotate = e.target.checked; saveSettings(); });
+    $('#bankChk', b).addEventListener('change', (e) => { SET.bank = e.target.checked; saveSettings(); });
     $('#aiChk', b).addEventListener('change', (e) => { SET.ai = e.target.checked; saveSettings(); });
     // أسئلة السرعة من بنك ديوان أو من المقدّم
     if (window.AtharQuiz) window.AtharQuiz.settingsUI($('#quizBox', b), { game: 'fazaa', def: 'diwan', sources: ['diwan', 'host'], labels: { host: { t: 'من المقدّم', s: 'تكتب السؤال وخياراته قبل كل جولة' } } });
@@ -393,10 +395,13 @@
     const rows = ind ? st.slice(0, 12) : st;
     $('#sideScore').innerHTML = `<h4>${ind ? 'الترتيب' : 'الفرق'}</h4>${rows.map((x, i) => `<div class="srow" style="--tc:${unitColor(x.t)};--w:${(x.pts / max * 100).toFixed(1)}%">
       <span class="pos">${ar(i + 1)}</span><span class="nm"><b>${esc(unitName(x.t))}</b>${ind ? '' : `<small>${T[x.t].l && P[T[x.t].l] ? '👑 ' + esc(P[T[x.t].l].n) : 'بلا قائد'}</small>`}</span>
-      <span class="pts">${num(x.pts)}${SET.cup ? `<small>🏅${ar(x.cup)}</small>` : ''}</span><i class="bar"></i></div>`).join('')}`;
+      <span class="pts">${num(x.pts)}${SET.cup ? `<small>🏅${ar(x.cup)}</small>` : ''}</span><i class="bar"></i></div>`).join('')}${!ind && SET.bank !== false && SCORE.B ? `<p class="side-bank">🐷 باقي في الحصالة <b>${num(SCORE.B)}</b></p>` : ''}`;
   }
   // تطبيق نقاط جولة: pp شخصية، tp للفريق (إن وُجدت) وإلا تُجمع من الأعضاء
-  function applyScores(pp = {}, tp = null) {
+  let lastBank = null;
+  const isLastRound = () => run.gi + 1 >= run.queue.length && run.ri + 1 >= run.queue[run.gi].rounds;
+  function applyScores(pp = {}, tp = null, opt = {}) {
+    lastBank = null;
     Object.keys(pp).forEach((pid) => { SCORE.P[pid] = (SCORE.P[pid] || 0) + pp[pid]; });
     if (ind) {
       // الفردي: نقاط الفقرة لكل مشارك
@@ -415,6 +420,11 @@
         const sum = ms.reduce((s, pid) => s + (pp[pid] || 0), 0);
         team[tid] = ms.length ? Math.round(SET.agg === 'sum' ? sum : sum / ms.length) : 0;
       });
+    }
+    // الحصالة: نقاط الجولة كلها للفريق الأعلى حسب الفرق
+    if (opt.bank && window.FZ_BANK) {
+      const r = FZ_BANK.compute(team, teamIds(), SCORE.B || 0, isLastRound());
+      team = r.final; lastBank = r.info; SCORE.B = r.info.left;
     }
     const gi = String(run.gi);
     SCORE.G[gi] = SCORE.G[gi] || {};
@@ -607,22 +617,26 @@
     let res;
     try { res = await g.score(c); } catch (e) { console.error(e); res = { pp: {}, rev: {} }; }
     // الفردي: نقاط فقرات «الأقرب» ترجع بمفتاح المشارك
-    holdSide = !!g.anim;
+    const bankOn = !ind && SET.bank !== false;
+    holdSide = !!g.anim || bankOn;
     const pp = ind ? (res.pp && Object.keys(res.pp).length ? res.pp : (res.tp || {})) : (res.pp || {});
-    const tp = applyScores(pp, ind || g.mode === 'solo' ? null : (res.tp || {}));
-    const rev = Object.assign({}, res.rev, { pp, tp: ind ? {} : tp });
+    const tp = applyScores(pp, ind || g.mode === 'solo' ? null : (res.tp || {}), { bank: bankOn });
+    const rev = Object.assign({}, res.rev, { pp, tp: ind ? {} : tp }, bankOn && lastBank ? { bank: lastBank } : {});
     await setState(Object.assign({}, S, { ph: 'reveal', k: JSON.stringify(rev) }));
+    const rev_r = S.r;
     saveRun();
     // فقرات الكشف المتحرك (كم السعر) تعرض النقاط بعد ما يخلص الكشف
     const fin = () => {
       if (holdSide) { holdSide = false; sideScore(); }
       $('#whoStrip').innerHTML = roundTeamPts(tp);
-      if (!g.anim) { const best = Math.max(0, ...Object.values(tp)); if (best > 0) FX.clap(5); else FX.wrong(); }
+      if (!g.anim && !rev.bank) { const best = Math.max(0, ...Object.values(tp)); if (best > 0) FX.clap(5); else FX.wrong(); }
     };
+    // بعد الكشف: الحصالة (في الفرق) ثم النقاط
+    const after = () => (rev.bank && window.FZ_BANK ? FZ_BANK.show({ info: rev.bank, T, done: fin }) : fin());
     $('#whoStrip').innerHTML = '';
-    g.reveal($('#stage'), Object.assign(c, { rev, pp, done: g.anim ? fin : null }));
+    g.reveal($('#stage'), Object.assign(c, { rev, pp, done: g.anim ? after : null }));
     $('#answered').innerHTML = ''; $('#timer').innerHTML = '';
-    if (!g.anim) fin();
+    if (!g.anim) { if (rev.bank) setTimeout(() => { if (S.ph === 'reveal' && S.r === rev_r) after(); else fin(); }, 1500); else fin(); }
     $('#nextBtn').textContent = run.ri + 1 < run.queue[run.gi].rounds ? 'الجولة التالية' : 'نتائج الفقرة';
     $('#nextBtn').disabled = false;
   }
@@ -631,6 +645,7 @@
     : teamIds().map((t) => `<span class="tdot pts" style="--tc:${T[t].c}">${esc(T[t].n)} <b>${plus(tp[t] || 0)}</b></span>`).join(''));
 
   function afterRound() {
+    if (window.FZ_BANK) FZ_BANK.close();
     if (holdSide) { holdSide = false; sideScore(); }
     if (run.ri + 1 < run.queue[run.gi].rounds) startRound();
     else gameBoard();
@@ -843,6 +858,13 @@
   // الأزرار
   // =========================================================
   $('#openRoom').addEventListener('click', () => { FX.unlock(); openRoom(); });
+  // اختيار طريقة اللعب من الواجهة
+  const paintMode = () => $$('#modePick .mode-card').forEach((b) => b.setAttribute('aria-pressed', String((SET.play === 'teams' ? 'teams' : 'solo') === b.dataset.play)));
+  $$('#modePick .mode-card').forEach((b) => b.addEventListener('click', () => {
+    SET.play = b.dataset.play; saveSettings(); paintMode(); FX.tick(0.25);
+    if (SET.play === 'teams') { const pig = $('.pig-mini', b); if (pig) { pig.style.animation = 'none'; void pig.offsetWidth; pig.style.animation = ''; } }
+  }));
+  paintMode();
   $('#openSet').addEventListener('click', openSettings);
   $('#openBankIntro').addEventListener('click', () => openBank());
   $('#setBtn').addEventListener('click', openSettings);
