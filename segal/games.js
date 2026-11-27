@@ -145,6 +145,66 @@ window.FZ_GAMES = (() => {
     })();
   }
 
+  // ---------- تحدي الرسم: الكشف بالتشويق للجميع ----------
+  const loadImg = (src) => new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
+  // تعليق محلي لو ما فيه ذكاء
+  function localNote(sim, seed) {
+    const r = rng((seed >>> 0) || 1);
+    const L = sim >= 70 ? ['تحفة! قريبة من الأصل مرة 👏', 'يد فنان، ما شاء الله', 'نسخة طبق الأصل تقريبًا 🎯']
+      : sim >= 50 ? ['الفكرة واضحة، والألوان تبي ضبط بسيط', 'قريبة، باقي لمسات بسيطة ✨', 'العناصر في أماكنها تقريبًا']
+        : sim >= 30 ? ['روح الصورة موجودة… تقريبًا 😄', 'نشوف المحاولة، والوقت ظلمك', 'بداية حلوة، كمّل المرة الجاية']
+          : ['فن تجريدي جريء 🎨', 'لوحة من مدرسة خاصة 😅', 'الحَكَم يحتاج نظارة يمكن 👓'];
+    return r.pick(L);
+  }
+  function drawReveal(el, c, { done, imgs, load, mine } = {}) {
+    const t = SC.target(c.d.s), rv = c.rev || {}, sim = rv.sim || {};
+    const order = Object.keys(sim).sort((a, b) => (sim[a] - sim[b]) || ((rv.rank || {})[b] - (rv.rank || {})[a]));
+    const n = order.length, myPid = mine && mine.pid;
+    const col = (pid) => (c.P[pid] ? (c.ind ? window.FZ.pcolor(pid) : teamColor(c.T, c.P[pid].t)) : '#888');
+    el.innerHTML = `<div class="dr-rev"><figure class="frame orig">${t.svg}<figcaption>الأصل: ${esc(t.title)}</figcaption></figure>
+      <div class="dr-grid ${n > 4 ? 'many' : ''}">${n ? '' : '<p class="empty">ما وصلت رسمات</p>'}</div>
+      <p class="judge">${rv.by === 'ai' ? '🤖 حكم الذكاء الاصطناعي' : '🔍 حكم آلي بمقارنة الألوان والأماكن'}${mine ? '' : aiNote(rv)}</p></div>`;
+    const root = $('.dr-rev', el), grid = $('.dr-grid', root);
+    const alive = () => root.isConnected;
+    const wait = (ms) => new Promise((r) => setTimeout(r, window.FZ.reduced() ? Math.min(ms, 80) : ms));
+    const countTo = (node, to, ms) => new Promise((res) => {
+      const t0 = performance.now();
+      const step = (now) => { if (!node.isConnected) return res(); const p = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(2, -10 * p); node.textContent = ar(Math.round(to * (p >= 1 ? 1 : e))) + '٪'; if (p < 1) requestAnimationFrame(step); else res(); };
+      requestAnimationFrame(step); setTimeout(() => { if (node.isConnected) node.textContent = ar(to) + '٪'; res(); }, ms + 120);
+    });
+    (async () => {
+      const pics = imgs || (load ? ((await load()) || {}) : {});
+      const src = (pid) => { const v = pics[pid]; return typeof v === 'string' ? v : (v && v.v) || ''; };
+      await wait(500);
+      for (let i = 0; i < n && alive(); i++) {
+        const pid = order[i], top = n - i <= 3, rank = n - i, me = myPid != null && pid === myPid;
+        const card = document.createElement('figure');
+        card.className = `frame dr-card ${top ? 'top wait' : ''} ${me ? 'me' : ''}`;
+        card.style.setProperty('--tc', col(pid));
+        card.innerHTML = `<i class="dr-rk">${ar(rank)}</i><img src="${src(pid)}" alt="رسمة ${esc(pname(c.P, pid))}">
+          <figcaption><span class="tchip" style="--tc:${col(pid)}">${esc(pname(c.P, pid))}</span>${whoTag(c, pid)}<b class="dr-sim">٠٪</b><em>${plus((c.pp || rv.pp || {})[pid] || 0)}</em></figcaption>
+          <p class="dr-note" hidden>${esc((rv.notes || {})[pid] || '')}</p>`;
+        grid.prepend(card);
+        if (top) {
+          for (let k = 0; k < 5 && alive(); k++) { FX.tick(0.2); await wait(170); }
+          card.classList.remove('wait');
+        }
+        FX.pop(top ? 700 : 520);
+        await countTo($('.dr-sim', card), sim[pid] || 0, top ? 900 : 450);
+        if (!alive()) return;
+        const nt = $('.dr-note', card); if (nt.textContent) nt.hidden = false;
+        if (i === n - 1) {
+          card.classList.add('win'); card.insertAdjacentHTML('afterbegin', '<span class="dr-crown">👑</span>');
+          FX.clap(5);
+          if (myPid == null || me) window.FZ.confetti(document.getElementById('confetti'), { count: 110 });
+        }
+        await wait(top ? 900 : Math.max(180, 1400 / Math.max(1, n - 3)));
+      }
+      await wait(700);
+      if (alive() && done) done();
+    })();
+  }
+
   // ---------- أسئلة السرعة: الجولة الذهبية والكشف للجميع ----------
   let goldShown = '';
   function goldSplash(key, big) {
@@ -516,51 +576,43 @@ window.FZ_GAMES = (() => {
 
     // ---------- ٥) تحدي الرسم ----------
     draw: {
-      name: 'تحدي الرسم', ico: '🎨', mode: 'duel', rounds: 1, time: 60,
+      name: 'تحدي الرسم', ico: '🎨', mode: 'duel', rounds: 1, time: 60, anim: true,
       idea: 'رسّام من كل فريق يقلّد الصورة',
-      how: 'يُختار رسّام من كل فريق، وتظهر صورة أصلية. ارسمها بأدق ما تقدر قبل نهاية الوقت، والحَكَم يقارن الألوان والأماكن والعناصر. الأدق ١٠٠ والثاني ٧٠…',
-      howSolo: 'تظهر صورة أصلية، والكل يرسمها من جواله بأدق ما يقدر قبل نهاية الوقت. الحَكَم يقارن الألوان والأماكن والعناصر: الأدق ١٠٠ والثاني ٧٠…',
+      how: 'يُختار رسّام من كل فريق، وتظهر صورة أصلية (رسمة أو صورة حقيقية). ارسمها بأدق ما تقدر قبل نهاية الوقت، والحَكَم يقارن الألوان والأماكن والعناصر ويعلّق على كل رسمة. الأدق ١٠٠ والثاني ٧٠…',
+      howSolo: 'تظهر صورة أصلية (رسمة أو صورة حقيقية)، والكل يرسمها من جواله بأدق ما يقدر قبل نهاية الوقت. الحَكَم يقارن الألوان والأماكن والعناصر ويعلّق على كل رسمة: الأدق ١٠٠ والثاني ٧٠…',
       make(c) { return { d: { s: c.seed }, k: {} }; },
       async score(c) {
         const t = SC.target(c.d.s);
-        const sims = {};
+        if (t.img) t.el = await loadImg(t.img);
+        const sims = {}, notes = {};
         let by = 'local', aiErr = '';
         const ids = Object.keys(c.A || {});
         // التحكيم بالذكاء إن كان مفعّلًا، وإلا المقارنة الآلية
         if (c.ai && ids.length) {
           try {
             const res = await c.ai.drawings({ title: t.title, target: t, items: ids.map((pid) => ({ id: pid, img: c.A[pid].v })) });
-            ids.forEach((pid) => { if (res[pid] != null) sims[pid] = res[pid]; });
+            ids.forEach((pid) => { const r = res[pid]; if (r != null) { sims[pid] = typeof r === 'number' ? r : r.score; if (r.note) notes[pid] = r.note; } });
             if (Object.keys(sims).length) by = 'ai'; else aiErr = 'ما رجعت نتيجة';
           } catch (e) { aiErr = String((e && e.message) || e).slice(0, 260); console.warn('[segal-ai]', aiErr); }
         } else if (ids.length) aiErr = c.ai === null ? 'off' : '';
         for (const pid of ids) {
-          if (sims[pid] != null) continue;
-          sims[pid] = await new Promise((res) => {
-            const img = new Image();
-            img.onload = () => res(SC.similarity(t.prims, img));
-            img.onerror = () => res(0);
-            img.src = c.A[pid].v;
-          });
+          if (sims[pid] == null) {
+            const img = await loadImg(c.A[pid].v);
+            sims[pid] = img && (t.prims || t.el) ? SC.similarity(t, img) : 0;
+          }
+          if (!notes[pid]) notes[pid] = localNote(sims[pid], c.d.s + pid.length);
         }
         const rows = rankBy(ids.map((pid) => ({ pid, err: -sims[pid] })), 'err');
         const pp = {}, tp = {};
         rows.forEach((r) => { pp[r.pid] = sims[r.pid] > 0 ? (RANK_PTS[r.rank] || 10) : 0; if (!c.ind && c.P[r.pid]) tp[String(c.P[r.pid].t)] = pp[r.pid]; });
-        return { pp, tp, rev: { sim: sims, by, aiErr, rank: Object.fromEntries(rows.map((r) => [r.pid, r.rank])) } };
+        return { pp, tp, rev: { sim: sims, notes, by, aiErr, rank: Object.fromEntries(rows.map((r) => [r.pid, r.rank])) } };
       },
       host(el, c) {
         const t = SC.target(c.d.s);
         el.innerHTML = `<div class="draw-host"><figure class="frame">${t.svg}<figcaption>${esc(t.title)}</figcaption></figure>
           <div class="drawers">${c.ind ? '<span class="drawer all">✏️ الكل يرسم الآن من جواله</span>' : (c.drawers || []).map((pid) => `<span class="drawer ${c.A && c.A[pid] ? 'done' : ''}" style="--tc:${c.P[pid] ? teamColor(c.T, c.P[pid].t) : '#888'}">✏️ ${esc(pname(c.P, pid))}</span>`).join('')}</div></div>`;
       },
-      reveal(el, c) {
-        const t = SC.target(c.d.s);
-        const ids = Object.keys(c.rev.sim || {}).sort((a, b) => c.rev.rank[a] - c.rev.rank[b]);
-        el.innerHTML = `<div class="gallery"><figure class="frame orig">${t.svg}<figcaption>الأصل</figcaption></figure>${ids.map((pid) => `
-          <figure class="frame ${c.rev.rank[pid] === 0 ? 'win' : ''}" style="--tc:${c.P[pid] ? (c.ind ? window.FZ.pcolor(pid) : teamColor(c.T, c.P[pid].t)) : '#888'}"><img src="${c.A[pid] ? c.A[pid].v : ''}" alt="رسمة ${esc(pname(c.P, pid))}">
-          <figcaption>${esc(pname(c.P, pid))}<span class="sim">تطابق ${ar(c.rev.sim[pid])}٪</span><b>${plus(c.pp[pid] || 0)}</b></figcaption></figure>`).join('')}</div>
-          <p class="judge">${c.rev.by === 'ai' ? '🤖 حكم الذكاء الاصطناعي' : '🔍 حكم آلي بمقارنة الألوان والأماكن'}${aiNote(c.rev)}</p>`;
-      },
+      reveal(el, c) { drawReveal(el, c, { done: c.done, imgs: Object.fromEntries(Object.keys(c.A || {}).map((p) => [p, c.A[p].v])) }); },
       phone(el, c) {
         const t = SC.target(c.d.s);
         if (!c.can) {
@@ -571,10 +623,7 @@ window.FZ_GAMES = (() => {
         el.innerHTML = `<figure class="frame ref">${t.svg}</figure>${PAD}`;
         drawPad(el, c);
       },
-      phoneRev(el, c) {
-        const me = c.me.pid;
-        el.innerHTML = c.rev.sim && c.rev.sim[me] != null ? `<div class="truth"><small>تطابق رسمتك</small><b>${ar(c.rev.sim[me])}٪</b></div>` : `<div class="truth"><small>الأدق</small><b>${esc(pname(c.P, Object.keys(c.rev.rank || {}).find((p) => c.rev.rank[p] === 0)))}</b></div>`;
-      }
+      phoneRev(el, c) { drawReveal(el, c, { done: c.done, mine: c.me, load: c.loadA }); }
     },
 
     // ---------- ٦) قرّب من الرقم ----------
@@ -822,24 +871,34 @@ window.FZ_GAMES = (() => {
   const PAD = `<div class="pad">
     <canvas class="pad-c" width="600" height="450" aria-label="لوحة الرسم"></canvas>
     <div class="pad-tools">
-      <div class="swatches">${['#FFFFFF', '#1d1d1d', '#8FD3F7', '#1E6FE0', '#1B2A6B', '#2E9E5B', '#6CC070', '#FFD34D', '#F59E0B', '#D94841', '#8B5A2B', '#F2D38B', '#7D8597', '#E0559B']
+      <div class="swatches">${['#FFFFFF', '#1d1d1d', '#8FD3F7', '#1E6FE0', '#1B2A6B', '#2E9E5B', '#6CC070', '#FFD34D', '#F59E0B', '#F2683C', '#D94841', '#8B5A2B', '#F2D38B', '#7D8597', '#E0559B', '#8257E5']
       .map((c, i) => `<button class="sw ${i === 1 ? 'on' : ''}" data-c="${c}" style="--c:${c}" aria-label="لون"></button>`).join('')}</div>
       <div class="pad-row">
         <button class="tool on" data-t="pen" aria-label="قلم">✏️</button>
+        <button class="tool" data-t="erase" aria-label="ممحاة">🧽</button>
         <button class="tool" data-t="fill" aria-label="تعبئة">🪣</button>
-        <button class="tool size" data-s="1" aria-label="حجم القلم">●</button>
-        <button class="tool" data-a="undo" aria-label="تراجع">↩️</button>
+        <button class="tool size" data-s="1" aria-label="سماكة القلم"><i></i></button>
+        <button class="tool" data-a="undo" aria-label="تراجع" disabled>↩️</button>
+        <button class="tool" data-a="redo" aria-label="إعادة" disabled>↪️</button>
         <button class="tool" data-a="clear" aria-label="مسح الكل">🗑️</button>
-        <button class="btn btn-primary tactile pad-send">إرسال</button>
       </div>
+      <button class="btn btn-primary tactile pad-send">إرسال الرسمة</button>
     </div></div>`;
   function drawPad(el, c) {
     const cv = $('.pad-c', el), x = cv.getContext('2d', { willReadFrequently: true });
     const W = cv.width, H = cv.height;
-    let color = '#1d1d1d', tool = 'pen', size = 1, hist = [];
+    const SIZES = [6, 16, 34];
+    let color = '#1d1d1d', tool = 'pen', size = 1, hist = [], redo = [];
     x.fillStyle = '#fff'; x.fillRect(0, 0, W, H);
     x.lineCap = 'round'; x.lineJoin = 'round';
-    const snap = () => { hist.push(x.getImageData(0, 0, W, H)); if (hist.length > 25) hist.shift(); };
+    const bU = $('[data-a="undo"]', el), bR = $('[data-a="redo"]', el), bS = $('.tool.size', el);
+    const sync = () => {
+      bU.disabled = !hist.length; bR.disabled = !redo.length;
+      const d = $('i', bS); d.style.width = d.style.height = [8, 14, 22][size] + 'px';
+      d.style.background = tool === 'erase' ? '#fff' : color; d.style.border = tool === 'erase' ? '2px dashed #999' : '2px solid rgba(0,0,0,.25)';
+    };
+    // قبل أي تغيير نحفظ اللوحة، وأي رسم جديد يمسح «الإعادة»
+    const snap = () => { hist.push(x.getImageData(0, 0, W, H)); if (hist.length > 30) hist.shift(); redo = []; sync(); };
     const pos = (e) => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * W / r.width, (e.clientY - r.top) * H / r.height]; };
     let last = null;
     cv.addEventListener('pointerdown', (e) => {
@@ -848,8 +907,9 @@ window.FZ_GAMES = (() => {
       snap();
       if (tool === 'fill') { flood(x, px | 0, py | 0, color, W, H); FX.pop(380); return; }
       last = [px, py];
-      x.strokeStyle = color; x.lineWidth = [6, 16, 40][size];
-      x.beginPath(); x.arc(px, py, x.lineWidth / 2, 0, Math.PI * 2); x.fillStyle = color; x.fill();
+      const ink = tool === 'erase' ? '#FFFFFF' : color;
+      x.strokeStyle = ink; x.lineWidth = SIZES[size] * (tool === 'erase' ? 1.6 : 1);
+      x.beginPath(); x.arc(px, py, x.lineWidth / 2, 0, Math.PI * 2); x.fillStyle = ink; x.fill();
     });
     cv.addEventListener('pointermove', (e) => {
       if (!last) return;
@@ -858,11 +918,17 @@ window.FZ_GAMES = (() => {
     });
     const up = () => { last = null; };
     cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
-    $$('.sw', el).forEach((b) => b.addEventListener('click', () => { color = b.dataset.c; $$('.sw', el).forEach((s) => s.classList.toggle('on', s === b)); FX.tick(0.12); }));
-    $$('.tool[data-t]', el).forEach((b) => b.addEventListener('click', () => { tool = b.dataset.t; $$('.tool[data-t]', el).forEach((s) => s.classList.toggle('on', s === b)); }));
-    $('.tool.size', el).addEventListener('click', (e) => { size = (size + 1) % 3; e.currentTarget.dataset.s = size; e.currentTarget.style.fontSize = ['12px', '18px', '26px'][size]; });
-    $('[data-a="undo"]', el).addEventListener('click', () => { const h = hist.pop(); if (h) x.putImageData(h, 0, 0); });
+    $$('.sw', el).forEach((b) => b.addEventListener('click', () => {
+      color = b.dataset.c; $$('.sw', el).forEach((s) => s.classList.toggle('on', s === b)); FX.tick(0.12);
+      if (tool === 'erase') { tool = 'pen'; $$('.tool[data-t]', el).forEach((s) => s.classList.toggle('on', s.dataset.t === 'pen')); }
+      sync();
+    }));
+    $$('.tool[data-t]', el).forEach((b) => b.addEventListener('click', () => { tool = b.dataset.t; $$('.tool[data-t]', el).forEach((s) => s.classList.toggle('on', s === b)); FX.tick(0.12); sync(); }));
+    bS.addEventListener('click', () => { size = (size + 1) % 3; bS.dataset.s = size; FX.tick(0.12); sync(); });
+    bU.addEventListener('click', () => { const h = hist.pop(); if (!h) return; redo.push(x.getImageData(0, 0, W, H)); x.putImageData(h, 0, 0); FX.tick(0.15); sync(); });
+    bR.addEventListener('click', () => { const h = redo.pop(); if (!h) return; hist.push(x.getImageData(0, 0, W, H)); x.putImageData(h, 0, 0); FX.tick(0.15); sync(); });
     $('[data-a="clear"]', el).addEventListener('click', () => { snap(); x.fillStyle = '#fff'; x.fillRect(0, 0, W, H); });
+    sync();
     let done = false;
     const send = () => {
       if (done) return; done = true;

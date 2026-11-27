@@ -481,7 +481,7 @@ button.mc-opt:disabled{cursor:default;}
 .tool{width:46px; height:46px; border-radius:12px; background:var(--solid); border:1px solid var(--line); box-shadow:0 3px 0 var(--edge); font-size:1.1rem;}
 .tool.on{background:var(--accent); color:var(--on-accent);}
 .tool.size{font-size:18px;}
-.pad-send{margin-inline-start:auto;}
+
 
 /* أدق وصف */
 .desc-rev{display:grid; grid-template-columns:minmax(200px,340px) 1fr; gap:16px; width:100%; text-align:right; align-items:start;}
@@ -881,3 +881,34 @@ body.play main{padding:10px 12px 22px;}
 @keyframes gsFade{0%{opacity:0;} 12%,80%{opacity:1;} 100%{opacity:0;}}
 @keyframes gsIn{0%{transform:scale(.5) rotate(-6deg); animation-timing-function:cubic-bezier(.34,1.45,.64,1);} 30%{transform:none;} 82%{transform:none; animation-timing-function:cubic-bezier(.7,0,.84,0);} 100%{transform:translateY(-40vh) scale(.8);}}
 @media (prefers-reduced-motion: reduce){.q-gold,.gold-splash,.gs-box,.gs-box i{animation:none !important;}}
+
+/* تحدي الرسم: الكشف بالتشويق */
+.dr-rev{display:flex; flex-direction:column; align-items:center; gap:14px; width:100%;}
+.dr-rev .frame.orig{width:min(100%,300px); transform:rotate(-1.5deg);}
+.dr-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:16px; width:100%;}
+.dr-grid.many{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}
+.dr-card{position:relative; animation:moIn .5s cubic-bezier(.34,1.45,.64,1) both;}
+.dr-card:nth-child(even){transform:rotate(1.2deg);}
+.dr-card.wait img{filter:blur(10px) saturate(.4); transition:filter .4s ease;}
+.dr-card img{transition:filter .5s cubic-bezier(.16,1,.3,1);}
+.dr-card.wait .dr-sim{opacity:.3;}
+.dr-card .dr-sim{font-size:1.05rem; color:#0A2463; font-variant-numeric:tabular-nums;}
+.dr-card figcaption em{font-style:normal; font-weight:800; color:#B86E00;}
+.dr-rk{position:absolute; top:-12px; right:-10px; z-index:2; width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font-style:normal; font-weight:800; background:#0A2463; color:#fff; border:2px solid #fff;}
+.dr-card.top .dr-rk{background:var(--gold); color:var(--gold-ink);}
+.dr-note{margin:6px 2px 2px; font-size:.85rem; line-height:1.5; color:#3B4A6B; text-align:center; animation:moPop .4s cubic-bezier(.34,1.45,.64,1) both;}
+.dr-card.win{outline:5px solid var(--gold); outline-offset:3px; box-shadow:0 0 0 10px color-mix(in srgb, var(--gold) 25%, transparent), 0 10px 0 var(--edge); animation:drWin .7s cubic-bezier(.34,1.45,.64,1) both;}
+@keyframes drWin{0%{transform:scale(1);} 50%{transform:scale(1.07) rotate(-1deg);} 100%{transform:scale(1.03);}}
+.dr-crown{position:absolute; top:-30px; left:50%; transform:translateX(-50%); font-size:2rem; animation:drCrown .6s cubic-bezier(.34,1.45,.64,1) both;}
+@keyframes drCrown{from{transform:translate(-50%,-30px) scale(.4); opacity:0;} to{transform:translateX(-50%); opacity:1;}}
+.dr-card.me{box-shadow:0 0 0 4px var(--accent), 0 6px 0 var(--edge);}
+.pg-body .dr-grid{grid-template-columns:1fr 1fr; gap:12px;}
+.pg-body .dr-rev .frame.orig{width:min(70%,240px);}
+.frame img.target.photo{object-fit:cover;}
+/* أدوات الرسم */
+.tool:disabled{opacity:.35; box-shadow:none;}
+.tool.size{display:grid; place-items:center;}
+.tool.size i{display:block; border-radius:50%;}
+.pad-send{width:100%; margin-top:4px;}
+.swatches{display:flex; flex-wrap:wrap; gap:6px; justify-content:center;}
+@media (prefers-reduced-motion: reduce){.dr-card,.dr-card.win,.dr-crown,.dr-note{animation:none !important;}}

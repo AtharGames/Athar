@@ -377,7 +377,56 @@ window.FZ_SCENE = (() => {
       ];
     }
   });
-  const TARGET_TITLES = { mosque: 'مسجد وقت الغروب', rainbow: 'قوس المطر', apples: 'شجرة تفاح', beach: 'شاطئ ونخلة', night: 'ليلة وخيمة', house: 'بيت وشجرة', mountains: 'جبال وشمس', boat: 'قارب وقت الغروب', oasis: 'واحة ونخلتين' };
+  // من بيئتنا
+  Object.assign(TARGETS, {
+    dallah: (r) => {
+      const x = r.int(110, 150);
+      return [
+        { t: 'rect', x: 0, y: 0, w: 300, h: 225, f: '#F5E6C8' }, { t: 'rect', x: 0, y: 170, w: 300, h: 55, f: '#8B5A2B' },
+        { t: 'poly', p: [[x - 22, 120], [x - 28, 112], [x - 74, 80], [x - 68, 74], [x - 18, 104]], f: '#C8963A' },
+        { t: 'poly', p: [[x + 22, 104], [x + 46, 108], [x + 48, 152], [x + 24, 154], [x + 24, 146], [x + 38, 144], [x + 36, 114], [x + 22, 112]], f: '#B8873E' },
+        { t: 'poly', p: [[x - 30, 172], [x + 30, 172], [x + 20, 95], [x - 20, 95]], f: '#D4A54A' },
+        { t: 'ell', x, y: 94, rx: 23, ry: 8, f: '#E8C66B' }, { t: 'poly', p: [[x - 13, 92], [x + 13, 92], [x, 62]], f: '#D4A54A' }, { t: 'circ', x, y: 60, r: 6, f: '#E8C66B' },
+        { t: 'poly', p: [[218, 172], [250, 172], [246, 150], [222, 150]], f: '#FFFFFF' }, { t: 'rect', x: 221, y: 155, w: 26, h: 5, f: '#2E9E5B' }
+      ];
+    },
+    camel: (r) => {
+      const x = r.int(150, 200);
+      return [
+        { t: 'rect', x: 0, y: 0, w: 300, h: 225, f: '#F9C784' }, { t: 'circ', x: r.int(40, 90), y: 60, r: 26, f: '#F2683C' },
+        { t: 'poly', p: [[0, 160], [80, 140], [170, 158], [300, 138], [300, 225], [0, 225]], f: '#E0A15A' },
+        { t: 'poly', p: [[20, 170], [70, 118], [120, 170]], f: '#3A2A20' },
+        { t: 'ell', x, y: 140, rx: 34, ry: 16, f: '#8B5A2B' }, { t: 'circ', x: x - 4, y: 124, r: 14, f: '#8B5A2B' },
+        { t: 'poly', p: [[x + 26, 138], [x + 34, 134], [x + 48, 104], [x + 40, 100]], f: '#8B5A2B' }, { t: 'ell', x: x + 50, y: 100, rx: 11, ry: 6, f: '#8B5A2B' },
+        { t: 'rect', x: x - 26, y: 148, w: 6, h: 30, f: '#7A4A22' }, { t: 'rect', x: x - 12, y: 150, w: 6, h: 28, f: '#7A4A22' }, { t: 'rect', x: x + 10, y: 150, w: 6, h: 28, f: '#7A4A22' }, { t: 'rect', x: x + 22, y: 148, w: 6, h: 30, f: '#7A4A22' }
+      ];
+    },
+    tower: (r) => {
+      const x = r.int(120, 180);
+      return [
+        { t: 'rect', x: 0, y: 0, w: 300, h: 225, f: '#14214F' }, { t: 'circ', x: r.int(30, 70), y: 40, r: 16, f: '#FBE7A1' },
+        { t: 'rect', x: 0, y: 170, w: 300, h: 55, f: '#2B3A67' },
+        { t: 'rect', x: 20, y: 140, w: 40, h: 40, f: '#2B3A67' }, { t: 'rect', x: 235, y: 130, w: 45, h: 50, f: '#2B3A67' },
+        { t: 'poly', p: [[x - 26, 190], [x + 26, 190], [x + 14, 40], [x + 6, 40], [x, 70], [x - 6, 40], [x - 14, 40]], f: '#7D8597' },
+        { t: 'rect', x: x - 12, y: 52, w: 24, h: 5, f: '#BFE6FA' },
+        { t: 'rect', x: 30, y: 150, w: 6, h: 6, f: '#FFD34D' }, { t: 'rect', x: 44, y: 160, w: 6, h: 6, f: '#FFD34D' }, { t: 'rect', x: 248, y: 142, w: 6, h: 6, f: '#FFD34D' }, { t: 'rect', x: 262, y: 156, w: 6, h: 6, f: '#FFD34D' }
+      ];
+    },
+    lantern: (r) => {
+      const x = r.int(130, 170);
+      return [
+        { t: 'rect', x: 0, y: 0, w: 300, h: 225, f: '#1B2A6B' }, { t: 'circ', x: 245, y: 55, r: 30, f: '#FBE7A1' }, { t: 'circ', x: 258, y: 46, r: 27, f: '#1B2A6B' },
+        { t: 'rect', x: x - 1, y: 0, w: 3, h: 40, f: '#E8C66B' },
+        { t: 'poly', p: [[x - 30, 72], [x + 30, 72], [x, 38]], f: '#D4A54A' },
+        { t: 'rect', x: x - 26, y: 72, w: 52, h: 80, f: '#F2C14E' }, { t: 'rect', x: x - 16, y: 82, w: 32, h: 60, f: '#FFE9A8' },
+        { t: 'rect', x: x - 32, y: 150, w: 64, h: 12, f: '#D4A54A' }, { t: 'circ', x: 60, y: 60, r: 3, f: '#FFFFFF' }, { t: 'circ', x: 90, y: 120, r: 3, f: '#FFFFFF' }
+      ];
+    }
+  });
+  // صور حقيقية (CC0) تُرسم كما هي
+  const PHOTOS = { apple: 'تفاحة حمراء', balloon: 'منطاد في السماء', camelsun: 'جمل وقت الغروب', palm: 'نخلة وسماء زرقاء', ship: 'سفينة وقت الغروب', sunset: 'غروب على البحر', melon: 'شريحة بطيخ' };
+  const PHOTO_FILE = { camelsun: 'camel' };
+  const TARGET_TITLES = { dallah: 'دلّة وفنجال', camel: 'جمل وخيمة في الصحراء', tower: 'برج في الليل', lantern: 'فانوس رمضان والهلال', mosque: 'مسجد وقت الغروب', rainbow: 'قوس المطر', apples: 'شجرة تفاح', beach: 'شاطئ ونخلة', night: 'ليلة وخيمة', house: 'بيت وشجرة', mountains: 'جبال وشمس', boat: 'قارب وقت الغروب', oasis: 'واحة ونخلتين' };
   function palm(x, base) {
     return [
       { t: 'poly', p: [[x - 5, base], [x + 5, base], [x + 3, base - 80], [x - 1, base - 80]], f: '#8B5A2B' },
@@ -405,7 +454,11 @@ window.FZ_SCENE = (() => {
   }
   function target(seed) {
     const r = rng(seed);
-    const kind = r.pick(Object.keys(TARGETS));
+    const kind = r.pick(Object.keys(TARGETS).concat(Object.keys(PHOTOS).map((k) => 'p:' + k)));
+    if (kind.startsWith('p:')) {
+      const k = kind.slice(2), src = `img/draw/${PHOTO_FILE[k] || k}.jpg`;
+      return { kind, title: PHOTOS[k], prims: null, img: src, svg: `<img class="target photo" src="${src}" alt="${PHOTOS[k]}" draggable="false">` };
+    }
     const prims = TARGETS[kind](r);
     return { kind, title: TARGET_TITLES[kind], prims, svg: `<svg class="target" viewBox="0 0 300 225" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${TARGET_TITLES[kind]}">${prims.map(primSvg).join('')}</svg>` };
   }
@@ -418,8 +471,10 @@ window.FZ_SCENE = (() => {
     drawFn(x, 20, 15);
     return x.getImageData(0, 0, 20, 15).data;
   }
-  function similarity(prims, img) {
-    const a = grid((x, w, h) => paint(x, prims, w, h));
+  // t: الأصل (أشكال أو صورة محمّلة في t.el)
+  function similarity(t, img) {
+    const prims = Array.isArray(t) ? t : t.prims;
+    const a = prims ? grid((x, w, h) => paint(x, prims, w, h)) : grid((x, w, h) => x.drawImage(t.el, 0, 0, w, h));
     const b = grid((x, w, h) => x.drawImage(img, 0, 0, w, h));
     let d = 0, n = 0;
     for (let i = 0; i < a.length; i += 4) {

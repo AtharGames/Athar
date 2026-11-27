@@ -62,18 +62,28 @@ window.FazaaAI = (() => {
     throw new Error(msg);
   }
 
+  // صورة الأصل: رسمة SVG أو صورة حقيقية
+  function imgToData(src, w = 400, h = 300) {
+    return new Promise((res, rej) => {
+      const img = new Image();
+      img.onload = () => { const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h); res(c.toDataURL('image/jpeg', 0.85)); };
+      img.onerror = rej; img.src = src;
+    });
+  }
+  // يرجع { id: { score, note } }: نسبة التطابق وتعليق قصير ظريف
   async function drawings({ title, target, items }) {
-    if (MODE === 'mock') return Object.fromEntries(items.map((x, i) => [x.id, 80 - i * 7]));
+    if (MODE === 'mock') return Object.fromEntries(items.map((x, i) => [x.id, { score: 80 - i * 7, note: 'تعليق تجريبي' }]));
     if (MODE !== 'gemini') throw new Error('ai-off');
+    const orig = target.img ? await imgToData(target.img) : await svgToPng(target.svg);
     const parts = [
-      'أنت حَكَم في «تحدي الرسم». الصورة الأولى هي الأصل، وبعدها رسمات المتسابقين بالترتيب مع معرّف كل رسمة. ' +
-      'قيّم تطابق كل رسمة مع الأصل من ٠ إلى ١٠٠: الألوان، ومواضع العناصر، ووجود العناصر وأشكالها. لا تحكم على المهارة الفنية بل على التطابق. ' +
-      'الرسمة الفارغة أو العشوائية تحت ١٠. أرجع score لكل id و hits فارغة. عنوان الأصل: ' + title,
-      { inlineData: { mimeType: 'image/png', data: b64(await svgToPng(target.svg)) } }
+      'أنت حَكَم ظريف في «تحدي الرسم». الصورة الأولى هي الأصل، وبعدها رسمات المتسابقين بالترتيب مع معرّف كل رسمة. ' +
+      'قيّم تطابق كل رسمة مع الأصل من ٠ إلى ١٠٠: الألوان، ومواضع العناصر، ووجود العناصر وأشكالها. لا تحكم على المهارة الفنية بل على التطابق، وراعِ أن الأصل قد يكون صورة حقيقية والرسم بالإصبع على جوال. ' +
+      'الرسمة الفارغة أو العشوائية تحت ١٠. أرجع score لكل id، وفي hits ضع عنصرًا واحدًا فقط: تعليق قصير ظريف باللهجة السعودية الخفيفة (من ٥ إلى ١٢ كلمة) عن الرسمة نفسها، لطيف وما فيه سخرية جارحة، ويجوز إيموجي واحد. عنوان الأصل: ' + title,
+      { inlineData: { mimeType: 'image/' + (target.img ? 'jpeg' : 'png'), data: b64(orig) } }
     ];
     items.forEach((x) => { parts.push('id: ' + x.id); parts.push({ inlineData: { mimeType: 'image/jpeg', data: b64(x.img) } }); });
     const out = {};
-    (await run(parts)).forEach((r) => { if (r.id && typeof r.score === 'number') out[r.id] = Math.max(0, Math.min(100, Math.round(r.score))); });
+    (await run(parts)).forEach((r) => { if (r.id && typeof r.score === 'number') out[r.id] = { score: Math.max(0, Math.min(100, Math.round(r.score))), note: String((r.hits || [])[0] || '').slice(0, 90) }; });
     return out;
   }
 

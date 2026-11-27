@@ -281,7 +281,7 @@
     const got = (rev.pp && rev.pp[me.pid]) || (g.mode !== 'solo' && rev.tp && rev.tp[m.team]);
     const fin = () => { if (body.isConnected) body.insertAdjacentHTML('afterbegin', myPts(m, rev)); };
     const after = () => (bank ? FZ_BANK.show({ info: bank, T, me: m.team, done: fin }) : fin());
-    try { g.phoneRev(body, { d, rev, me: m, P, T, ind: m.ind, done: g.anim ? after : null }); } catch (e) { console.error(e); }
+    try { g.phoneRev(body, { d, rev, me: m, P, T, ind: m.ind, done: g.anim ? after : null, loadA: () => Net.get(me.room + '/a/' + S.r) }); } catch (e) { console.error(e); }
     if (g.anim) return;
     if (bank) { setTimeout(() => { if (body.isConnected && S.ph === 'reveal') after(); else fin(); }, 1500); return; }
     fin();
