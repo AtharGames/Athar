@@ -269,11 +269,17 @@
     $('#pTimer').innerHTML = '';
     const d = parse(S.d) || {}, rev = parse(S.k) || {};
     const el = $('#pgame');
+    // الكشف المتحرك ما يُعاد رسمه مع كل تحديث (حتى ما يرجع من البداية)
+    const rk = S.r + '|' + S.g + '|' + (S.k || '').length;
+    if (g.anim && el.dataset.rk === rk && $('.pg-body.reveal', el)) return;
+    el.dataset.rk = g.anim ? rk : '';
     el.innerHTML = '<div class="pg-body reveal"></div>';
     const body = $('.pg-body', el);
-    try { g.phoneRev(body, { d, rev, me: m, P, T, ind: m.ind }); } catch (e) { console.error(e); }
-    body.insertAdjacentHTML('afterbegin', myPts(m, rev));
     const got = (rev.pp && rev.pp[me.pid]) || (g.mode !== 'solo' && rev.tp && rev.tp[m.team]);
+    const fin = () => { if (body.isConnected) body.insertAdjacentHTML('afterbegin', myPts(m, rev)); };
+    try { g.phoneRev(body, { d, rev, me: m, P, T, ind: m.ind, done: g.anim ? fin : null }); } catch (e) { console.error(e); }
+    if (g.anim) return;
+    fin();
     if (got > 0) FX.right(); else FX.wrong();
   }
 

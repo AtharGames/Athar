@@ -192,7 +192,7 @@
   const bankView = { g: 'number', cat: '', lvl: -1, q: '' };
   function bankRow(gid, it) {
     const cat = `<span class="bk-cat">${esc(C.BANK[gid].cats[it.cat] || '')}</span><span class="bk-lvl l${it.lvl}">${C.LEVELS[it.lvl]}</span>`;
-    if (gid === 'price') return `<li><span class="bk-emo">${it.e}</span><div><b>${esc(it.n)}</b><small>${esc(it.st)}</small></div><strong>${num(it.v)} ر.س${it.est ? ' ≈' : ''}</strong>${cat}</li>`;
+    if (gid === 'price') return `<li><span class="bk-emo bk-art">${(window.FZ_ART && FZ_ART(it.art)) || it.e}</span><div><b>${esc(it.n)}</b><small>${esc(it.st)}</small></div><strong>${num(it.v)} ${it.u && it.u !== 'ريال' ? esc(it.u) : 'ر.س'}${it.est ? ' ≈' : ''}</strong>${cat}</li>`;
     if (gid === 'number') return `<li><div><b>${esc(it.q)}</b></div><strong>${num(it.v)} <small>${esc(it.u)}</small></strong>${cat}</li>`;
     if (gid === 'order') return `<li><div><b>${esc(it.t)}</b><small>${it.items.map(esc).join(' ← ')}</small></div>${cat}</li>`;
     if (gid === 'odd') return `<li><div><b>${it.w.map((w, i) => (i === it.ans ? `<mark>${esc(w)}</mark>` : esc(w))).join('، ')}</b><small>${esc(it.why)}</small></div>${cat}</li>`;
@@ -386,7 +386,9 @@
     return unitIds().map((t) => ({ t, pts: (ind ? SCORE.P[t] : SCORE.T[t]) || 0, cup: cup ? cup[t] : 0 }))
       .sort((a, b) => (b.cup - a.cup) || (b.pts - a.pts));
   }
+  let holdSide = false; // أثناء الكشف المتحرك نؤجّل تحديث الترتيب حتى ما ينكشف الفائز
   function sideScore() {
+    if (holdSide) return;
     const st = standings(), max = Math.max(1, ...st.map((x) => x.pts));
     const rows = ind ? st.slice(0, 12) : st;
     $('#sideScore').innerHTML = `<h4>${ind ? 'الترتيب' : 'الفرق'}</h4>${rows.map((x, i) => `<div class="srow" style="--tc:${unitColor(x.t)};--w:${(x.pts / max * 100).toFixed(1)}%">
@@ -605,16 +607,22 @@
     let res;
     try { res = await g.score(c); } catch (e) { console.error(e); res = { pp: {}, rev: {} }; }
     // الفردي: نقاط فقرات «الأقرب» ترجع بمفتاح المشارك
+    holdSide = !!g.anim;
     const pp = ind ? (res.pp && Object.keys(res.pp).length ? res.pp : (res.tp || {})) : (res.pp || {});
     const tp = applyScores(pp, ind || g.mode === 'solo' ? null : (res.tp || {}));
     const rev = Object.assign({}, res.rev, { pp, tp: ind ? {} : tp });
     await setState(Object.assign({}, S, { ph: 'reveal', k: JSON.stringify(rev) }));
     saveRun();
-    g.reveal($('#stage'), Object.assign(c, { rev, pp }));
+    // فقرات الكشف المتحرك (كم السعر) تعرض النقاط بعد ما يخلص الكشف
+    const fin = () => {
+      if (holdSide) { holdSide = false; sideScore(); }
+      $('#whoStrip').innerHTML = roundTeamPts(tp);
+      if (!g.anim) { const best = Math.max(0, ...Object.values(tp)); if (best > 0) FX.clap(5); else FX.wrong(); }
+    };
+    $('#whoStrip').innerHTML = '';
+    g.reveal($('#stage'), Object.assign(c, { rev, pp, done: g.anim ? fin : null }));
     $('#answered').innerHTML = ''; $('#timer').innerHTML = '';
-    $('#whoStrip').innerHTML = roundTeamPts(tp);
-    const best = Math.max(0, ...Object.values(tp));
-    if (best > 0) FX.clap(5); else FX.wrong();
+    if (!g.anim) fin();
     $('#nextBtn').textContent = run.ri + 1 < run.queue[run.gi].rounds ? 'الجولة التالية' : 'نتائج الفقرة';
     $('#nextBtn').disabled = false;
   }
@@ -623,6 +631,7 @@
     : teamIds().map((t) => `<span class="tdot pts" style="--tc:${T[t].c}">${esc(T[t].n)} <b>${plus(tp[t] || 0)}</b></span>`).join(''));
 
   function afterRound() {
+    if (holdSide) { holdSide = false; sideScore(); }
     if (run.ri + 1 < run.queue[run.gi].rounds) startRound();
     else gameBoard();
   }

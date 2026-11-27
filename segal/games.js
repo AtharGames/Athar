@@ -33,6 +33,117 @@ window.FZ_GAMES = (() => {
   // سبب الرجوع للحكم الآلي (يظهر صغيرًا تحت النتيجة للمقدّم)
   const aiNote = (rev) => (rev.by === 'ai' || !rev.aiErr ? '' : rev.aiErr === 'off' ? '<small class="ai-why"> — الذكاء مطفأ من الإعدادات</small>' : `<small class="ai-why"> — تعذّر الذكاء: ${esc(rev.aiErr)}</small>`);
 
+  // ---------- كم السعر؟ النطاقات والكشف بالدور ----------
+  // بالضبط (فرق ≤ ٠٫٥٪) ثم الأحمر (قريب جدًا) ثم الأصفر، وخارجها صفر. الصعب نطاقاته أوسع
+  const PRICE_BANDS = [{ r: 0.05, y: 0.15 }, { r: 0.10, y: 0.30 }];
+  const PRICE_EXACT = 0.005;
+  const PRICE_PTS = { ex: 150, r: 80, y: 40, o: 0 };
+  const BAND_TXT = { ex: '🎯 بالضبط', r: 'قريب جدًا', y: 'قريب', o: 'بعيد' };
+  const pct = (x) => ar(x >= 0.1 ? Math.round(x * 100) : Math.round(x * 1000) / 10).replace('.', '٫') + '٪';
+  const iso = (t) => `\u2066${t}\u2069`;
+  const priceArt = (d) => (window.FZ_ART && FZ_ART(d.art || 'tag')) || `<span class="p-emo">${d.e || '🏷️'}</span>`;
+  function priceLegend(b) {
+    return `<div class="pc-bands"><span class="bd b-ex">🎯 بالضبط <b>${plus(PRICE_PTS.ex)}</b></span><span class="bd b-r">${iso('±' + pct(b.r))} <b>${plus(PRICE_PTS.r)}</b></span><span class="bd b-y">${iso('±' + pct(b.y))} <b>${plus(PRICE_PTS.y)}</b></span></div>`;
+  }
+  function priceCard(d, big = false) {
+    const b = d.b || PRICE_BANDS[0];
+    return `<div class="pcard ${big ? 'big' : ''}"><div class="pc-art">${priceArt(d)}</div>
+      <div class="pc-txt"><b>${esc(d.n)}</b><small>${esc(d.st)}</small></div>
+      <div class="pc-tag"><span>؟</span><i>${esc(d.u || 'ريال')}</i></div>${priceLegend(b)}</div>`;
+  }
+  function priceScore(c) {
+    const v = c.k.v, b = c.d.b || PRICE_BANDS[0], tp = {}, ans = {};
+    Object.keys(c.A || {}).forEach((pid) => {
+      if (!c.P[pid]) return;
+      const x = parseFloat(c.A[pid].v);
+      if (isNaN(x)) return;
+      const se = (x - v) / v, e = Math.abs(se);
+      const band = e <= PRICE_EXACT ? 'ex' : e <= b.r ? 'r' : e <= b.y ? 'y' : 'o';
+      const tid = unitKey(c, pid);
+      tp[tid] = PRICE_PTS[band];
+      ans[tid] = { v: x, se: Math.round(se * 10000) / 10000, b: band, pts: PRICE_PTS[band], t: c.A[pid].t || 0 };
+    });
+    return { tp, rev: { k: v, ans } };
+  }
+  // كشف النتائج: السعر بعدّاد، ثم النطاقات، ثم الإجابات من الأبعد للأقرب (الأقرب ٣ على مهل)
+  function priceReveal(el, c, { done, mine } = {}) {
+    const d = c.d, b = d.b || PRICE_BANDS[0], v = +c.rev.k, u = d.u || 'ريال';
+    const rows = Object.keys(c.rev.ans || {}).map((tid) => Object.assign({ tid }, c.rev.ans[tid]))
+      .sort((a, z) => Math.abs(z.se) - Math.abs(a.se) || (z.t || 0) - (a.t || 0));
+    const span = b.y * 2.2;
+    const pos = (se) => 50 + Math.max(-1, Math.min(1, se / span)) * 46;
+    const dec = String(v).includes('.') ? String(v).split('.')[1].length : 0;
+    el.innerHTML = `<div class="pr-rev">
+      <div class="pr-top"><div class="pr-art">${priceArt(d)}</div><div class="pr-name"><b>${esc(d.n)}</b><small>${esc(d.st)}</small></div></div>
+      <div class="pr-truth"><small>${d.est ? 'السعر التقريبي' : 'السعر الحقيقي'}</small><b><span class="odo">${num(0)}</span> <i>${esc(u)}</i></b></div>
+      <div class="pr-gauge"><div class="zone b-y" style="left:${pos(-b.y)}%;right:${100 - pos(b.y)}%"></div><div class="zone b-r" style="left:${pos(-b.r)}%;right:${100 - pos(b.r)}%"></div>
+        <div class="mid"></div><span class="lab lo">أقل</span><span class="lab hi">أعلى</span><div class="marks"></div></div>
+      ${priceLegend(b)}
+      <ol class="pr-list"></ol></div>`;
+    const root = $('.pr-rev', el), odo = $('.odo', root), list = $('.pr-list', root), marks = $('.marks', root), gauge = $('.pr-gauge', root);
+    const alive = () => root.isConnected;
+    const fast = window.FZ.reduced();
+    const wait = (ms) => new Promise((r) => setTimeout(r, fast ? Math.min(ms, 120) : ms));
+    const fmt = (x) => num(dec ? Math.round(x * 10 ** dec) / 10 ** dec : Math.round(x));
+    const diffTxt = (r) => (r.se === 0 ? 'بالضبط' : Math.abs(r.se) < 0.01 ? `${r.se > 0 ? 'أعلى' : 'أقل'} بأقل من ${ar(1)}٪` : `${r.se > 0 ? 'أعلى' : 'أقل'} بـ${ar(Math.round(Math.abs(r.se) * 100))}٪`);
+    const bandFx = (bd) => { if (bd === 'ex') { FX.clap(5); window.FZ.confetti(document.getElementById('confetti'), { count: 90 }); } else if (bd === 'r') FX.right(); else if (bd === 'y') FX.pop(760); else FX.wrong(); };
+    (async () => {
+      // ١) العدّاد
+      const T0 = performance.now(), dur = fast ? 150 : 1500;
+      let lastTick = 0;
+      await new Promise((res) => {
+        const step = (t) => {
+          if (!alive()) return res();
+          const p = Math.min(1, (t - T0) / dur), e = 1 - Math.pow(1 - p, 3);
+          odo.textContent = fmt(v * e);
+          if (t - lastTick > 90 && p < 1) { FX.tick(0.12); lastTick = t; }
+          if (p < 1) requestAnimationFrame(step); else res();
+        };
+        requestAnimationFrame(step);
+      });
+      if (!alive()) return;
+      odo.textContent = fmt(v);
+      root.classList.add('t-on'); FX.whistle && FX.whistle();
+      await wait(700);
+      gauge.classList.add('on');
+      await wait(600);
+      if (!rows.length) { list.innerHTML = '<li class="empty">ما أرسل أحد</li>'; if (done) done(); return; }
+      // ٢) الإجابات بالدور
+      const n = rows.length, rest = Math.max(0, n - 3);
+      const gap = rest > 6 ? Math.max(140, 2600 / rest) : 750;
+      for (let i = 0; i < n; i++) {
+        if (!alive()) return;
+        const r = rows[i], top = n - i <= 3, me = mine != null && String(r.tid) === String(mine);
+        const li = document.createElement('li');
+        li.className = `pr-row b-${r.b} ${top ? 'top' : ''} ${me ? 'me' : ''}`;
+        li.innerHTML = `${top ? `<i class="rk">${ar(n - i)}</i>` : ''}${unitTag(c, r.tid)}<b class="guess">${top ? '؟' : num(r.v)}</b><small>${top ? '…' : diffTxt(r)}</small><em class="band">${top ? '' : BAND_TXT[r.b]}</em><strong>${top ? '' : plus(r.pts)}</strong>`;
+        list.prepend(li);
+        const mk = document.createElement('i');
+        const land = () => {
+          mk.className = `mk b-${r.b} ${Math.abs(r.se) > span ? 'edge' : ''} ${me ? 'me' : ''}`;
+          mk.style.cssText = `left:${pos(r.se)}%;--c:${unitColor(c, r.tid)}`;
+          marks.appendChild(mk);
+        };
+        if (top) {
+          // تشويق: الاسم يظهر والرقم مخفي لحظات
+          li.classList.add('wait');
+          for (let k = 0; k < 6 && alive(); k++) { FX.tick(0.2); await wait(170); }
+          if (!alive()) return;
+          li.classList.remove('wait');
+          $('.guess', li).textContent = num(r.v); $('small', li).textContent = diffTxt(r);
+          $('.band', li).textContent = BAND_TXT[r.b]; $('strong', li).innerHTML = plus(r.pts);
+          li.classList.add('flip'); land(); bandFx(r.b);
+          await wait(1100);
+        } else {
+          land();
+          if (me) bandFx(r.b); else FX.tick(0.16);
+          await wait(gap);
+        }
+      }
+      if (alive() && done) done();
+    })();
+  }
+
   // ---------- أدوات مشتركة ----------
   // خيارات متعددة على الجوال
   function mcPhone(el, opts, c, { big = false } = {}) {
@@ -150,24 +261,21 @@ window.FZ_GAMES = (() => {
 
     // ---------- ١) كم السعر؟ ----------
     price: {
-      name: 'كم السعر؟', ico: '💰', mode: 'team', rounds: 3, time: 30,
-      idea: 'خمّنوا سعر المنتج، والأقرب يكسب',
-      how: 'يظهر منتج من متجر معيّن. تشاوروا في سعره الحقيقي، والقائد يرسل الرقم. الأقرب ١٠٠ والثاني ٧٠ وهكذا، والإصابة الدقيقة +٣٠.',
-      howSolo: 'يظهر منتج من متجر معيّن، وكل واحد يكتب تقديره لسعره من جواله. الأقرب ١٠٠ والثاني ٧٠ وهكذا، والإصابة الدقيقة +٣٠.',
+      name: 'كم السعر؟', ico: '💰', mode: 'team', rounds: 3, time: 30, anim: true,
+      idea: 'خمّنوا السعر، وكل ما قربتوا زادت نقاطكم',
+      how: 'تظهر سلعة أو صفقة. تشاوروا في سعرها، والقائد يرسل الرقم. بالضبط ١٥٠، والنطاق الأحمر (قريب جدًا) ٨٠، والأصفر ٤٠، واللي برّا النطاقين صفر.',
+      howSolo: 'تظهر سلعة أو صفقة، وكل واحد يكتب تقديره من جواله. بالضبط ١٥٠، والنطاق الأحمر (قريب جدًا) ٨٠، والأصفر ٤٠، واللي برّا النطاقين صفر.',
       make(c) {
-        const mine = (c.cfg.prices || []).map((r) => ({ n: r[0], st: r[1], v: +r[2], e: r[3] || '🏷️', cat: 'mine', lvl: 1 }));
+        const mine = (c.cfg.prices || []).map((r) => ({ n: r[0], st: r[1], v: +r[2], e: r[3] || '🏷️', cat: 'mine', lvl: 1, art: 'tag', u: 'ريال' }));
         const it = fromBank(c, 'price', mine);
-        return { d: { n: it.n, st: it.st, e: it.e || '🏷️', est: it.est ? 1 : 0 }, k: { v: +it.v } };
+        const b = PRICE_BANDS[it.lvl === 2 ? 1 : 0];
+        return { d: { n: it.n, st: it.st, e: it.e || '🏷️', art: it.art || 'tag', u: it.u || 'ريال', est: it.est ? 1 : 0, b }, k: { v: +it.v } };
       },
-      score: (c) => closeness(c, c.k.v, (v) => { const x = parseFloat(v); return isNaN(x) ? null : Math.abs(x - c.k.v) / c.k.v; }, (e) => e <= 0.02),
-      card: (d) => `<div class="product"><span class="p-emo">${d.e}</span><div><b>${esc(d.n)}</b><small>${esc(d.st)}</small></div><span class="tagprice">؟ ريال</span></div>`,
-      host(el, c) { el.innerHTML = this.card(c.d); },
-      reveal(el, c) {
-        el.innerHTML = `<div class="truth"><small>${c.d.est ? 'السعر التقريبي' : 'السعر الحقيقي'}</small><b>${num(c.rev.k)} <i>ريال</i></b></div>`;
-        closenessReveal(el, c, (v) => num(+v), (r) => `فرق ${num(Math.round(r.err * 100))}٪`);
-      },
-      phone(el, c) { el.innerHTML = this.card(c.d); numPhone(el, c, { unit: 'ريال', ph: 'السعر' }); },
-      phoneRev(el, c) { el.innerHTML = `<div class="truth"><small>${c.d.est ? 'السعر التقريبي' : 'السعر الحقيقي'}</small><b>${num(c.rev.k)} <i>ريال</i></b></div>`; }
+      score: (c) => priceScore(c),
+      host(el, c) { el.innerHTML = priceCard(c.d, true); },
+      reveal(el, c) { priceReveal(el, c, { done: c.done }); },
+      phone(el, c) { el.innerHTML = priceCard(c.d); numPhone(el, c, { unit: c.d.u || 'ريال', ph: 'السعر' }); },
+      phoneRev(el, c) { priceReveal(el, c, { done: c.done, mine: c.me && c.me.unit }); }
     },
 
     // ---------- ٢) سرعة البديهة ----------

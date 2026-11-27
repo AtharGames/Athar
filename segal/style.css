@@ -362,6 +362,71 @@ button.mc-opt:disabled{cursor:default;}
 .product small{color:var(--text-2); font-size:1rem;}
 .tagprice{position:absolute; bottom:-16px; left:14px; padding:4px 14px 4px 18px; background:var(--gold); color:var(--gold-ink); font-weight:700; border-radius:8px 999px 999px 8px; transform:rotate(-6deg); box-shadow:0 3px 0 var(--gold-dk);}
 
+/* كم السعر: بطاقة السلعة برسمتها والنطاقات */
+:root{--b-ex:#1FA971; --b-r:#E8554E; --b-y:#F2C21B;}
+.pcard{position:relative; display:grid; grid-template-columns:auto 1fr; align-items:center; gap:6px 18px; width:min(100%,640px); padding:16px 20px 18px; border-radius:24px; background:var(--solid); border:2px solid var(--line); box-shadow:0 7px 0 var(--edge); text-align:right; animation:popIn .45s ease both;}
+.pc-art{grid-row:span 2; width:clamp(120px,26vw,190px); aspect-ratio:4/3; border-radius:18px; display:grid; place-items:center; background:radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--gold) 38%, transparent), transparent 70%), var(--surface);}
+.pc-art svg{width:100%; height:100%;}
+.pc-art .p-emo{font-size:clamp(3rem,8vw,5rem);}
+.pc-txt b{display:block; font-size:clamp(1.15rem,2.8vw,1.8rem); line-height:1.35;}
+.pc-txt small{color:var(--text-2); font-size:.95rem;}
+.pc-tag{justify-self:start; display:inline-flex; align-items:baseline; gap:6px; padding:4px 16px 4px 18px; background:var(--gold); color:var(--gold-ink); font-weight:800; border-radius:8px 999px 999px 8px; transform:rotate(-4deg); box-shadow:0 3px 0 var(--gold-dk);}
+.pc-tag span{font-size:1.4rem;} .pc-tag i{font-style:normal; font-size:.9rem;}
+.pc-bands{grid-column:1/-1; display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-top:8px;}
+.bd{display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:999px; font-size:.85rem; font-weight:700; border:2px solid var(--bc); background:color-mix(in srgb, var(--bc) 16%, transparent);}
+.bd b{color:var(--text);}
+.b-ex{--bc:var(--b-ex);} .b-r{--bc:var(--b-r);} .b-y{--bc:var(--b-y);} .b-o{--bc:var(--line);}
+.host .stage .pcard.big{width:min(100%,820px); padding:22px 28px 24px; margin:10px 0;}
+.host .stage .pcard.big .pc-art{width:clamp(170px,22vw,260px);}
+.host .stage .pcard.big .pc-txt b{font-size:clamp(1.5rem,3vw,2.4rem);}
+.pg-body .pcard{grid-template-columns:1fr; text-align:center; justify-items:center; padding:12px 14px 14px;}
+.pg-body .pcard .pc-art{grid-row:auto; width:min(62vw,220px);}
+.pg-body .pcard .pc-tag{justify-self:center;}
+
+/* كشف كم السعر */
+.pr-rev{width:min(100%,760px); display:flex; flex-direction:column; align-items:center; gap:12px;}
+.pr-top{display:flex; align-items:center; gap:12px; text-align:right;}
+.pr-art{width:92px; aspect-ratio:4/3; border-radius:14px; background:var(--surface); display:grid; place-items:center;}
+.pr-art svg{width:100%; height:100%;} .pr-art .p-emo{font-size:2.6rem;}
+.pr-name b{display:block; font-size:1.1rem; line-height:1.35;} .pr-name small{color:var(--text-2);}
+.pr-truth{display:flex; flex-direction:column; align-items:center; padding:8px 28px; border-radius:18px; background:color-mix(in srgb, var(--gold) 16%, transparent); border:2px solid var(--gold); transition:transform .3s ease, box-shadow .3s ease;}
+.pr-truth small{color:var(--text-2); font-weight:700;}
+.pr-truth b{font-size:clamp(1.8rem,5vw,3rem); color:var(--gold); line-height:1.25; font-variant-numeric:tabular-nums;}
+.pr-truth b i{font-style:normal; font-size:.45em; color:var(--text);}
+.pr-rev.t-on .pr-truth{transform:scale(1.06); box-shadow:0 0 0 6px color-mix(in srgb, var(--gold) 25%, transparent);}
+.pr-gauge{position:relative; direction:ltr; width:100%; height:44px; border-radius:999px; background:var(--surface); border:2px solid var(--line); overflow:visible;}
+.pr-gauge .zone{position:absolute; top:4px; bottom:4px; border-radius:999px; background:var(--bc); opacity:0; transform:scaleX(.05); transition:transform .6s cubic-bezier(.2,.9,.3,1.2), opacity .4s;}
+.pr-gauge .zone.b-y{opacity:0;} .pr-gauge.on .zone.b-y{opacity:.55; transform:none;}
+.pr-gauge.on .zone.b-r{opacity:.9; transform:none; transition-delay:.25s;}
+.pr-gauge .mid{position:absolute; left:50%; top:-6px; bottom:-6px; width:4px; margin-left:-2px; border-radius:2px; background:var(--b-ex); box-shadow:0 0 0 3px color-mix(in srgb, var(--b-ex) 30%, transparent);}
+.pr-gauge .lab{position:absolute; bottom:-20px; font-size:.75rem; color:var(--text-2); font-weight:700;}
+.pr-gauge .lab.lo{left:6px;} .pr-gauge .lab.hi{right:6px;}
+.pr-gauge .mk{position:absolute; top:50%; width:18px; height:18px; margin:-9px 0 0 -9px; border-radius:50%; background:var(--c); border:3px solid var(--solid); box-shadow:0 2px 0 var(--edge); animation:mkDrop .45s cubic-bezier(.2,.9,.3,1.4) both;}
+.pr-gauge .mk.edge{border-style:dashed;}
+.pr-gauge .mk.b-ex{width:24px; height:24px; margin:-12px 0 0 -12px; z-index:2;}
+.pr-gauge .mk.me{outline:3px solid var(--gold); outline-offset:2px; z-index:3;}
+@keyframes mkDrop{from{transform:translateY(-34px) scale(.6); opacity:0;} to{transform:none; opacity:1;}}
+.pr-rev > .pc-bands{margin-top:12px;}
+.pr-list{width:100%; display:flex; flex-direction:column; gap:7px; max-height:min(52vh,520px); overflow:auto; padding:2px;}
+.pr-row{display:flex; align-items:center; gap:10px; padding:7px 12px; border-radius:14px; background:var(--surface); border:2px solid var(--line); border-inline-start:6px solid var(--bc); animation:slideIn .35s ease both;}
+.pr-row .rk{font-style:normal; font-weight:800; width:26px; height:26px; border-radius:50%; display:grid; place-items:center; background:var(--gold); color:var(--gold-ink); flex:none;}
+.pr-row .guess{font-size:1.2rem; font-variant-numeric:tabular-nums;}
+.pr-row small{flex:1; color:var(--text-2); font-size:.85rem;}
+.pr-row .band{font-style:normal; font-size:.8rem; font-weight:800; padding:2px 8px; border-radius:999px; background:color-mix(in srgb, var(--bc) 22%, transparent);}
+.pr-row strong{min-width:44px; text-align:left;}
+.pr-row.top{padding:10px 14px; font-size:1.05rem;}
+.pr-row.wait{border-color:var(--gold); border-inline-start-color:var(--gold); animation:waitPulse .34s ease-in-out infinite alternate;}
+.pr-row.wait .guess{color:var(--gold);}
+.pr-row.flip{animation:flipIn .5s ease both;}
+.pr-row.b-ex.flip{background:color-mix(in srgb, var(--b-ex) 22%, var(--surface)); box-shadow:0 0 0 4px color-mix(in srgb, var(--b-ex) 30%, transparent);}
+.pr-row.me{outline:3px solid var(--gold); outline-offset:1px;}
+@keyframes waitPulse{from{transform:scale(1);} to{transform:scale(1.025);}}
+@keyframes flipIn{0%{transform:rotateX(80deg);} 100%{transform:none;}}
+.bk-art svg{width:52px; height:39px; display:block;}
+.pg-body .pr-rev{gap:10px;} .pg-body .pr-art{width:64px;} .pg-body .pr-name b{font-size:.95rem;}
+.pg-body .pr-list{max-height:none;}
+@media (prefers-reduced-motion: reduce){.pr-gauge .zone,.pr-gauge .mk,.pr-row{animation:none !important; transition:none !important;}}
+
 /* المحتوى أكبر على الشاشة الكبيرة */
 .host .stage .product{transform:scale(1.25); margin:20px 0;}
 .host .stage .rx-grid{width:min(100%,560px);}
