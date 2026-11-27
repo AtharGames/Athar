@@ -608,5 +608,5 @@ window.FZ_SCENE = (() => {
     return `<svg viewBox="0 0 40 40" aria-hidden="true"><path d="${SHAPE_D[c.s]}" fill="${c.c}" stroke="rgba(0,0,0,.25)" stroke-width="1.5"/></svg>`;
   }
 
-  return { scene, ask, describeScore, target, paint, similarity, reflex, reflexCell, reflexField, reflexTargets, norm, COLORS };
+  return { scene, ask, describeScore, target, paint, similarity, reflex, reflexCell, reflexField, reflexTargets, norm, strip, COLORS };
 })();

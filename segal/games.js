@@ -205,6 +205,103 @@ window.FZ_GAMES = (() => {
     })();
   }
 
+  // ---------- أدق وصف: صورة حقيقية أو مشهد مرسوم، وكشف بالتشويق ----------
+  // الصورة: { svg, title, facts:[{label, w}], img? }
+  function descPic(d) {
+    if (d.p != null && C.desc && C.desc[d.p]) {
+      const it = C.desc[d.p], img = 'img/hawk/' + it.img + '.jpg';
+      return { img, title: it.t, photo: true, facts: it.facts.map((f) => ({ label: f.label, w: f.kw, have: true })),
+        svg: `<img class="desc-photo" src="${img}" alt="${esc(it.t)}" draggable="false">` };
+    }
+    const sc = SC.scene(d.s);
+    return { svg: sc.svg, title: '', photo: false, facts: sc.facts, scene: sc };
+  }
+  // جذر الكلمة للمطابقة: بلا واو العطف وحروف الجر و«ال»
+  const dStem = (w) => SC.strip(w).replace(/^(و|ف|ب|ل)(?=ال)/, '').replace(/^ال(?=..)/, '');
+  const dHit = (t, w) => t === w || (w.length >= 3 && t.includes(w) && t.length - w.length <= 4) || (/^\d+$/.test(w) && t === w);
+  // تقييم محلي لوصف صورة حقيقية: كل حقيقة لها كلمات تدل عليها
+  function descPhotoScore(text, facts) {
+    const nt = SC.norm(text), toks = nt.split(' ').filter(Boolean).map(dStem);
+    const hits = [];
+    facts.forEach((f) => {
+      const ws = f.w.map((x) => dStem(SC.norm(x)));
+      const ok = ws.some((w) => (w.includes(' ') ? (' ' + nt + ' ').includes(' ' + w + ' ') : toks.some((t) => dHit(t, w))));
+      if (ok) hits.push(f.label);
+    });
+    const words = toks.length;
+    const score = Math.min(100, Math.round(92 * hits.length / Math.max(1, Math.min(facts.length, 8)) * 0.9 + Math.min(10, words / 4)));
+    return { score: hits.length ? score : Math.min(score, 8), hits };
+  }
+  // تظليل الكلمات اللي أصاب فيها داخل النص
+  function descMark(text, facts) {
+    const ws = [].concat(...facts.filter((f) => f.have || (typeof f.n === 'number' && f.n > 0) || f.text).map((f) => f.w || [])).map((x) => dStem(SC.norm(x))).filter((w) => w && !w.includes(' '));
+    return String(text || '').split(/(\s+)/).map((p) => {
+      const t = dStem(SC.norm(p));
+      return t && ws.some((w) => dHit(t, w)) ? `<mark>${esc(p)}</mark>` : esc(p);
+    }).join('');
+  }
+  function descNote(score, seed) {
+    const r = rng((seed >>> 0) || 1);
+    const L = score >= 70 ? ['عين صقر ووصف مصوّر 👏', 'كأنك واقف داخل الصورة!', 'ما فاتك شي، ما شاء الله 🎯']
+      : score >= 45 ? ['وصف حلو، فاتتك تفاصيل بسيطة', 'قريب مرة، شوي تركيز ✨', 'الأساسيات كلها موجودة']
+        : score >= 20 ? ['شفت نص الصورة تقريبًا 😄', 'الوقت ظلمك يمكن', 'بداية، والمرة الجاية أدق']
+          : ['تبي نظارة؟ 👓', 'وصف من الذاكرة يمكن 😅', 'الصورة تسلّم عليك'];
+    return r.pick(L);
+  }
+  function descReveal(el, c, { done, texts, load, mine } = {}) {
+    const pic = descPic(c.d), rv = c.rev || {}, sc = rv.sc || {};
+    const order = Object.keys(sc).sort((a, b) => (sc[a] - sc[b]) || (a < b ? 1 : -1));
+    const n = order.length, myPid = mine && mine.pid;
+    const col = (pid) => (c.P[pid] ? (c.ind ? window.FZ.pcolor(pid) : teamColor(c.T, c.P[pid].t)) : '#888');
+    el.innerHTML = `<div class="ds-rev"><figure class="frame ds-pic ${pic.photo ? 'photo' : ''}">${pic.svg}${pic.title ? `<figcaption>${esc(pic.title)}</figcaption>` : ''}</figure>
+      <ol class="ds-list">${n ? '' : '<li class="empty">ما أرسل أحد</li>'}</ol>
+      <p class="judge">${rv.by === 'ai' ? '🤖 حكم الذكاء الاصطناعي' : '🔍 حكم آلي يطابق العناصر والأعداد والألوان'}${mine ? '' : aiNote(rv)}</p></div>`;
+    const root = $('.ds-rev', el), list = $('.ds-list', root);
+    const alive = () => root.isConnected;
+    const wait = (ms) => new Promise((r) => setTimeout(r, window.FZ.reduced() ? Math.min(ms, 80) : ms));
+    const countTo = (node, to, ms) => new Promise((res) => {
+      const t0 = performance.now();
+      const step = (now) => { if (!node.isConnected) return res(); const p = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(2, -10 * p); node.textContent = ar(Math.round(to * (p >= 1 ? 1 : e))); if (p < 1) requestAnimationFrame(step); else res(); };
+      requestAnimationFrame(step); setTimeout(() => { if (node.isConnected) node.textContent = ar(to); res(); }, ms + 120);
+    });
+    (async () => {
+      const raw = texts || (load ? ((await load()) || {}) : {});
+      const txt = (pid) => { const v = raw[pid]; return typeof v === 'string' ? v : (v && v.v) || ''; };
+      await wait(500);
+      for (let i = 0; i < n && alive(); i++) {
+        const pid = order[i], top = n - i <= 3, rank = n - i, me = myPid != null && pid === myPid;
+        const li = document.createElement('li');
+        li.className = `ds-card ${top ? 'top wait' : ''} ${me ? 'me' : ''}`;
+        li.style.setProperty('--tc', col(pid));
+        const hits = (rv.hits || {})[pid] || [];
+        li.innerHTML = `<header><i class="ds-rk">${ar(rank)}</i><span class="tchip" style="--tc:${col(pid)}">${esc(pname(c.P, pid))}</span>${whoTag(c, pid)}
+            <span class="ds-meter"><b class="ds-sc">٠</b><small>/١٠٠</small></span><em>${plus((c.pp || rv.pp || {})[pid] || 0)}</em></header>
+          <p class="ds-txt">${descMark(txt(pid), pic.facts) || '<span class="dim">…</span>'}</p>
+          <div class="ds-hits" hidden>${hits.map((h) => `<span>✓ ${esc(h)}</span>`).join('')}</div>
+          <p class="ds-note" hidden>${esc((rv.notes || {})[pid] || '')}</p>`;
+        list.prepend(li);
+        if (top) {
+          for (let k = 0; k < 5 && alive(); k++) { FX.tick(0.2); await wait(170); }
+          li.classList.remove('wait');
+        }
+        FX.pop(top ? 700 : 520);
+        await countTo($('.ds-sc', li), sc[pid] || 0, top ? 900 : 450);
+        if (!alive()) return;
+        li.style.setProperty('--p', ((sc[pid] || 0) / 100).toFixed(3));
+        const hb = $('.ds-hits', li); if (hb.children.length) hb.hidden = false;
+        const nt = $('.ds-note', li); if (nt.textContent) nt.hidden = false;
+        if (i === n - 1) {
+          li.classList.add('win'); li.insertAdjacentHTML('afterbegin', '<span class="dr-crown">👑</span>');
+          FX.clap(5);
+          if (myPid == null || me) window.FZ.confetti(document.getElementById('confetti'), { count: 110 });
+        }
+        await wait(top ? 1100 : Math.max(180, 1400 / Math.max(1, n - 3)));
+      }
+      await wait(700);
+      if (alive() && done) done();
+    })();
+  }
+
   // ---------- أسئلة السرعة: الجولة الذهبية والكشف للجميع ----------
   let goldShown = '';
   function goldSplash(key, big) {
@@ -649,39 +746,44 @@ window.FZ_GAMES = (() => {
 
     // ---------- ٧) أدق وصف ----------
     describe: {
-      name: 'أدق وصف', ico: '🖼️', mode: 'solo', rounds: 1, time: 60,
+      name: 'أدق وصف', ico: '🖼️', mode: 'solo', rounds: 1, time: 60, anim: true,
       idea: 'صف الصورة كتابةً بكل تفاصيلها',
-      how: 'تظهر صورة، واكتب وصفًا شاملًا: العناصر وأعدادها وألوانها والخلفية. كل تفصيلة صحيحة تزيد نقاطك، والوصف الأطول والأدق يكسب.',
-      make(c) { return { d: { s: c.seed }, k: {} }; },
+      how: 'تظهر صورة حقيقية أو مشهد مرسوم، واكتب وصفًا شاملًا: العناصر وأعدادها وألوانها والخلفية. كل تفصيلة صحيحة تزيد نقاطك، والوصف الأدق يكسب.',
+      make(c) {
+        // نصف الجولات صورة حقيقية، والباقي مشهد مرسوم
+        const photos = C.desc || [];
+        if (photos.length && rng(c.seed ^ 0x5bd1e995)() < 0.5) return { d: { p: c.pick('desc', photos)[0] }, k: {} };
+        return { d: { s: c.seed }, k: {} };
+      },
       async score(c) {
-        const sc = SC.scene(c.d.s);
-        const pp = {}, hits = {};
+        const pic = descPic(c.d);
+        const pp = {}, hits = {}, notes = {};
         let by = 'local', aiErr = '';
         const ids = Object.keys(c.A || {});
         if (c.ai && ids.length) {
           try {
-            const res = await c.ai.descriptions({ scene: sc, items: ids.map((pid) => ({ id: pid, text: c.A[pid].v })) });
-            ids.forEach((pid) => { if (res[pid]) { pp[pid] = res[pid].score; hits[pid] = res[pid].hits || []; } });
+            const scene = pic.photo ? { img: pic.img, facts: pic.facts } : pic.scene;
+            const res = await c.ai.descriptions({ scene, items: ids.map((pid) => ({ id: pid, text: c.A[pid].v })) });
+            ids.forEach((pid) => { if (res[pid]) { pp[pid] = res[pid].score; hits[pid] = res[pid].hits || []; if (res[pid].note) notes[pid] = res[pid].note; } });
             if (Object.keys(pp).length) by = 'ai'; else aiErr = 'ما رجعت نتيجة';
           } catch (e) { aiErr = String((e && e.message) || e).slice(0, 260); console.warn('[segal-ai]', aiErr); }
         } else if (ids.length) aiErr = c.ai === null ? 'off' : '';
-        ids.forEach((pid) => {
-          if (pp[pid] != null) return;
-          const r = SC.describeScore(c.A[pid].v, sc.facts);
-          pp[pid] = r.score; hits[pid] = r.hits;
+        ids.forEach((pid, i) => {
+          if (pp[pid] == null) {
+            const r = pic.photo ? descPhotoScore(c.A[pid].v, pic.facts) : SC.describeScore(c.A[pid].v, pic.facts);
+            pp[pid] = r.score; hits[pid] = r.hits;
+          }
+          if (!notes[pid]) notes[pid] = descNote(pp[pid], (c.d.s || c.d.p || 7) * 31 + i);
         });
-        const top = ids.sort((a, b) => pp[b] - pp[a]).slice(0, 3);
-        return { pp, rev: { hits, top, by, aiErr } };
+        const sc = Object.assign({}, pp);
+        const top = ids.slice().sort((a, b) => pp[b] - pp[a]).slice(0, 3);
+        return { pp, rev: { sc, hits, notes, top, by, aiErr } };
       },
-      host(el, c) { el.innerHTML = `<div class="scene-wrap big">${SC.scene(c.d.s).svg}</div>`; },
-      reveal(el, c) {
-        el.innerHTML = `<div class="desc-rev"><div class="scene-wrap mini">${SC.scene(c.d.s).svg}</div><ol class="desc-top">${(c.rev.top || []).map((pid, i) =>
-          `<li><header><i>${ar(i + 1)}</i>${esc(pname(c.P, pid))}${whoTag(c, pid)}<b>${plus(c.pp[pid] || 0)}</b></header>
-          <p>${esc((c.A[pid] && c.A[pid].v) || '')}</p><small>${(c.rev.hits[pid] || []).map(esc).join('، ')}</small></li>`).join('') || '<li class="empty">ما أرسل أحد</li>'}</ol></div>
-          <p class="judge">${c.rev.by === 'ai' ? '🤖 حكم الذكاء الاصطناعي' : '🔍 حكم آلي يطابق العناصر والأعداد والألوان'}${aiNote(c.rev)}</p>`;
-      },
+      host(el, c) { const p = descPic(c.d); el.innerHTML = `<div class="scene-wrap big ${p.photo ? 'photo' : ''}">${p.svg}</div>`; },
+      reveal(el, c) { descReveal(el, c, { done: c.done, texts: Object.fromEntries(Object.keys(c.A || {}).map((p) => [p, c.A[p].v])) }); },
       phone(el, c) {
-        el.innerHTML = `<div class="scene-wrap">${SC.scene(c.d.s).svg}</div>`;
+        const p = descPic(c.d);
+        el.innerHTML = `<div class="scene-wrap ${p.photo ? 'photo' : ''}">${p.svg}</div>`;
         if (c.sent != null) { el.insertAdjacentHTML('beforeend', `<p class="sent-text">${esc(c.sent)}</p>`); return; }
         el.insertAdjacentHTML('beforeend', `<form class="desc-in"><textarea rows="5" maxlength="900" placeholder="صف كل ما تراه: العناصر، أعدادها، ألوانها، الخلفية…"></textarea>
           <div class="row"><small class="wc">٠ كلمة</small><button class="btn btn-primary tactile">إرسال الوصف</button></div></form>`);
@@ -695,10 +797,7 @@ window.FZ_GAMES = (() => {
         // إرسال تلقائي قبل نهاية الوقت
         c.onEnd(() => { if (ta.value.trim()) c.submit(ta.value.trim().slice(0, 900)); });
       },
-      phoneRev(el, c) {
-        const h = (c.rev.hits || {})[c.me.pid];
-        el.innerHTML = `<div class="scene-wrap mini">${SC.scene(c.d.s).svg}</div>${h ? `<p class="hits">أصبت في: ${esc(h.join('، ') || '—')}</p>` : ''}`;
-      }
+      phoneRev(el, c) { descReveal(el, c, { done: c.done, mine: c.me, load: c.loadA }); }
     },
 
     // ---------- ٨) ثبّت الدبوس ----------

@@ -2,7 +2,7 @@
    سِجَال | التحكيم بالذكاء الاصطناعي (Gemini عبر Firebase AI Logic) — اختياري
    يشتغل في شاشة المقدّم فقط، ولو فشل ترجع اللعبة للتحكيم الآلي المحلي.
      FazaaAI.drawings({ title, target, items:[{id, img}] })   ← { id: نسبة التطابق ٠–١٠٠ }
-     FazaaAI.descriptions({ scene, items:[{id, text}] })       ← { id: { score, hits } }
+     FazaaAI.descriptions({ scene, items:[{id, text}] })       ← { id: { score, note, hits } } (scene رسمة أو صورة img)
      FazaaAI.ready ← مفعّل في firebase-config.js (ai: true) ومعه الإعدادات
    للاختبار: ?ai=mock حَكَم وهمي محلي.
    ========================================================= */
@@ -88,18 +88,19 @@ window.FazaaAI = (() => {
   }
 
   async function descriptions({ scene, items }) {
-    if (MODE === 'mock') return Object.fromEntries(items.map((x) => [x.id, { score: Math.min(100, 20 + x.text.length / 3 | 0), hits: ['وهمي'] }]));
+    if (MODE === 'mock') return Object.fromEntries(items.map((x) => [x.id, { score: Math.min(100, 20 + x.text.length / 3 | 0), note: 'تعليق تجريبي', hits: ['وهمي'] }]));
     if (MODE !== 'gemini') throw new Error('ai-off');
     const facts = scene.facts.map((f) => `${f.label}${typeof f.n === 'number' ? ': ' + f.n : ''}${f.color ? ' (' + f.colorLabel + ': ' + f.color + ')' : ''}${f.text ? ' (' + f.textLabel + ': ' + f.text + ')' : ''}`).join('، ');
+    const pic = scene.img ? { mimeType: 'image/jpeg', data: b64(await imgToData(scene.img, 512, 340)) } : { mimeType: 'image/png', data: b64(await svgToPng(scene.svg, 400, 250)) };
     const parts = [
-      'أنت حَكَم في «أدق وصف»: المتسابقون كتبوا وصفًا للصورة المرفقة. حقائق الصورة الصحيحة: ' + facts + '. ' +
+      'أنت حَكَم في «أدق وصف»: المتسابقون كتبوا وصفًا للصورة المرفقة (قد تكون رسمة أو صورة حقيقية، وتفاصيلها الظاهرة فيها صحيحة حتى لو ما ذُكرت). أبرز حقائق الصورة: ' + facts + '. ' +
       'قيّم كل وصف من ٠ إلى ١٠٠ حسب عدد التفاصيل الصحيحة (العناصر وأعدادها وألوانها والخلفية) ودقتها وشموله، واخصم على المعلومات الخاطئة. ' +
-      'hits: قائمة قصيرة بالتفاصيل اللي أصاب فيها (كلمتان لكل واحدة).',
-      { inlineData: { mimeType: 'image/png', data: b64(await svgToPng(scene.svg, 400, 250)) } },
+      'hits: أول عنصر فيها تعليق قصير ظريف باللهجة السعودية الخفيفة (من ٥ إلى ١٢ كلمة) على الوصف نفسه، لطيف وما فيه سخرية جارحة، ويجوز إيموجي واحد؛ وبعده التفاصيل الصحيحة اللي أصاب فيها (كلمتان لكل واحدة، ٦ بالكثير).',
+      { inlineData: pic },
       JSON.stringify(items.map((x) => ({ id: x.id, text: x.text })))
     ];
     const out = {};
-    (await run(parts)).forEach((r) => { if (r.id && typeof r.score === 'number') out[r.id] = { score: Math.max(0, Math.min(100, Math.round(r.score))), hits: (r.hits || []).slice(0, 8) }; });
+    (await run(parts)).forEach((r) => { if (r.id && typeof r.score === 'number') out[r.id] = { score: Math.max(0, Math.min(100, Math.round(r.score))), note: String((r.hits || [])[0] || '').slice(0, 90), hits: (r.hits || []).slice(1, 7) }; });
     return out;
   }
 
