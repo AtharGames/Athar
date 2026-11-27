@@ -90,7 +90,7 @@
         <p class="hint">المتوسط عادل إذا اختلفت أعداد الفرق.</p>
         <label class="row-set chk"><span>نظام البطولة: الفائز بكل فقرة ٣ نقاط والثاني ٢ والثالث ١ (والتعادل بمجموع النقاط)</span><input type="checkbox" id="cupChk" ${SET.cup ? 'checked' : ''}></label>
         <label class="row-set chk" ${SET.play === 'teams' ? '' : 'hidden'}><span>القائد يتبدّل كل فقرة</span><input type="checkbox" id="rotChk" ${SET.rotate ? 'checked' : ''}></label>
-        <label class="row-set chk" ${SET.play === 'teams' ? '' : 'hidden'}><span>🐷 الحصالة: ${esc(window.FZ_BANK ? FZ_BANK.RULES : '')}</span><input type="checkbox" id="bankChk" ${SET.bank !== false ? 'checked' : ''}></label>
+        <label class="row-set chk" ${SET.play === 'teams' ? '' : 'hidden'}><span>🪙 الحصالة: ${esc(window.FZ_BANK ? FZ_BANK.RULES : '')}</span><input type="checkbox" id="bankChk" ${SET.bank !== false ? 'checked' : ''}></label>
         <label class="row-set chk"><span>تحكيم الرسم والوصف بالذكاء الاصطناعي ${AI.ready ? '' : '<small>(يحتاج تفعيل AI Logic في Firebase)</small>'}</span><input type="checkbox" id="aiChk" ${SET.ai && AI.ready ? 'checked' : ''} ${AI.ready ? '' : 'disabled'}></label>
       </section>
 
@@ -395,7 +395,7 @@
     const rows = ind ? st.slice(0, 12) : st;
     $('#sideScore').innerHTML = `<h4>${ind ? 'الترتيب' : 'الفرق'}</h4>${rows.map((x, i) => `<div class="srow" style="--tc:${unitColor(x.t)};--w:${(x.pts / max * 100).toFixed(1)}%">
       <span class="pos">${ar(i + 1)}</span><span class="nm"><b>${esc(unitName(x.t))}</b>${ind ? '' : `<small>${T[x.t].l && P[T[x.t].l] ? '👑 ' + esc(P[T[x.t].l].n) : 'بلا قائد'}</small>`}</span>
-      <span class="pts">${num(x.pts)}${SET.cup ? `<small>🏅${ar(x.cup)}</small>` : ''}</span><i class="bar"></i></div>`).join('')}${!ind && SET.bank !== false && SCORE.B ? `<p class="side-bank">🐷 باقي في الحصالة <b>${num(SCORE.B)}</b></p>` : ''}`;
+      <span class="pts">${num(x.pts)}${SET.cup ? `<small>🏅${ar(x.cup)}</small>` : ''}</span><i class="bar"></i></div>`).join('')}${!ind && SET.bank !== false && SCORE.B ? `<p class="side-bank">🪙 باقي في الحصالة <b>${num(SCORE.B)}</b></p>` : ''}`;
   }
   // تطبيق نقاط جولة: pp شخصية، tp للفريق (إن وُجدت) وإلا تُجمع من الأعضاء
   let lastBank = null;
@@ -862,7 +862,7 @@
   const paintMode = () => $$('#modePick .mode-card').forEach((b) => b.setAttribute('aria-pressed', String((SET.play === 'teams' ? 'teams' : 'solo') === b.dataset.play)));
   $$('#modePick .mode-card').forEach((b) => b.addEventListener('click', () => {
     SET.play = b.dataset.play; saveSettings(); paintMode(); FX.tick(0.25);
-    if (SET.play === 'teams') { const pig = $('.pig-mini', b); if (pig) { pig.style.animation = 'none'; void pig.offsetWidth; pig.style.animation = ''; } }
+    if (SET.play === 'teams') { const cm = $('.coin-mini', b); if (cm) { cm.style.animation = 'none'; void cm.offsetWidth; cm.style.animation = ''; } }
   }));
   paintMode();
   $('#openSet').addEventListener('click', openSettings);

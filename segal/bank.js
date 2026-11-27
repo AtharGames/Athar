@@ -57,17 +57,31 @@ window.FZ_BANK = (() => {
   }
 
   // ---------- الرسومات ----------
-  const PIG = `<g class="legs" fill="#E2789F"><rect x="62" y="116" width="16" height="24" rx="6"/><rect x="86" y="120" width="16" height="22" rx="6"/><rect x="128" y="120" width="16" height="22" rx="6"/><rect x="152" y="116" width="16" height="24" rx="6"/></g>
-    <path d="M34 82c-16-8-18 14-2 10 10-3 4-14-4-8" fill="none" stroke="#E2789F" stroke-width="4" stroke-linecap="round"/>
-    <ellipse cx="110" cy="86" rx="80" ry="54" fill="#F7A8C4"/><ellipse cx="96" cy="66" rx="46" ry="20" fill="#FBC8DB" opacity=".75"/>
-    <path d="M148 44 166 16l12 36z" fill="#E2789F"/><ellipse cx="190" cy="92" rx="19" ry="16" fill="#F48FB4"/><circle cx="184" cy="92" r="3.2" fill="#B9507A"/><circle cx="195" cy="92" r="3.2" fill="#B9507A"/>
-    <circle cx="160" cy="70" r="5.5" fill="#2B2F3A"/><circle cx="162" cy="68" r="1.8" fill="#fff"/><circle cx="168" cy="98" r="7" fill="#F27BA6" opacity=".55"/>
-    <rect x="92" y="34" width="44" height="8" rx="4" fill="#8E3A5E"/><path d="M60 110c20 10 80 10 100 0" stroke="#E2789F" stroke-width="3" fill="none" opacity=".5"/>`;
-  const PIG_SVG = `<svg class="bk-pig" viewBox="0 0 220 160" aria-hidden="true"><defs>
-      <clipPath id="bkL"><polygon points="-20,-20 114,-20 104,40 118,70 102,100 116,180 -20,180"/></clipPath>
-      <clipPath id="bkR"><polygon points="114,-20 240,-20 240,180 116,180 102,100 118,70 104,40"/></clipPath></defs>
-    <g class="whole">${PIG}</g><g class="half l" clip-path="url(#bkL)">${PIG}</g><g class="half r" clip-path="url(#bkR)">${PIG}</g>
-    <path class="crack" d="M114 30 104 44 118 70 102 100 116 136" fill="none" stroke="#5A1F38" stroke-width="3.5" stroke-linejoin="round"/></svg>`;
+  // جرّة فخار بنقشة سدو وحزام ذهبي، وتنكسر لأربع شظايا
+  const JAR = `<ellipse cx="110" cy="180" rx="72" ry="8" fill="#000" opacity=".25"/>
+    <path d="M66 74c-16-2-24 10-18 22s18 10 22 6" fill="none" stroke="#9C4422" stroke-width="7" stroke-linecap="round"/>
+    <path d="M154 74c16-2 24 10 18 22s-18 10-22 6" fill="none" stroke="#9C4422" stroke-width="7" stroke-linecap="round"/>
+    <path id="bkBody" d="M74 58C40 74 30 140 70 168q40 18 80 0c40-28 30-94-4-110z" fill="url(#bkJB)"/>
+    <g clip-path="url(#bkBodyClip)">
+      <rect x="20" y="98" width="180" height="24" fill="#E8C66B"/><rect x="20" y="98" width="180" height="3" fill="#FFF1C4" opacity=".7"/>
+      <g fill="#8E1F2F">${Array.from({ length: 12 }, (_, i) => `<path d="M${24 + i * 15} 119l7.5-15 7.5 15z"/>`).join('')}</g>
+      <g fill="#1F3A5F">${Array.from({ length: 12 }, (_, i) => `<path d="M${31.5 + i * 15} 101l7.5 13 7.5-13z"/>`).join('')}</g>
+      <rect x="20" y="140" width="180" height="5" fill="#E8C66B"/><rect x="20" y="78" width="180" height="4" fill="#E8C66B" opacity=".85"/>
+      <ellipse cx="86" cy="104" rx="13" ry="40" fill="#fff" opacity=".16" transform="rotate(12 86 104)"/>
+    </g>
+    <path d="M78 58q32-14 64 0l-4-18q-28-10-56 0z" fill="#A9502A"/>
+    <ellipse cx="110" cy="40" rx="35" ry="10" fill="#D8844F"/><ellipse cx="110" cy="38" rx="29" ry="7" fill="#7E3519"/>
+    <rect x="95" y="35" width="30" height="5.5" rx="2.75" fill="#2A1208"/>
+    <ellipse class="peek" cx="110" cy="33" rx="9" ry="5" fill="#F7C948" stroke="#C98A06" stroke-width="1.5"/>`;
+  const JAR_DEFS = `<radialGradient id="bkJB" cx="38%" cy="38%" r="75%"><stop offset="0" stop-color="#EC9A62"/><stop offset=".45" stop-color="#C2622F"/><stop offset="1" stop-color="#7A3218"/></radialGradient>
+    <clipPath id="bkBodyClip"><path d="M74 58C40 74 30 140 70 168q40 18 80 0c40-28 30-94-4-110z"/></clipPath>
+    <clipPath id="bkA"><polygon points="-20,-20 112,-20 104,62 70,100 -20,110"/></clipPath>
+    <clipPath id="bkB"><polygon points="112,-20 240,-20 240,100 150,96 104,62"/></clipPath>
+    <clipPath id="bkC"><polygon points="-20,110 70,100 118,128 100,210 -20,210"/></clipPath>
+    <clipPath id="bkD"><polygon points="104,62 150,96 240,100 240,210 100,210 118,128 70,100"/></clipPath>`;
+  const JAR_SVG = `<svg class="bk-jar" viewBox="0 0 220 190" aria-hidden="true"><defs>${JAR_DEFS}</defs>
+    <g class="whole">${JAR}</g>${['A', 'B', 'C', 'D'].map((k) => `<g class="shard s${k}" clip-path="url(#bk${k})">${JAR.replace('id="bkBody" ', '').replace(/<ellipse cx="110" cy="180"[^>]*\/>/, '')}</g>`).join('')}
+    <path class="crack" d="M112 30 104 62 70 100M104 62l46 34M70 100l48 28-18 48" fill="none" stroke="#3A1608" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
   const HAMMER = `<svg class="bk-hammer" viewBox="0 0 120 120" aria-hidden="true"><g class="hm"><rect x="56" y="30" width="10" height="84" rx="4" fill="#8A5A3B"/><rect x="30" y="12" width="62" height="28" rx="6" fill="#6B7380"/><rect x="30" y="12" width="62" height="9" rx="4" fill="#9AA3AE"/></g></svg>`;
 
   // ---------- العرض المتحرك ----------
@@ -83,15 +97,15 @@ window.FZ_BANK = (() => {
     const ids = info.ids;
     ov.innerHTML = `<div class="bk-box" role="dialog" aria-label="الحصالة">
       <h3 class="bk-h">الحصالة</h3>
-      <div class="bk-stage">${PIG_SVG}${HAMMER}<div class="bk-glow"></div></div>
+      <div class="bk-stage">${JAR_SVG}${HAMMER}<div class="bk-glow"></div></div>
       <div class="bk-count"><b>${num(0)}</b><small>نقطة في الحصالة</small></div>
-      ${info.carry ? `<p class="bk-carry">🐷 من الجولات اللي قبل: <b>${plus(info.carry)}</b></p>` : ''}
+      ${info.carry ? `<p class="bk-carry">🪙 من الجولات اللي قبل: <b>${plus(info.carry)}</b></p>` : ''}
       <div class="bk-teams">${ids.map((t) => `<div class="bk-team ${String(t) === String(me) ? 'me' : ''}" data-t="${esc(t)}" style="--tc:${(T[t] && T[t].c) || '#888'}">
         <b>${esc((T[t] && T[t].n) || 'فريق')}</b><span class="raw">${plus(info.raw[t] || 0)}</span><em class="got"></em></div>`).join('')}</div>
       <p class="bk-msg" aria-live="polite"></p>
       <button type="button" class="bk-skip">متابعة</button></div>`;
     document.body.appendChild(ov);
-    const box = ov.querySelector('.bk-box'), pig = ov.querySelector('.bk-pig'), cnt = ov.querySelector('.bk-count b');
+    const box = ov.querySelector('.bk-box'), jar = ov.querySelector('.bk-jar'), cnt = ov.querySelector('.bk-count b');
     const msg = ov.querySelector('.bk-msg'), stage = ov.querySelector('.bk-stage');
     let alive = true, finished = false, count = 0;
     const setCount = (v) => { count = v; cnt.textContent = num(Math.round(v)); };
@@ -107,7 +121,7 @@ window.FZ_BANK = (() => {
     ov.querySelector('.bk-skip').addEventListener('click', () => finish());
     // نقطة داخل الصندوق
     const at = (el, fx = 0.5, fy = 0.5) => { const b = box.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - b.left + r.width * fx, y: r.top - b.top + r.height * fy }; };
-    const slot = () => { const b = box.getBoundingClientRect(), r = pig.getBoundingClientRect(); return { x: r.left - b.left + r.width * (114 / 220), y: r.top - b.top + r.height * (38 / 160) }; };
+    const slot = () => { const b = box.getBoundingClientRect(), r = jar.getBoundingClientRect(); return { x: r.left - b.left + r.width * (110 / 220), y: r.top - b.top + r.height * (36 / 190) }; };
     function coin(from, to, { dur = 560, lift = 90, size = 22, delay = 0, spin = true } = {}) {
       const c = document.createElement('i'); c.className = 'bk-coin'; c.style.width = c.style.height = size + 'px';
       c.style.left = (from.x - size / 2) + 'px'; c.style.top = (from.y - size / 2) + 'px';
@@ -125,7 +139,7 @@ window.FZ_BANK = (() => {
       requestAnimationFrame(() => ov.classList.add('in'));
       play('pop', 0.7);
       await wait(500);
-      if (info.carry) { setCount(info.carry); pig.classList.add('bump'); }
+      if (info.carry) { setCount(info.carry); jar.classList.add('bump'); }
       await wait(info.carry ? 500 : 150);
       // ١) العملات من الفرق إلى الحصالة
       const jobs = [];
@@ -142,7 +156,7 @@ window.FZ_BANK = (() => {
           jobs.push(coin(at(chip, 0.5, 0.2), slot(), { delay: d }).then(() => {
             if (!alive) return;
             setCount(count + step); play(k % 2 ? 'coin1' : 'coin2', 0.8);
-            pig.classList.remove('bump'); void pig.offsetWidth; pig.classList.add('bump');
+            jar.classList.remove('bump'); void jar.offsetWidth; jar.classList.add('bump');
           }));
         });
       }
@@ -156,12 +170,12 @@ window.FZ_BANK = (() => {
         msg.innerHTML = 'ما أحد جمع نقاط هالجولة… الحصالة تنتظر';
         await wait(1800); return finish();
       }
-      pig.classList.add('shake');
+      jar.classList.add('shake');
       for (let i = 0; i < 6 && alive; i++) { F().FX.tick(0.18); await wait(160); }
-      pig.classList.remove('shake');
+      jar.classList.remove('shake');
       if (!alive) return;
       if (info.tier === 'tie') {
-        pig.classList.add('wiggle');
+        jar.classList.add('wiggle');
         msg.innerHTML = `<b>تعادل!</b> ما أحد كسرها، والحصالة تكبر للجولة الجاية`;
         play('pop', 0.8); F().FX.whistle && F().FX.whistle();
         await wait(2600); return finish();
@@ -169,12 +183,12 @@ window.FZ_BANK = (() => {
       // ٣) المطرقة والكسر
       stage.classList.add('swing');
       await wait(330); play('hit', 1);
-      pig.classList.add('cracked');
+      jar.classList.add('cracked');
       await wait(380);
       stage.classList.remove('swing'); void stage.offsetWidth; stage.classList.add('swing');
       await wait(330);
       if (!alive) return;
-      play('smash', 1); pig.classList.add('broke'); stage.classList.add('flash');
+      play('smash', 1); jar.classList.add('broke'); stage.classList.add('flash');
       if (navigator.vibrate) try { navigator.vibrate(60); } catch (e) { /* */ }
       await wait(200);
       // ٤) العملات تطير للفائز
@@ -204,7 +218,8 @@ window.FZ_BANK = (() => {
         requestAnimationFrame(step);
       });
       setCount(info.left);
-      ov.querySelector('.bk-count small').textContent = info.left ? 'باقي في الحصالة للجولة الجاية' : 'الحصالة فاضية';
+      if (!info.left) cnt.textContent = '';
+      ov.querySelector('.bk-count small').textContent = info.left ? 'باقي في الحصالة للجولة الجاية' : 'انكسرت وفضيت';
       F().FX.clap(5);
       const conf = document.getElementById('confetti');
       if (conf && (me == null || wins.map(String).includes(String(me)))) F().confetti(conf, { count: 120 });
