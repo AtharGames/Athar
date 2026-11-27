@@ -528,7 +528,7 @@
       run.used[gid].push(i);
       return [i, list[i]];
     };
-    const made = g.make({ seed, cfg: SET, pick, quiz, hostQ });
+    const made = g.make({ seed, cfg: SET, pick, quiz, hostQ, last: run.ri + 1 >= run.queue[run.gi].rounds, rounds: run.queue[run.gi].rounds });
     if (!made) { F.toast('ما فيه أسئلة متاحة'); afterRound(); return; }
     run.cur = { d: made.d, k: made.k };
     run.rk = (run.rk || 0) + 1;

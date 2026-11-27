@@ -868,3 +868,16 @@ body.play main{padding:10px 12px 22px;}
 .pg-body .hk-wrap, .pg-body .hk-rev .hk-wrap{width:100%; height:auto;}
 .host .stage .hk-wrap.look{width:min(100%,980px);}
 @media (prefers-reduced-motion: reduce){.hk-wrap.spot .hole{animation:none; transform:none;} .hk-wrap.spot .ring{animation:none; opacity:1;}}
+
+/* أسئلة السرعة: الجولة الذهبية */
+.q-gold{display:inline-flex; align-items:center; gap:6px; padding:5px 14px; border-radius:999px; font-weight:800; background:linear-gradient(90deg,#FFD877,#F5A50B,#FFD877); background-size:200% 100%; color:#2A1A00; box-shadow:0 4px 0 #B86E00; animation:goldShine 2.4s linear infinite;}
+@keyframes goldShine{to{background-position:-200% 0;}}
+.q-big.gold{padding:10px 18px; border-radius:16px; border:2px solid var(--gold); box-shadow:0 0 0 4px color-mix(in srgb, var(--gold) 22%, transparent), 0 0 30px color-mix(in srgb, var(--gold) 30%, transparent);}
+.gold-splash{position:fixed; inset:0; z-index:56; display:grid; place-items:center; pointer-events:none; background:radial-gradient(circle at 50% 50%, rgba(245,165,11,.35), rgba(10,6,32,.55) 70%); animation:gsFade 1.9s ease both;}
+.gs-box{display:flex; flex-direction:column; align-items:center; gap:4px; padding:22px 40px; border-radius:26px; background:linear-gradient(180deg,#FFE29A,#F5A50B); color:#2A1A00; box-shadow:0 10px 0 #B86E00, 0 30px 80px rgba(245,165,11,.5); animation:gsIn 1.9s both;}
+.gs-box i{font-style:normal; font-size:3rem; line-height:1; animation:spark 1s ease-in-out infinite;}
+.gs-box b{font-size:clamp(1.6rem,5vw,2.8rem);} .gs-box small{font-weight:700; font-size:1.05rem;}
+.gold-splash.small .gs-box{padding:14px 26px;} .gold-splash.small .gs-box i{font-size:2.2rem;}
+@keyframes gsFade{0%{opacity:0;} 12%,80%{opacity:1;} 100%{opacity:0;}}
+@keyframes gsIn{0%{transform:scale(.5) rotate(-6deg); animation-timing-function:cubic-bezier(.34,1.45,.64,1);} 30%{transform:none;} 82%{transform:none; animation-timing-function:cubic-bezier(.7,0,.84,0);} 100%{transform:translateY(-40vh) scale(.8);}}
+@media (prefers-reduced-motion: reduce){.q-gold,.gold-splash,.gs-box,.gs-box i{animation:none !important;}}

@@ -96,6 +96,7 @@ window.FZ_MO = (() => {
     };
     el.textContent = fmt(from);
     requestAnimationFrame(step);
+    setTimeout(() => { if (el.isConnected) el.textContent = fmt(to); }, dur + 80); // ضمان الرقم النهائي لو توقفت الإطارات
   }
   function sparks(host, n = 12) {
     if (reduced()) return;
@@ -147,6 +148,7 @@ window.FZ_MO = (() => {
         const t0 = performance.now();
         const step = (t) => { if (!node.isConnected) return; const k = Math.min(1, (t - t0) / 700), e = 1 - Math.pow(2, -10 * k); node.textContent = numFmt(Math.round(o.pts + (nv - o.pts) * (k >= 1 ? 1 : e))); if (k < 1) requestAnimationFrame(step); };
         node.textContent = numFmt(o.pts); requestAnimationFrame(step);
+        setTimeout(() => { if (node.isConnected) node.textContent = numFmt(nv); }, 780);
         if (nv > o.pts) { r.classList.add('mo-gain'); setTimeout(() => r.classList.remove('mo-gain'), 950); }
         const w = r.style.getPropertyValue('--w');
         if (o.w && w && o.w !== w) { r.style.setProperty('--w', o.w); void r.offsetWidth; requestAnimationFrame(() => r.style.setProperty('--w', w)); }

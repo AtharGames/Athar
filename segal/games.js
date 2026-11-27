@@ -70,16 +70,38 @@ window.FZ_GAMES = (() => {
 
   // ---------- سرعة البديهة: الحساب والكشف المتحرك للجميع ----------
   const secs = (ms) => ar((Math.max(0, ms) / 1000).toFixed(2)).replace('.', '٫') + ' ث';
-  function reflexScore(c) {
+  function reflexScore(c, right = c.k.ans, mult = 1) {
     const pp = {}, tm = {}, fast = [];
-    let right = 0;
+    let ok = 0;
     Object.keys(c.A || {}).forEach((pid) => {
-      const a = c.A[pid], ok = +a.v === c.k.ans;
-      pp[pid] = ok ? speedPts(a.t, c.at, c.dl) : 0;
-      if (ok) { right++; tm[pid] = Math.max(0, a.t - c.at); fast.push(pid); }
+      const a = c.A[pid], hit = +a.v === right;
+      pp[pid] = hit ? speedPts(a.t, c.at, c.dl) * mult : 0;
+      if (hit) { ok++; tm[pid] = Math.max(0, a.t - c.at); fast.push(pid); }
     });
     fast.sort((x, y) => tm[x] - tm[y]);
-    return { pp, rev: { k: c.k, right, n: Object.keys(c.A || {}).length, top: fast.slice(0, 5), tm, picks: Object.fromEntries(Object.keys(c.A || {}).map((p) => [p, +c.A[p].v])) } };
+    return { pp, rev: { k: c.k, right: ok, n: Object.keys(c.A || {}).length, top: fast.slice(0, 5), tm, picks: Object.fromEntries(Object.keys(c.A || {}).map((p) => [p, +c.A[p].v])) } };
+  }
+  // إعلان الأسرع للجميع (سرعة البديهة وأسئلة السرعة)
+  function fastAnnounce(ann, c, rv, ans, myPid) {
+    const top = rv.top || [];
+    const tag = (pid) => `<span class="tchip" style="--tc:${window.FZ.pcolor(pid)}">${esc(pname(c.P, pid))}</span>${whoTag(c, pid)}`;
+    let mineLine = '';
+    if (myPid != null) {
+      const pick = rv.picks ? rv.picks[myPid] : undefined;
+      mineLine = pick === undefined ? '<p class="rx-me none">ما ضغطت هالمرة</p>'
+        : pick === ans ? `<p class="rx-me ok">✓ صح! وقتك ${secs(rv.tm[myPid])}</p>` : '<p class="rx-me no">✗ اخترت غلط</p>';
+    }
+    if (!top.length) {
+      ann.innerHTML = `<div class="rx-ban none">😮 ما أحد جابها!</div>${mineLine}`;
+      FX.wrong();
+      return;
+    }
+    const f = top[0];
+    ann.innerHTML = `<div class="rx-ban"><small>⚡ الأسرع</small><div class="who">${tag(f)}</div><b class="time">${secs(rv.tm[f])}</b><em>${plus((c.pp || rv.pp || {})[f] || 0)}</em></div>
+      <ol class="rx-podium">${top.slice(1, 3).map((pid, i) => `<li style="--d:${i}"><i>${ar(i + 2)}</i>${tag(pid)}<span>${secs(rv.tm[pid])}</span></li>`).join('')}</ol>
+      <p class="rx-sum">أصاب <b>${ar(rv.right || 0)}</b> من ${ar(rv.n || 0)}</p>${mineLine}`;
+    FX.whistle && FX.whistle();
+    if (myPid == null || f === myPid) setTimeout(() => FX.clap(4), 250);
   }
   function reflexReveal(el, c, { done, mine } = {}) {
     const G0 = GAMES.reflex, g = SC.reflex(c.d.s), rv = c.rev || {}, ans = (rv.k || {}).ans;
@@ -117,25 +139,47 @@ window.FZ_GAMES = (() => {
       await wait(700);
       if (!alive()) return;
       // ٣) الإعلان: الأسرع ووقته
-      const top = rv.top || [];
-      const tag = (pid) => `<span class="tchip" style="--tc:${window.FZ.pcolor(pid)}">${esc(pname(c.P, pid))}</span>${whoTag(c, pid)}`;
-      let mineLine = '';
-      if (myPid != null) {
-        const pick = rv.picks ? rv.picks[myPid] : undefined;
-        mineLine = pick === undefined ? '<p class="rx-me none">ما ضغطت هالمرة</p>'
-          : pick === ans ? `<p class="rx-me ok">✓ صح! وقتك ${secs(rv.tm[myPid])}</p>` : '<p class="rx-me no">✗ اخترت غلط</p>';
-      }
-      if (!top.length) {
-        ann.innerHTML = `<div class="rx-ban none">😮 ما أحد جابها!</div>${mineLine}`;
-        FX.wrong();
-      } else {
-        const f = top[0];
-        ann.innerHTML = `<div class="rx-ban"><small>⚡ الأسرع</small><div class="who">${tag(f)}</div><b class="time">${secs(rv.tm[f])}</b><em>${plus((c.pp || rv.pp || {})[f] || 0)}</em></div>
-          <ol class="rx-podium">${top.slice(1, 3).map((pid, i) => `<li style="--d:${i}"><i>${ar(i + 2)}</i>${tag(pid)}<span>${secs(rv.tm[pid])}</span></li>`).join('')}</ol>
-          <p class="rx-sum">أصاب <b>${ar(rv.right || 0)}</b> من ${ar(rv.n || 0)}</p>${mineLine}`;
-        FX.whistle && FX.whistle();
-        if (myPid == null || top[0] === myPid) setTimeout(() => FX.clap(4), 250);
-      }
+      fastAnnounce(ann, c, rv, ans, myPid);
+      await wait(1600);
+      if (alive() && done) done();
+    })();
+  }
+
+  // ---------- أسئلة السرعة: الجولة الذهبية والكشف للجميع ----------
+  let goldShown = '';
+  function goldSplash(key, big) {
+    if (goldShown === key || window.FZ.reduced()) { goldShown = key; return; }
+    goldShown = key;
+    const ov = document.createElement('div');
+    ov.className = 'gold-splash' + (big ? '' : ' small');
+    ov.innerHTML = '<div class="gs-box"><i>🌟</i><b>الجولة الذهبية</b><small>سؤال صعب ونقاطه دبل</small></div>';
+    document.body.appendChild(ov);
+    FX.whistle && FX.whistle(); setTimeout(() => FX.clap(3), 300);
+    setTimeout(() => ov.remove(), 1900);
+  }
+  function quickReveal(el, c, { done, mine } = {}) {
+    const d = c.d, rv = c.rev || {}, ans = (rv.k || {}).correct;
+    const counts = {};
+    Object.values(rv.picks || {}).forEach((v) => { counts[v] = (counts[v] || 0) + 1; });
+    el.innerHTML = `<div class="rx-rev">${d.gold ? '<span class="q-gold">🌟 الجولة الذهبية · النقاط دبل</span>' : ''}<div class="q-big small">${esc(d.q)}</div>${mcHost(d.o)}
+      ${rv.k && rv.k.cite ? `<p class="cite" hidden>${esc(rv.k.cite)}</p>` : ''}<div class="rx-ann" aria-live="polite"></div></div>`;
+    const root = $('.rx-rev', el), ann = $('.rx-ann', root);
+    const alive = () => root.isConnected;
+    const wait = (ms) => new Promise((r) => setTimeout(r, window.FZ.reduced() ? Math.min(ms, 80) : ms));
+    const myPid = mine && mine.pid;
+    (async () => {
+      await wait(450);
+      if (!alive()) return;
+      $$('.mc-opt', root).forEach((o, i) => {
+        o.classList.add(i === ans ? 'is-right' : 'is-dim');
+        if (counts[i]) o.insertAdjacentHTML('beforeend', `<b class="cnt">${ar(counts[i])}</b>`);
+        if (myPid != null && rv.picks && rv.picks[myPid] === i && i !== ans) o.classList.add('my-wrong');
+      });
+      const ct = $('.cite', root); if (ct) ct.hidden = false;
+      FX.pop(820);
+      await wait(700);
+      if (!alive()) return;
+      fastAnnounce(ann, c, rv, ans, myPid);
       await wait(1600);
       if (alive() && done) done();
     })();
@@ -446,24 +490,28 @@ window.FZ_GAMES = (() => {
 
     // ---------- ٤) أسئلة السرعة ----------
     quick: {
-      name: 'أسئلة السرعة', ico: '⚡', mode: 'solo', rounds: 5, time: 15,
+      name: 'أسئلة السرعة', ico: '⚡', mode: 'solo', rounds: 5, time: 15, anim: true,
       idea: 'سؤال ثقافي وخيارات، والأسرع يكسب أكثر',
-      how: 'سؤال من بنك ديوان (أو من المقدّم) وخياراته على جوالك. الصح يعطيك ٥٠ وحتى ٥٠ زيادة حسب سرعتك.',
+      how: 'سؤال من بنك ديوان (أو من المقدّم) وخياراته على جوالك. الصح يعطيك ٥٠ وحتى ٥٠ زيادة حسب سرعتك. وآخر جولة ذهبية: سؤال صعب ونقاطه دبل.',
       make(c) {
-        const q = c.hostQ || (window.AtharQuiz && window.AtharQuiz.next(c.quiz));
+        // آخر جولة: الجولة الذهبية بسؤال صعب ونقاط مضاعفة
+        const gold = !!(c.last && c.rounds > 1);
+        const q = c.hostQ || (window.AtharQuiz && window.AtharQuiz.next(gold && c.quiz ? Object.assign({}, c.quiz, { levels: [2] }) : c.quiz));
         if (!q) return null;
-        return { d: { q: q.q, o: q.opts, cat: q.cat || '' }, k: { correct: q.correct, cite: q.cite || '' } };
+        return { d: { q: q.q, o: q.opts, cat: q.cat || '', gold: gold ? 1 : 0 }, k: { correct: q.correct, cite: q.cite || '' } };
       },
-      score: (c) => soloMC(c, (v) => +v === c.k.correct),
-      host(el, c) { el.innerHTML = `${c.d.cat ? `<span class="q-cat">${esc(c.d.cat)}</span>` : ''}<div class="q-big">${esc(c.d.q)}</div>${mcHost(c.d.o)}`; },
-      reveal(el, c) {
-        const counts = {};
-        Object.values(c.A || {}).forEach((a) => { counts[a.v] = (counts[a.v] || 0) + 1; });
-        el.innerHTML = `<div class="q-big small">${esc(c.d.q)}</div>${mcHost(c.d.o, c.rev.k.correct, counts)}${c.rev.k.cite ? `<p class="cite">${esc(c.rev.k.cite)}</p>` : ''}`;
-        soloTop(el, c);
+      score: (c) => reflexScore(c, c.k.correct, c.d.gold ? 2 : 1),
+      host(el, c) {
+        el.innerHTML = `${c.d.gold ? '<span class="q-gold">🌟 الجولة الذهبية · النقاط دبل</span>' : ''}${c.d.cat ? `<span class="q-cat">${esc(c.d.cat)}</span>` : ''}<div class="q-big ${c.d.gold ? 'gold' : ''}">${esc(c.d.q)}</div>${mcHost(c.d.o)}`;
+        if (c.d.gold) goldSplash(c.d.q, true);
       },
-      phone(el, c) { el.innerHTML = `<div class="q-big">${esc(c.d.q)}</div>`; mcPhone(el, c.d.o, c); },
-      phoneRev(el, c) { el.innerHTML = `<div class="q-big small">${esc(c.d.q)}</div><div class="truth"><small>الإجابة</small><b>${esc(c.d.o[c.rev.k.correct])}</b></div>`; }
+      reveal(el, c) { quickReveal(el, c, { done: c.done }); },
+      phone(el, c) {
+        el.innerHTML = `${c.d.gold ? '<span class="q-gold">🌟 ذهبية · دبل</span>' : ''}<div class="q-big ${c.d.gold ? 'gold' : ''}">${esc(c.d.q)}</div>`;
+        mcPhone(el, c.d.o, c);
+        if (c.d.gold) goldSplash(c.d.q, false);
+      },
+      phoneRev(el, c) { quickReveal(el, c, { done: c.done, mine: c.me }); }
     },
 
     // ---------- ٥) تحدي الرسم ----------
