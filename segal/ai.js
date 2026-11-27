@@ -11,7 +11,8 @@ window.FazaaAI = (() => {
   const params = new URLSearchParams(location.search);
   const FB = window.FAZAA_FIREBASE || {};
   const SDK = 'https://www.gstatic.com/firebasejs/13.4.0/';
-  const MODEL = FB.aiModel || 'gemini-3.5-flash-lite';
+  // النموذج الأساسي ثم بديل لو تعذّر (الأسماء من قائمة Firebase AI Logic)
+  const MODELS = [FB.aiModel || 'gemini-3.5-flash-lite', 'gemini-3.6-flash'].filter((m, i, a) => a.indexOf(m) === i);
   const MODE = params.get('ai') === 'mock' ? 'mock' : (FB.ai && FB.databaseURL ? 'gemini' : 'off');
 
   let ready = null;
@@ -26,7 +27,7 @@ window.FazaaAI = (() => {
         const ai = AI.getAI(app, { backend: new AI.GoogleAIBackend() });
         const S = AI.Schema;
         const schema = S.object({ properties: { results: S.array({ items: S.object({ properties: { id: S.string(), score: S.integer(), hits: S.array({ items: S.string() }) } }) }) } });
-        return AI.getGenerativeModel(ai, { model: MODEL, generationConfig: { responseMimeType: 'application/json', responseSchema: schema, temperature: 0.1 } });
+        return MODELS.map((model) => AI.getGenerativeModel(ai, { model, generationConfig: { responseMimeType: 'application/json', responseSchema: schema, temperature: 0.1 } }));
       }).catch((e) => { ready = null; throw e; });
     }
     return ready;
@@ -43,10 +44,16 @@ window.FazaaAI = (() => {
     });
   }
   async function run(parts) {
-    const m = await load();
-    const r = await withTimeout(m.generateContent(parts), 30000);
-    const data = JSON.parse(r.response.text());
-    return data.results || [];
+    const models = await load();
+    let last = null;
+    for (const m of models) {
+      try {
+        const r = await withTimeout(m.generateContent(parts), 30000);
+        const data = JSON.parse(r.response.text());
+        return data.results || [];
+      } catch (e) { last = e; console.warn('[segal-ai]', e && e.message); }
+    }
+    throw last || new Error('ai-failed');
   }
 
   async function drawings({ title, target, items }) {

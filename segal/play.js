@@ -46,7 +46,10 @@
       me = { room: code, pid, name };
       meStore.put(ME_KEY, me);
       const ex = await Net.get(`${code}/p/${pid}`);
-      if (ex && ex.t != null) { await Net.update(`${code}/p/${pid}`, { n: name, on: true }); start(); }
+      if (ex && ex.t != null) { await Net.update(`${code}/p/${pid}`, { n: name, on: true }); start(); return; }
+      // اللعب الفردي (فريق واحد ضمني): دخول مباشر بدون اختيار فريق
+      const TT = (await Net.get(code + '/T')) || {};
+      if (Object.keys(TT).length === 1) { await Net.set(`${code}/p/${pid}`, { n: name, t: Object.keys(TT)[0], j: Net.TS, on: true }); start(); }
       else teamScreen();
     } catch (x) { console.error(x); err.textContent = 'تعذّر الاتصال، حاول مرة ثانية'; err.hidden = false; }
     finally { btn.disabled = false; }
@@ -118,11 +121,13 @@
   }
 
   // ---------- من أنا؟ ----------
+  const isInd = () => Object.keys(T || {}).length === 1;
   function whoAmI() {
     const p = P[me.pid] || {};
     const tid = String(p.t);
     const t = T[tid] || {};
-    return { pid: me.pid, name: me.name, team: tid, teamName: t.n || '', color: t.c || '#888', leader: t.l, isLeader: t.l === me.pid };
+    const ind = isInd();
+    return { pid: me.pid, name: me.name, team: tid, unit: ind ? me.pid : tid, ind, teamName: t.n || '', color: ind ? F.pcolor(me.pid) : (t.c || '#888'), leader: ind ? null : t.l, isLeader: !ind && t.l === me.pid };
   }
   function canAnswer(m) {
     if (!S) return false;
@@ -162,11 +167,12 @@
     if (!S || !P[me.pid]) return;
     const m = whoAmI();
     $('#meName').textContent = me.name;
-    $('#meRoom').innerHTML = `<span class="tchip mini" style="--tc:${m.color}">${esc(m.teamName)}</span>${m.isLeader ? ' 👑 القائد' : ''}`;
+    $('#meRoom').innerHTML = m.ind ? `غرفة ${ar(me.room)}` : `<span class="tchip mini" style="--tc:${m.color}">${esc(m.teamName)}</span>${m.isLeader ? ' 👑 القائد' : ''}`;
     const key = [S.ph, S.r, S.sub, S.g, m.isLeader, m.leader, m.team, S.cur, (S.dw && S.dw[me.pid]) ? 1 : 0, S.ph === 'play' && S.g === 'mines' ? S.d : '', mineAns != null ? 1 : 0].join('|');
     if (!force && key === rendered) return;
     rendered = key;
     clearInterval(timer);
+    if (S.ph === 'lobby' && m.ind) return waitView(`<div class="w-ico">⏳</div><h2>أهلًا ${esc(me.name)}</h2><p><span class="tchip" style="--tc:${m.color}">👤 تلعب لنفسك</span></p><p class="muted">انتظر المقدّم يبدأ السِّجال…</p>`);
     if (S.ph === 'lobby') return waitView(`<div class="w-ico">⏳</div><h2>أهلًا ${esc(me.name)}</h2><p>أنت في فريق <span class="tchip" style="--tc:${m.color}">${esc(m.teamName)}</span>${m.isLeader ? '<br><b class="lead-badge">👑 أنت قائد الفريق</b>' : ''}</p><p class="muted">انتظر المقدّم يبدأ السِجَال…</p><button class="btn btn-ghost" id="chgTeam">غيّر فريقي</button>`, () => { $('#chgTeam').onclick = () => { watchers.forEach((w) => w()); watchers = []; teamScreen(true); }; });
     if (S.ph === 'intro') return introView(m);
     if (S.ph === 'board') return boardView(m);
@@ -181,6 +187,7 @@
     if (after) after();
   }
   function roleLine(g, m) {
+    if (m.ind) return g.mode === 'mines' ? '<b class="lead-badge">💣 كل واحد يخبّي لغمه ويلعب بنفسه</b>' : g.mode === 'duel' ? '<b class="lead-badge">✏️ الكل يرسم من جواله</b>' : '<b class="lead-badge">📱 كلكم تجاوبون من جوالاتكم</b>';
     if (g.mode === 'team') return m.isLeader ? '<b class="lead-badge">👑 أنت القائد: تشاور مع فريقك وأرسل الإجابة</b>' : `<span class="muted">القائد ${m.leader && P[m.leader] ? '«' + esc(P[m.leader].n) + '»' : ''} يرسل، وأنت تشاور معه</span>`;
     if (g.mode === 'duel') return S.dw && S.dw[me.pid] ? '<b class="lead-badge">✏️ أنت رسّام فريقك!</b>' : `<span class="muted">رسّام فريقك: ${esc((Object.keys(S.dw || {}).filter((p) => P[p] && String(P[p].t) === m.team).map((p) => P[p].n)[0]) || '—')}</span>`;
     if (g.mode === 'mines') return parse(S.d) && parse(S.d).unit === 'solo' ? '<b class="lead-badge">💣 كل واحد يلعب بنفسه</b>' : (m.isLeader ? '<b class="lead-badge">👑 أنت تضغط عن فريقك</b>' : '<span class="muted">القائد يخبّي اللغم ويضغط عن الفريق</span>');
@@ -188,8 +195,8 @@
   }
   function introView(m) {
     const g = G[S.g]; if (!g) return;
-    waitView(`<div class="booth-sign small"><span class="b-ico">${g.ico}</span><h2>${esc(g.name)}</h2><span class="mode-badge m-${g.mode}">${GM.MODE_LABEL[g.mode]}</span></div>
-      <p class="how">${esc(g.how)}</p><p>${roleLine(g, m)}</p><p class="muted">الفقرة ${ar((S.gi || 0) + 1)} من ${ar(S.gn || 1)}</p>`);
+    waitView(`<div class="booth-sign small"><span class="b-ico">${g.ico}</span><h2>${esc(g.name)}</h2><span class="mode-badge m-${GM.effMode(g, m.ind)}">${GM.modeLabel(g, m.ind)}</span></div>
+      <p class="how">${esc(GM.howOf(g, m.ind))}</p><p>${roleLine(g, m)}</p><p class="muted">الفقرة ${ar((S.gi || 0) + 1)} من ${ar(S.gn || 1)}</p>`);
     FX.swoosh();
   }
   function bar(g, m) {
@@ -239,7 +246,7 @@
       const body = $('.pg-body', el);
       const waitText = g.mode === 'duel' ? `يرسم الآن: ${Object.keys(S.dw || {}).map((p) => (P[p] ? P[p].n : '')).filter(Boolean).join('، ')}` : '';
       g.phone(body, { d, me: m, can, sent: mineAns, submit, view, r: S.r, P, T, waitText, onEnd: (f) => endCbs.push(f) });
-      if (g.mode === 'team' && !m.isLeader) {
+      if (S.m === 'team' && !m.isLeader) {
         body.insertAdjacentHTML('beforeend', `<p class="consult">🗣️ تشاوروا! ${m.leader && P[m.leader] ? 'القائد «' + esc(P[m.leader].n) + '» يرسل' : ''}</p>`);
         leadNote();
       }
@@ -252,6 +259,7 @@
 
   function myPts(m, rev) {
     const p = rev.pp && rev.pp[me.pid], t = rev.tp && rev.tp[m.team];
+    if (m.ind) return `<div class="my-pts"><span>نقاطك <b>${plus(p || 0)}</b></span></div>`;
     return `<div class="my-pts">${p != null ? `<span>أنت <b>${plus(p)}</b></span>` : ''}<span class="tchip" style="--tc:${m.color}">${esc(m.teamName)} <b>${plus(t || 0)}</b></span></div>`;
   }
   function revealView(m) {
@@ -263,7 +271,7 @@
     const el = $('#pgame');
     el.innerHTML = '<div class="pg-body reveal"></div>';
     const body = $('.pg-body', el);
-    try { g.phoneRev(body, { d, rev, me: m, P, T }); } catch (e) { console.error(e); }
+    try { g.phoneRev(body, { d, rev, me: m, P, T, ind: m.ind }); } catch (e) { console.error(e); }
     body.insertAdjacentHTML('afterbegin', myPts(m, rev));
     const got = (rev.pp && rev.pp[me.pid]) || (g.mode !== 'solo' && rev.tp && rev.tp[m.team]);
     if (got > 0) FX.right(); else FX.wrong();
@@ -320,13 +328,24 @@
 
   // ---------- النتائج والنهاية ----------
   function standings() {
+    if (isInd()) {
+      const sp = (SCORE && SCORE.P) || {};
+      return Object.keys(P).map((pid) => ({ t: pid, n: P[pid].n, c: F.pcolor(pid), pts: sp[pid] || 0 })).sort((a, b) => b.pts - a.pts);
+    }
     const sc = (SCORE && SCORE.T) || {};
     return F.teamList(T).map((t) => ({ t: t.id, n: t.n, c: t.c, pts: sc[t.id] || 0 })).sort((a, b) => b.pts - a.pts);
   }
   function boardView(m) {
     const st = standings();
-    const pos = st.findIndex((x) => x.t === m.team);
+    const pos = st.findIndex((x) => x.t === m.unit);
     const g = G[S.g];
+    if (m.ind) {
+      // أول ١٠ ومكاني إن كنت خارجهم
+      const top = st.slice(0, 10);
+      return waitView(`<div class="w-ico">${g ? g.ico : '📊'}</div><h2>نتائج ${g ? '«' + esc(g.name) + '»' : ''}</h2>
+        <p>مركزك <b class="big-num">${ar(pos + 1)}</b> من ${ar(st.length)}</p>
+        <ol class="mini-rank">${top.map((x, i) => `<li style="--tc:${x.c}" class="${x.t === m.unit ? 'mine' : ''}"><b>${ar(i + 1)}. ${esc(x.n)}</b><span>${num(x.pts)}</span></li>`).join('')}${pos >= 10 ? `<li style="--tc:${m.color}" class="mine"><b>${ar(pos + 1)}. ${esc(me.name)}</b><span>${num(st[pos].pts)}</span></li>` : ''}</ol>`);
+    }
     waitView(`<div class="w-ico">${g ? g.ico : '📊'}</div><h2>نتائج ${g ? '«' + esc(g.name) + '»' : ''}</h2>
       <p>فريقك <span class="tchip" style="--tc:${m.color}">${esc(m.teamName)}</span> في المركز <b class="big-num">${ar(pos + 1)}</b></p>
       <ol class="mini-rank">${st.map((x) => `<li style="--tc:${x.c}" class="${x.t === m.team ? 'mine' : ''}"><b>${esc(x.n)}</b><span>${num(x.pts)}</span></li>`).join('')}</ol>
@@ -334,9 +353,10 @@
   }
   function endView(m) {
     const st = standings();
-    const won = S.win != null && String(S.win) === m.team;
-    waitView(`<div class="w-ico">${won ? '🏆' : '👏'}</div><h2>${won ? 'فزتوا!' : 'انتهى السِّجال'}</h2>
-      <ol class="mini-rank">${st.map((x) => `<li style="--tc:${x.c}" class="${x.t === m.team ? 'mine' : ''}"><b>${esc(x.n)}</b><span>${num(x.pts)}</span></li>`).join('')}</ol>`);
+    const won = m.ind ? (st[0] && st[0].t === me.pid && st[0].pts > 0) : (S.win != null && String(S.win) === m.team);
+    const pos = st.findIndex((x) => x.t === m.unit);
+    waitView(`<div class="w-ico">${won ? '🏆' : '👏'}</div><h2>${won ? (m.ind ? 'أنت البطل!' : 'فزتوا!') : 'انتهى السِّجال'}</h2>${m.ind ? `<p>مركزك <b class="big-num">${ar(pos + 1)}</b> من ${ar(st.length)}</p>` : ''}
+      <ol class="mini-rank">${st.slice(0, m.ind ? 10 : 6).map((x) => `<li style="--tc:${x.c}" class="${x.t === m.unit ? 'mine' : ''}"><b>${esc(x.n)}</b><span>${num(x.pts)}</span></li>`).join('')}</ol>`);
     if (won) { window.AtharSound.winner(); F.confetti($('#confetti')); } else FX.clap(6);
   }
 

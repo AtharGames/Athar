@@ -51,6 +51,9 @@ window.FZ = (() => {
   const TEAM_COLORS = ['#E8554E', '#E59A1C', '#1FA971', '#8257E5', '#E0559B', '#0FA3B1'];
   const TEAM_NAMES = ['الصقور', 'النخيل', 'الدروع', 'السهام', 'النجوم', 'الموج'];
   const teamList = (T) => Object.keys(T || {}).sort((a, b) => a - b).map((k) => Object.assign({ id: k }, T[k]));
+  // لون ثابت لكل مشارك (للعب الفردي)
+  const P_COLORS = ['#E8554E', '#E59A1C', '#1FA971', '#8257E5', '#E0559B', '#0FA3B1', '#3B82F6', '#D97706', '#16A34A', '#DB2777', '#7C3AED', '#0891B2'];
+  const pcolor = (pid) => { let h = 0; String(pid).split('').forEach((ch) => { h = (h * 31 + ch.charCodeAt(0)) >>> 0; }); return P_COLORS[h % P_COLORS.length]; };
   const members = (P, t) => Object.keys(P || {}).filter((pid) => P[pid] && String(P[pid].t) === String(t));
 
   // نقاط الترتيب للفقرات اللي تعتمد على الأقرب أو الأفضل
@@ -239,7 +242,7 @@ window.FZ = (() => {
 
   return {
     $, $$, S, FX, store, ar, toLatin, esc, num, plus, clock, parseNum, rng, R, shuffle, uid,
-    TEAM_COLORS, TEAM_NAMES, teamList, members, RANK_PTS, rankBy, speedPts, km,
+    TEAM_COLORS, TEAM_NAMES, teamList, members, pcolor, RANK_PTS, rankBy, speedPts, km,
     THEME_KEY, GAME_THEMES, setTheme, initChrome, show, toast, confirmBox, confetti, reduced, keepAwake, vibrate, ring, bunting
   };
 })();

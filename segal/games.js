@@ -13,6 +13,12 @@ window.FZ_GAMES = (() => {
   const teamColor = (T, id) => (T[id] && T[id].c) || '#888';
   const tag = (T, id) => `<span class="tchip" style="--tc:${teamColor(T, id)}">${esc(teamName(T, id))}</span>`;
   const pname = (P, pid) => (P[pid] && P[pid].n) || '؟';
+  // «الوحدة» في اللعب الفردي هي المشارك، وفي الفرق هي الفريق
+  const unitKey = (c, pid) => (c.ind ? pid : String(c.P[pid].t));
+  const unitColor = (c, k) => (c.ind ? window.FZ.pcolor(k) : teamColor(c.T, k));
+  const unitTag = (c, k) => (c.ind ? `<span class="tchip" style="--tc:${window.FZ.pcolor(k)}">${esc(pname(c.P, k))}</span>` : tag(c.T, k));
+  // شارة اسم المشارك (مع فريقه في وضع الفرق)
+  const whoTag = (c, pid) => (c.ind ? '' : (c.P[pid] ? tag(c.T, c.P[pid].t) : ''));
 
   // سحب عنصر من بنك الفقرة حسب التصنيفات والمستويات المختارة (وعناصر المقدّم الخاصة أولًا)
   function fromBank(c, gid, custom = []) {
@@ -70,7 +76,7 @@ window.FZ_GAMES = (() => {
       const v = c.A[pid].v;
       const e = errOf(v);
       if (e == null) return;
-      rows.push({ tid: String(p.t), pid, v, err: e, t: c.A[pid].t });
+      rows.push({ tid: unitKey(c, pid), pid, v, err: e, t: c.A[pid].t });
     });
     const ranked = rankBy(rows, 'err');
     const tp = {}, ans = {};
@@ -86,7 +92,7 @@ window.FZ_GAMES = (() => {
   function closenessReveal(el, c, fmt, errFmt) {
     const rows = Object.keys(c.rev.ans || {}).map((tid) => Object.assign({ tid }, c.rev.ans[tid])).sort((a, b) => a.rank - b.rank);
     el.insertAdjacentHTML('beforeend', `<ol class="rank-list">${rows.map((r) => `<li class="${r.rank === 0 ? 'first' : ''}">
-      ${tag(c.T, r.tid)}<b class="guess">${fmt(r.v)}</b><small>${errFmt(r)}</small>${r.ex ? '<em class="exact">إصابة!</em>' : ''}<strong>${plus(r.pts)}</strong></li>`).join('')
+      ${unitTag(c, r.tid)}<b class="guess">${fmt(r.v)}</b><small>${errFmt(r)}</small>${r.ex ? '<em class="exact">إصابة!</em>' : ''}<strong>${plus(r.pts)}</strong></li>`).join('')
       || '<li class="empty">ما أرسل أحد</li>'}</ol>`);
   }
 
@@ -96,7 +102,7 @@ window.FZ_GAMES = (() => {
     let fastest = null;
     Object.keys(c.A || {}).forEach((pid) => {
       const p = c.P[pid]; if (!p) return;
-      const v = +c.A[pid].v, ok = v === c.k.correct, tid = String(p.t);
+      const v = +c.A[pid].v, ok = v === c.k.correct, tid = unitKey(c, pid);
       ans[tid] = { v, ok };
       tp[tid] = ok ? 100 : 0;
       if (ok && (!fastest || c.A[pid].t < fastest.t)) fastest = { tid, t: c.A[pid].t };
@@ -107,9 +113,10 @@ window.FZ_GAMES = (() => {
   function teamMCReveal(el, c, opts) {
     const counts = {};
     Object.values(c.rev.ans || {}).forEach((x) => { counts[x.v] = (counts[x.v] || 0) + 1; });
-    el.insertAdjacentHTML('beforeend', mcHost(opts, c.rev.k, counts) + `<div class="team-res">${Object.keys(c.T).map((tid) => {
+    const keys = c.ind ? Object.keys(c.rev.ans || {}).sort((a, b) => (c.rev.ans[b].ok - c.rev.ans[a].ok)) : Object.keys(c.T);
+    el.insertAdjacentHTML('beforeend', mcHost(opts, c.rev.k, counts) + `<div class="team-res">${keys.map((tid) => {
       const a = c.rev.ans[tid];
-      return `<span class="tres ${a ? (a.ok ? 'ok' : 'no') : 'none'}" style="--tc:${teamColor(c.T, tid)}">${esc(teamName(c.T, tid))}<b>${a ? (a.ok ? '✓' : '✗') : '—'}</b>${a && a.fast ? '<em>الأسرع ' + plus(20) + '</em>' : ''}</span>`;
+      return `<span class="tres ${a ? (a.ok ? 'ok' : 'no') : 'none'}" style="--tc:${unitColor(c, tid)}">${esc(c.ind ? pname(c.P, tid) : teamName(c.T, tid))}<b>${a ? (a.ok ? '✓' : '✗') : '—'}</b>${a && a.fast ? '<em>الأسرع ' + plus(20) + '</em>' : ''}</span>`;
     }).join('')}</div>`);
   }
 
@@ -130,7 +137,7 @@ window.FZ_GAMES = (() => {
   function soloTop(el, c) {
     const top = c.rev.top || [];
     el.insertAdjacentHTML('beforeend', `<div class="solo-sum"><span>أصاب <b>${ar(c.rev.right || 0)}</b> من ${ar(c.rev.n || 0)}</span>
-      ${top.length ? `<ol class="fast-list">${top.map((pid, i) => `<li><i>${ar(i + 1)}</i>${esc(pname(c.P, pid))}${c.P[pid] ? tag(c.T, c.P[pid].t) : ''}<b>${plus(c.pp[pid] || 0)}</b></li>`).join('')}</ol>` : ''}</div>`);
+      ${top.length ? `<ol class="fast-list">${top.map((pid, i) => `<li><i>${ar(i + 1)}</i>${esc(pname(c.P, pid))}${whoTag(c, pid)}<b>${plus(c.pp[pid] || 0)}</b></li>`).join('')}</ol>` : ''}</div>`);
   }
 
   // =========================================================
@@ -143,6 +150,7 @@ window.FZ_GAMES = (() => {
       name: 'كم السعر؟', ico: '💰', mode: 'team', rounds: 3, time: 30,
       idea: 'خمّنوا سعر المنتج، والأقرب يكسب',
       how: 'يظهر منتج من متجر معيّن. تشاوروا في سعره الحقيقي، والقائد يرسل الرقم. الأقرب ١٠٠ والثاني ٧٠ وهكذا، والإصابة الدقيقة +٣٠.',
+      howSolo: 'يظهر منتج من متجر معيّن، وكل واحد يكتب تقديره لسعره من جواله. الأقرب ١٠٠ والثاني ٧٠ وهكذا، والإصابة الدقيقة +٣٠.',
       make(c) {
         const mine = (c.cfg.prices || []).map((r) => ({ n: r[0], st: r[1], v: +r[2], e: r[3] || '🏷️', cat: 'mine', lvl: 1 }));
         const it = fromBank(c, 'price', mine);
@@ -199,6 +207,7 @@ window.FZ_GAMES = (() => {
       name: 'عين الصقر', ico: '👁️', mode: 'team', rounds: 3, time: 20, view: 8,
       idea: 'ركّزوا في المشهد، ثم جاوبوا عن تفاصيله',
       how: 'يظهر مشهد (واحة، سوق شعبي، قرية تراثية، ساحل) لثوانٍ ثم يختفي، ويأتي سؤال عن تفصيلة صغيرة. اجمعوا ما لاحظه كل واحد، والقائد يرسل. الصح ١٠٠ والأسرع +٢٠.',
+      howSolo: 'يظهر مشهد لثوانٍ ثم يختفي، ويأتي سؤال عن تفصيلة صغيرة فيه. كل واحد يجاوب من جواله: الصح ١٠٠ والأسرع بين المصيبين +٢٠.',
       make(c) { const seed = c.seed, sc = SC.scene(seed), q = SC.ask(sc, seed); return { d: { s: seed }, k: { correct: q.correct } }; },
       score: (c) => teamMC(c),
       host(el, c) {
@@ -250,6 +259,7 @@ window.FZ_GAMES = (() => {
       name: 'تحدي الرسم', ico: '🎨', mode: 'duel', rounds: 1, time: 60,
       idea: 'رسّام من كل فريق يقلّد الصورة',
       how: 'يُختار رسّام من كل فريق، وتظهر صورة أصلية. ارسمها بأدق ما تقدر قبل نهاية الوقت، والحَكَم يقارن الألوان والأماكن والعناصر. الأدق ١٠٠ والثاني ٧٠…',
+      howSolo: 'تظهر صورة أصلية، والكل يرسمها من جواله بأدق ما يقدر قبل نهاية الوقت. الحَكَم يقارن الألوان والأماكن والعناصر: الأدق ١٠٠ والثاني ٧٠…',
       make(c) { return { d: { s: c.seed }, k: {} }; },
       async score(c) {
         const t = SC.target(c.d.s);
@@ -275,19 +285,19 @@ window.FZ_GAMES = (() => {
         }
         const rows = rankBy(ids.map((pid) => ({ pid, err: -sims[pid] })), 'err');
         const pp = {}, tp = {};
-        rows.forEach((r) => { pp[r.pid] = sims[r.pid] > 0 ? (RANK_PTS[r.rank] || 10) : 0; if (c.P[r.pid]) tp[String(c.P[r.pid].t)] = pp[r.pid]; });
+        rows.forEach((r) => { pp[r.pid] = sims[r.pid] > 0 ? (RANK_PTS[r.rank] || 10) : 0; if (!c.ind && c.P[r.pid]) tp[String(c.P[r.pid].t)] = pp[r.pid]; });
         return { pp, tp, rev: { sim: sims, by, rank: Object.fromEntries(rows.map((r) => [r.pid, r.rank])) } };
       },
       host(el, c) {
         const t = SC.target(c.d.s);
         el.innerHTML = `<div class="draw-host"><figure class="frame">${t.svg}<figcaption>${esc(t.title)}</figcaption></figure>
-          <div class="drawers">${(c.drawers || []).map((pid) => `<span class="drawer ${c.A && c.A[pid] ? 'done' : ''}" style="--tc:${c.P[pid] ? teamColor(c.T, c.P[pid].t) : '#888'}">✏️ ${esc(pname(c.P, pid))}</span>`).join('')}</div></div>`;
+          <div class="drawers">${c.ind ? '<span class="drawer all">✏️ الكل يرسم الآن من جواله</span>' : (c.drawers || []).map((pid) => `<span class="drawer ${c.A && c.A[pid] ? 'done' : ''}" style="--tc:${c.P[pid] ? teamColor(c.T, c.P[pid].t) : '#888'}">✏️ ${esc(pname(c.P, pid))}</span>`).join('')}</div></div>`;
       },
       reveal(el, c) {
         const t = SC.target(c.d.s);
         const ids = Object.keys(c.rev.sim || {}).sort((a, b) => c.rev.rank[a] - c.rev.rank[b]);
         el.innerHTML = `<div class="gallery"><figure class="frame orig">${t.svg}<figcaption>الأصل</figcaption></figure>${ids.map((pid) => `
-          <figure class="frame ${c.rev.rank[pid] === 0 ? 'win' : ''}" style="--tc:${c.P[pid] ? teamColor(c.T, c.P[pid].t) : '#888'}"><img src="${c.A[pid] ? c.A[pid].v : ''}" alt="رسمة ${esc(pname(c.P, pid))}">
+          <figure class="frame ${c.rev.rank[pid] === 0 ? 'win' : ''}" style="--tc:${c.P[pid] ? (c.ind ? window.FZ.pcolor(pid) : teamColor(c.T, c.P[pid].t)) : '#888'}"><img src="${c.A[pid] ? c.A[pid].v : ''}" alt="رسمة ${esc(pname(c.P, pid))}">
           <figcaption>${esc(pname(c.P, pid))}<span class="sim">تطابق ${ar(c.rev.sim[pid])}٪</span><b>${plus(c.pp[pid] || 0)}</b></figcaption></figure>`).join('')}</div>
           <p class="judge">${c.rev.by === 'ai' ? '🤖 حكم الذكاء الاصطناعي' : '🔍 حكم آلي بمقارنة الألوان والأماكن'}</p>`;
       },
@@ -312,6 +322,7 @@ window.FZ_GAMES = (() => {
       name: 'قرّب من الرقم', ico: '🔢', mode: 'team', rounds: 3, time: 25,
       idea: 'قدّروا الرقم أو الإحصائية',
       how: 'سؤال جوابه رقم (عدد، مسافة، سنة…). تشاوروا والقائد يرسل التقدير، والأقرب يكسب أكثر.',
+      howSolo: 'سؤال جوابه رقم (عدد، مسافة، سنة…). كل واحد يرسل تقديره، والأقرب يكسب أكثر.',
       make(c) {
         const mine = (c.cfg.numbers || []).map((r) => ({ q: r[0], v: +r[1], u: r[2] || '', cat: 'mine', lvl: 1 }));
         const it = fromBank(c, 'number', mine);
@@ -356,7 +367,7 @@ window.FZ_GAMES = (() => {
       host(el, c) { el.innerHTML = `<div class="scene-wrap big">${SC.scene(c.d.s).svg}</div>`; },
       reveal(el, c) {
         el.innerHTML = `<div class="desc-rev"><div class="scene-wrap mini">${SC.scene(c.d.s).svg}</div><ol class="desc-top">${(c.rev.top || []).map((pid, i) =>
-          `<li><header><i>${ar(i + 1)}</i>${esc(pname(c.P, pid))}${c.P[pid] ? tag(c.T, c.P[pid].t) : ''}<b>${plus(c.pp[pid] || 0)}</b></header>
+          `<li><header><i>${ar(i + 1)}</i>${esc(pname(c.P, pid))}${whoTag(c, pid)}<b>${plus(c.pp[pid] || 0)}</b></header>
           <p>${esc((c.A[pid] && c.A[pid].v) || '')}</p><small>${(c.rev.hits[pid] || []).map(esc).join('، ')}</small></li>`).join('') || '<li class="empty">ما أرسل أحد</li>'}</ol></div>
           <p class="judge">${c.rev.by === 'ai' ? '🤖 حكم الذكاء الاصطناعي' : '🔍 حكم آلي يطابق العناصر والأعداد والألوان'}</p>`;
       },
@@ -386,6 +397,7 @@ window.FZ_GAMES = (() => {
       name: 'ثبّت الدبوس', ico: '📍', mode: 'team', rounds: 3, time: 25,
       idea: 'حدّدوا المكان على الخريطة',
       how: 'تظهر خريطة واسم مكان. تشاوروا والقائد يضع الدبوس، والأقرب بالكيلومترات يكسب أكثر، والإصابة الدقيقة +٣٠.',
+      howSolo: 'تظهر خريطة واسم مكان، وكل واحد يضع دبوسه من جواله. الأقرب بالكيلومترات يكسب أكثر، والإصابة الدقيقة +٣٠.',
       make(c) {
         const it = fromBank(c, 'pin');
         return { d: { m: it.cat, p: it.p }, k: { lat: it.lat, lon: it.lon } };
@@ -409,7 +421,7 @@ window.FZ_GAMES = (() => {
       },
       host(el, c) { el.innerHTML = `<div class="q-big">وين تقع: <b class="place">${esc(c.d.p)}</b>؟</div><div class="map-wrap">${this.map(c.d.m)}</div>`; },
       reveal(el, c) {
-        const pins = Object.keys(c.rev.ans || {}).map((tid) => { const [lat, lon] = String(c.rev.ans[tid].v).split(',').map(Number); return { lat, lon, c: teamColor(c.T, tid) }; });
+        const pins = Object.keys(c.rev.ans || {}).map((tid) => { const [lat, lon] = String(c.rev.ans[tid].v).split(',').map(Number); return { lat, lon, c: unitColor(c, tid) }; });
         el.innerHTML = `<div class="pin-rev"><div class="map-wrap">${this.map(c.d.m, pins, c.rev.k)}</div><div><div class="q-big small">${esc(c.d.p)}</div></div></div>`;
         closenessReveal($('.pin-rev > div:last-child', el), c, () => '📍', (r) => `${num(Math.round(r.err))} كم`);
       },
@@ -429,10 +441,10 @@ window.FZ_GAMES = (() => {
         btn.addEventListener('click', () => { if (!cur) return; btn.disabled = true; c.submit(`${cur.lat.toFixed(3)},${cur.lon.toFixed(3)}`); });
       },
       phoneRev(el, c) {
-        const pins = Object.keys(c.rev.ans || {}).map((tid) => { const [lat, lon] = String(c.rev.ans[tid].v).split(',').map(Number); return { lat, lon, c: teamColor(c.T, tid) }; });
+        const pins = Object.keys(c.rev.ans || {}).map((tid) => { const [lat, lon] = String(c.rev.ans[tid].v).split(',').map(Number); return { lat, lon, c: unitColor(c, tid) }; });
         el.innerHTML = `<div class="q-big small">${esc(c.d.p)}</div><div class="map-wrap">${this.map(c.d.m, pins, c.rev.k)}</div>`;
-        const a = c.rev.ans && c.rev.ans[c.me.team];
-        if (a) el.insertAdjacentHTML('beforeend', `<div class="truth"><small>بُعد دبوسكم</small><b>${num(Math.round(a.err))} <i>كم</i></b></div>`);
+        const a = c.rev.ans && c.rev.ans[c.me.unit];
+        if (a) el.insertAdjacentHTML('beforeend', `<div class="truth"><small>${c.ind ? 'بُعد دبوسك' : 'بُعد دبوسكم'}</small><b>${num(Math.round(a.err))} <i>كم</i></b></div>`);
       }
     },
 
@@ -523,6 +535,7 @@ window.FZ_GAMES = (() => {
       name: 'أكمِل المثل', ico: '✍️', mode: 'team', rounds: 4, time: 25,
       idea: 'أكملوا المثل أو بيت الشعر',
       how: 'يظهر مثل أو بيت شعر (فصيح ونبطي) ناقص آخره. تشاوروا ٢٥ ثانية، والقائد يختار التكملة. الصح ١٠٠، ولو أصاب أكثر من فريق فالأسرع +٢٠.',
+      howSolo: 'يظهر مثل أو بيت شعر ناقص آخره، وكل واحد يختار التكملة من جواله. الصح ١٠٠، والأسرع بين المصيبين +٢٠.',
       make(c) {
         const it = fromBank(c, 'proverb');
         const opts = window.FZ.shuffle([it.a, ...it.o]);
@@ -540,7 +553,8 @@ window.FZ_GAMES = (() => {
     mines: {
       name: 'الألغام', ico: '💣', mode: 'mines', rounds: 2, time: 12, place: 15,
       idea: 'خبّوا لغمكم، وافتحوا الخانات بالدور',
-      how: 'لوحة ٤×٤: كل فريق (قائده) يخبّي لغمًا في خانة سرًا. بعدها بالدور كل واحد يفتح خانة: الآمنة +١٠ لرصيد الجولة، واللي ينفجر عليه لغم يخسر رصيد الجولة ويطلع منها. اللي يصمد يحفظ رصيده.'
+      how: 'لوحة ٤×٤: كل فريق (قائده) يخبّي لغمًا في خانة سرًا. بعدها بالدور كل واحد يفتح خانة: الآمنة +١٠ لرصيد الجولة، واللي ينفجر عليه لغم يخسر رصيد الجولة ويطلع منها. اللي يصمد يحفظ رصيده.',
+      howSolo: 'لوحة: كل مشارك يخبّي لغمًا في خانة سرًا. بعدها بالدور كل واحد يفتح خانة: الآمنة +١٠ لرصيد الجولة، واللي ينفجر عليه لغم يخسر رصيد الجولة ويطلع منها. اللي يصمد يحفظ رصيده.'
     }
   };
 
@@ -635,14 +649,18 @@ window.FZ_GAMES = (() => {
       const r = st.rev && st.rev[i];
       const own = owners && owners[i];
       const cls = r === 'ok' ? 'safe' : r ? 'boom' : bombs && bombs[i] ? 'bomb-show' : '';
-      h += `<button class="mcell tactile ${cls} ${i === mark ? 'mine-mark' : ''}" data-i="${i}" ${!tap || r || i === mark ? 'disabled' : ''}>${r === 'ok' ? '✓' : r ? '💥' : bombs && bombs[i] ? '💣' : i === mark ? '💣' : ''}${own ? `<span class="owners">${own.map((tid) => `<i style="background:${teamColor(T, tid)}"></i>`).join('')}</span>` : ''}</button>`;
+      h += `<button class="mcell tactile ${cls} ${i === mark ? 'mine-mark' : ''}" data-i="${i}" ${!tap || r || i === mark ? 'disabled' : ''}>${r === 'ok' ? '✓' : r ? '💥' : bombs && bombs[i] ? '💣' : i === mark ? '💣' : ''}${own ? `<span class="owners">${own.map((tid) => `<i style="background:${String(tid).startsWith('#') ? tid : teamColor(T, tid)}"></i>`).join('')}</span>` : ''}</button>`;
     }
     return h + '</div>';
   }
 
   const ORDER = ['price', 'reflex', 'hawk', 'quick', 'draw', 'number', 'describe', 'pin', 'order', 'odd', 'proverb', 'mines'];
+  // نظام الفقرة الفعلي: في اللعب الفردي كل الفقرات فردية (والألغام لكل مشارك)
+  const howOf = (g, ind) => (ind && g.howSolo ? g.howSolo : g.how);
+  const modeLabel = (g, ind) => (ind ? (g.mode === 'mines' ? 'بالدور — لغم لكل مشارك' : g.mode === 'duel' ? 'فردي — الكل يرسم' : MODE_LABEL.solo) : MODE_LABEL[g.mode]);
+  const effMode = (g, ind) => (ind ? (g.mode === 'mines' ? 'mines' : 'solo') : g.mode);
   const MODE_LABEL = { team: 'جماعي — القائد يرسل', solo: 'فردي — الكل من جواله', duel: 'مواجهة — رسّام من كل فريق', mines: 'بالدور — لغم لكل فريق' };
   // فقرات لها بنك محتوى يُستعرض ويُصفّى
   const BANKED = ['price', 'number', 'order', 'odd', 'proverb', 'pin'];
-  return { GAMES, ORDER, BANKED, MODE_LABEL, minesBoard, pinSvg, tag, teamColor, teamName, pname, mcHost };
+  return { GAMES, ORDER, BANKED, MODE_LABEL, effMode, howOf, modeLabel, minesBoard, pinSvg, tag, teamColor, teamName, pname, mcHost };
 })();
