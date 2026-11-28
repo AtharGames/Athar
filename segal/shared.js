@@ -89,7 +89,29 @@ window.FZ = (() => {
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
       const s = x.createBufferSource(); s.buffer = b; return s;
     }
+    // ملفات مؤثرات مسجّلة في sounds/ (تُحمَّل مرة وتُشغَّل من الذاكرة)
+    const BUF = {}, LOAD = {};
+    const SND_BASE = new URL('sounds/', document.baseURI).href;
+    function load(n) {
+      if (LOAD[n]) return LOAD[n];
+      const x = c(); if (!x) return Promise.resolve(null);
+      LOAD[n] = fetch(SND_BASE + n + '.mp3').then((r) => r.arrayBuffer())
+        .then((a) => new Promise((res, rej) => x.decodeAudioData(a, res, rej)))
+        .then((b) => { BUF[n] = b; return b; }).catch(() => null);
+      return LOAD[n];
+    }
+    function play(n, vol = 0.8, rate = 1, delay = 0) {
+      if (!ok()) return;
+      const go = (b) => {
+        if (!b) return;
+        const s = ctx.createBufferSource(), g = ctx.createGain();
+        s.buffer = b; s.playbackRate.value = rate; g.gain.value = vol;
+        s.connect(g); g.connect(ctx.destination); s.start(ctx.currentTime + delay);
+      };
+      if (BUF[n]) go(BUF[n]); else { const t0 = performance.now(); load(n).then((b) => { if (performance.now() - t0 < 600) go(b); }); }
+    }
     return {
+      play, preload(list) { list.forEach(load); },
       // صافرة فم: بداية الجولة
       whistle(delay = 0) {
         if (!ok()) return;
@@ -128,9 +150,12 @@ window.FZ = (() => {
       wrong() { if (S && S.on) S.sigh(0); },
       pop(f = 520) { if (S && S.on) S.drop(f, 0, 0.22); },
       swoosh() { if (S && S.on) S.whoosh(true, 0); },
-      unlock() { c(); }
+      unlock() { c(); ['boom', 'heart', 'flip', 'write', 'stamp', 'riser', 'wbig', 'fire', 'coin1'].forEach(load); }
     };
   })();
+
+  // تحميل المؤثرات مبكرًا (حتى بعد إعادة فتح الصفحة)
+  setTimeout(() => { try { FX.preload(['boom', 'heart', 'flip', 'write', 'stamp', 'riser', 'wbig', 'fire', 'coin1']); } catch (e) { /* بلا صوت */ } }, 800);
 
   // ---------- الثيمات: ثيم الساحة الليلي افتراضي ----------
   const THEME_KEY = 'athar-fazaa-theme';

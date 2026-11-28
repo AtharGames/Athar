@@ -619,6 +619,7 @@
     const c = Object.assign(ctxBase(), { A, ai: SET.ai && AI.ready ? AI : (AI.ready ? null : undefined) });
     let res;
     try { res = await g.score(c); } catch (e) { console.error(e); res = { pp: {}, rev: {} }; }
+    try { collectStats(run.queue[run.gi].id, res); } catch (e) { console.warn(e); }
     // الفردي: نقاط فقرات «الأقرب» ترجع بمفتاح المشارك
     const bankOn = !ind && SET.bank !== false;
     holdSide = !!g.anim || bankOn;
@@ -685,7 +686,9 @@
     ensureLeaders();
     const actors = minesActors();
     let n = SET.mines.size;
-    if (mUnit() === 'solo') while (n < 8 && n * n < actors.length * 2.5) n++;
+    // لوحة أكبر إذا كثر اللاعبون (الفرق حتى ٦×٦، والفردي حتى ٨×٨)
+    if (mUnit() === 'solo') while (n < 8 && n * n < actors.length * 3) n++;
+    else while (n < 6 && n * n < actors.length * 3.5) n++;
     run.rk = (run.rk || 0) + 1;
     const r = String(run.rk);
     minesSt = { n, rev: {}, pot: {}, out: [], order: actors, turn: -1, pr: r, unit: mUnit(), own: {} };
@@ -701,7 +704,7 @@
   }
   const actorName = (ak) => (minesSt.unit === 'team' ? (T[ak] ? T[ak].n : '') : (P[ak] ? P[ak].n : '؟'));
   const actorColor = (ak) => (minesSt.unit === 'team' ? (T[ak] ? T[ak].c : '#888') : ind ? F.pcolor(ak) : (P[ak] && T[P[ak].t] ? T[P[ak].t].c : '#888'));
-  const minesPublic = () => ({ n: minesSt.n, rev: minesSt.rev, pot: minesSt.pot, out: minesSt.out, order: minesSt.order, turn: minesSt.turn, pr: minesSt.pr, unit: minesSt.unit, last: minesSt.last || null });
+  const minesPublic = () => ({ n: minesSt.n, rev: minesSt.rev, pot: minesSt.pot, out: minesSt.out, order: minesSt.order, turn: minesSt.turn, pr: minesSt.pr, unit: minesSt.unit, last: minesSt.last || null, pick: minesSt.pick || null });
   function minesPlaceProgress() {
     if (S.sub !== 'place') return;
     const keyOf = (pid) => (minesSt.unit === 'team' ? String(P[pid] && P[pid].t) : pid);
@@ -756,26 +759,39 @@
     minesRender();
     startTimer();
   }
-  function minesRender(flash = null) {
+  // عرض اللوحة للمقدّم: شريط الدور الكبير، اللوحة، وقائمة اللاعبين ورصيدهم
+  function minesRender(flash = null, picking = -1) {
     const ak = S.ak;
-    $('#stage').innerHTML = `<div class="mines-host">${GM.minesBoard(minesSt)}
-      <div class="mines-side">
-        ${flash ? `<div class="m-flash ${flash.boom ? 'boom' : 'ok'}">${flash.boom ? `💥 انفجر على ${esc(actorName(flash.ak))}!<small>لغم ${flash.owners.map(actorName).map(esc).join(' و')}</small>` : `✓ ${esc(actorName(flash.ak))} نجا ${plus(10)}`}</div>`
-        : `<div class="m-turn" style="--tc:${actorColor(ak)}">الدور على <b>${esc(actorName(ak))}</b>${minesSt.unit === 'team' && P[S.cur] ? `<small>👑 ${esc(P[S.cur].n)} يضغط</small>` : ''}</div>`}
-        <div class="actors">${minesSt.order.map((x) => `<span class="actor ${minesSt.out.includes(x) ? 'out' : ''} ${x === ak && !flash ? 'now' : ''}" style="--tc:${actorColor(x)}">${esc(actorName(x))}<b>${minesSt.out.includes(x) ? '💥' : ar(minesSt.pot[x] || 0)}</b></span>`).join('')}</div>
-      </div></div>`;
+    const bombsN = minesSt.order.length, safeN = Object.values(minesSt.rev).filter((v) => v === 'ok').length;
+    const top = flash
+      ? `<div class="m-flash ${flash.boom ? 'boom' : 'ok'}">${flash.boom ? `💥 انفجر على ${esc(actorName(flash.ak))}!<small>لغم ${flash.owners.map(actorName).map(esc).join(' و')}</small>` : `✓ ${esc(actorName(flash.ak))} نجا ${plus(10)}`}</div>`
+      : picking >= 0 ? `<div class="m-turn pick" style="--tc:${actorColor(ak)}">⏳ <b>${esc(actorName(ak))}</b> يفتح خانة…<small>نبض… نبض…</small></div>`
+        : `<div class="m-turn big" style="--tc:${actorColor(ak)}"><span class="mx-av" style="--tc:${actorColor(ak)}">${esc((actorName(ak) || '؟').slice(0, 1))}</span><span>الدور على <b>${esc(actorName(ak))}</b>${minesSt.unit === 'team' && P[S.cur] ? `<small>👑 ${esc(P[S.cur].n)} يضغط</small>` : ''}</span></div>`;
+    $('#stage').innerHTML = `<div class="mines-host v2"><div class="mx-top">${top}</div>
+      <div class="mx-main">${GM.minesBoard(minesSt, { pick: picking })}
+      <div class="mx-side"><div class="mx-stat"><span>💣 <b>${ar(bombsN)}</b> ${bombsN > 2 && bombsN < 11 ? 'ألغام مخبّاة' : 'لغم مخبّى'}</span><span>✓ <b>${ar(safeN)}</b> آمنة</span><span>▦ ${ar(minesSt.n)}×${ar(minesSt.n)}</span></div>
+        <ol class="mx-list">${minesSt.order.map((x) => { const out = minesSt.out.includes(x); return `<li class="mx-row ${out ? 'out' : ''} ${x === ak && !flash ? 'now' : ''}" style="--tc:${actorColor(x)}"><i class="mx-dot"></i><b>${esc(actorName(x))}</b><span>${out ? '💥 طلع' : x === ak && !flash ? '👈 دوره' : '🟢'}</span><em>${out ? '٠' : ar(minesSt.pot[x] || 0)}</em></li>`; }).join('')}</ol></div></div></div>`;
   }
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   async function minesMove(ak, cell) {
     stopTimer();
     if (!(cell >= 0 && cell < minesSt.n * minesSt.n) || minesSt.rev[cell]) cell = minesRandomCell(ak);
+    // تشويق: الخانة تنبض مع دقات قلب قبل ما تنفتح (للجميع)
+    minesSt.pick = { ak, cell }; minesSt.last = null;
+    await Net.update(path('s'), { ph: 'lock', d: JSON.stringify(minesPublic()) }); S.ph = 'lock';
+    minesRender(null, cell);
+    for (let i = 0; i < 3; i++) { FX.play('heart', 0.9, 1 + i * 0.15); await sleep(430 - i * 70); }
     const owners = Object.keys(minesSt.bombs).filter((x) => minesSt.bombs[x] === cell);
     const boom = owners.length > 0;
-    if (boom) { minesSt.rev[cell] = 'b'; minesSt.out.push(ak); minesSt.pot[ak] = 0; FX.boom(); F.vibrate([60, 40, 120]); }
-    else { minesSt.rev[cell] = 'ok'; minesSt.pot[ak] = (minesSt.pot[ak] || 0) + 10; FX.pop(640); }
+    if (boom) { minesSt.rev[cell] = 'b'; minesSt.out.push(ak); minesSt.pot[ak] = 0; }
+    else { minesSt.rev[cell] = 'ok'; minesSt.pot[ak] = (minesSt.pot[ak] || 0) + 10; }
+    minesSt.pick = null;
     minesSt.last = { ak, cell, boom, owners };
-    await Net.update(path('s'), { ph: 'lock', d: JSON.stringify(minesPublic()) }); S.ph = 'lock';
+    await Net.update(path('s'), { d: JSON.stringify(minesPublic()) });
     minesRender({ ak, boom, owners });
-    setTimeout(minesNextTurn, boom ? 2200 : 1300);
+    GM.minesFx($('#stage .mines'), cell, boom ? 'boom' : 'safe', { big: true });
+    if (boom) { FX.play('boom', 1); F.vibrate([60, 40, 120]); } else { FX.play('coin1', 0.9); FX.pop(700); }
+    setTimeout(minesNextTurn, boom ? 2700 : 1500);
   }
   function minesRandomCell(ak) {
     const N = minesSt.n * minesSt.n;
@@ -799,11 +815,16 @@
     Object.keys(minesSt.bombs).forEach((ak) => { const c = minesSt.bombs[ak]; (owners[c] = owners[c] || []).push(minesSt.unit === 'team' ? ak : (ind ? F.pcolor(ak) : String(P[ak] ? P[ak].t : '0'))); });
     const rev = { pp, tp: team, bombs: minesSt.bombs, owners, out: minesSt.out, pot: minesSt.pot };
     await setState(Object.assign({}, S, { ph: 'reveal', sub: 'end', k: JSON.stringify(rev), d: JSON.stringify(minesPublic()) }));
-    const bm = {}; Object.values(minesSt.bombs).forEach((c) => { bm[c] = 1; });
-    $('#stage').innerHTML = `<div class="mines-host">${GM.minesBoard(minesSt, { bombs: bm, owners, T })}
-      <div class="mines-side"><h3 class="m-end">نهاية الجولة</h3><div class="actors">${minesSt.order.map((x) => `<span class="actor ${minesSt.out.includes(x) ? 'out' : 'won'}" style="--tc:${actorColor(x)}">${esc(actorName(x))}<b>${minesSt.out.includes(x) ? '💥 ٠' : plus(minesSt.pot[x] || 0)}</b></span>`).join('')}</div></div></div>`;
-    $('#whoStrip').innerHTML = roundTeamPts(team);
+    const sorted = minesSt.order.slice().sort((a, b) => (minesSt.out.includes(a) - minesSt.out.includes(b)) || ((minesSt.pot[b] || 0) - (minesSt.pot[a] || 0)));
+    $('#stage').innerHTML = `<div class="mines-host v2"><div class="mx-top"><div class="m-turn big end">🔍 نكشف أماكن الألغام…</div></div>
+      <div class="mx-main">${GM.minesBoard(minesSt)}
+      <div class="mx-side"><ol class="mx-list end">${sorted.map((x, i) => `<li class="mx-row ${minesSt.out.includes(x) ? 'out' : 'won'}" style="--tc:${actorColor(x)};--d:${i}"><i class="mx-dot"></i><b>${esc(actorName(x))}</b><span>${minesSt.out.includes(x) ? '💥 انفجر' : '🛡️ نجا'}</span><em>${minesSt.out.includes(x) ? '٠' : plus(minesSt.pot[x] || 0)}</em></li>`).join('')}</ol></div></div></div>`;
     $('#timer').innerHTML = ''; $('#answered').innerHTML = '';
+    $('#nextBtn').disabled = true;
+    await GM.minesEndAnim($('#stage .mines'), { bombs: minesSt.bombs, owners, T });
+    const tt = $('#stage .mx-top .m-turn'); if (tt) tt.textContent = '🏁 نهاية الجولة';
+    const lst = $('#stage .mx-list.end'); if (lst) lst.classList.add('show');
+    $('#whoStrip').innerHTML = roundTeamPts(team);
     FX.clap(5);
     $('#nextBtn').textContent = run.ri + 1 < run.queue[run.gi].rounds ? 'الجولة التالية' : 'نتائج الفقرة';
     $('#nextBtn').disabled = false;
@@ -840,6 +861,68 @@
     const top = Object.keys(SCORE.P || {}).filter((pid) => P[pid]).sort((a, b) => SCORE.P[b] - SCORE.P[a]).slice(0, 5);
     el.innerHTML = top.length ? `<h4>نجوم الساحة</h4><ol>${top.map((pid) => `<li><span class="tchip" style="--tc:${T[P[pid].t] ? T[P[pid].t].c : '#888'}">${esc(P[pid].n)}</span><b>${num(SCORE.P[pid])}</b></li>`).join('')}</ol>` : '';
   }
+  // إحصائيات طريفة للحفل الختامي
+  function collectStats(gid, res) {
+    const st = run.stats = run.stats || {};
+    const rv = res.rev || {};
+    if (rv.tm) Object.keys(rv.tm).forEach((pid) => { const ms = rv.tm[pid]; if (P[pid] && (!st.fast || ms < st.fast.ms)) st.fast = { pid, ms, g: G[gid].name }; });
+    if (gid === 'pin' && rv.ans) Object.keys(rv.ans).forEach((u) => { const e = rv.ans[u].err; if (e != null && (!st.pin || e < st.pin.km)) st.pin = { u, km: e }; });
+    if (gid === 'describe' && rv.sc) Object.keys(rv.sc).forEach((pid) => { if (P[pid] && (!st.desc || rv.sc[pid] > st.desc.v)) st.desc = { pid, v: rv.sc[pid] }; });
+    if (gid === 'draw' && rv.sim) Object.keys(rv.sim).forEach((pid) => { if (P[pid] && (!st.draw || rv.sim[pid] > st.draw.v)) st.draw = { pid, v: rv.sim[pid] }; });
+    if (gid === 'order' && rv.nc) Object.keys(rv.nc).forEach((pid) => { if (rv.nc[pid] === 4) { st.perf = st.perf || {}; st.perf[pid] = (st.perf[pid] || 0) + 1; } });
+    Object.keys(res.pp || {}).forEach((pid) => { if (P[pid] && res.pp[pid] > 0) { st.hits = st.hits || {}; st.hits[pid] = (st.hits[pid] || 0) + 1; } });
+  }
+  function statCards() {
+    const st = run.stats || {}, out = [];
+    const pn = (pid) => (P[pid] ? P[pid].n : '—');
+    const topOf = (o) => Object.keys(o || {}).filter((k) => P[k]).sort((a, b) => o[b] - o[a])[0];
+    const h = topOf(st.hits); if (h) out.push(['🎯', 'أكثر إجابات صحيحة', pn(h), `${ar(st.hits[h])} مرة`]);
+    if (st.fast) out.push(['⚡', 'أسرع إجابة', pn(st.fast.pid), `${ar((st.fast.ms / 1000).toFixed(2))} ث في «${st.fast.g}»`]);
+    if (st.pin) out.push(['📍', 'ملك الدبابيس', unitName(st.pin.u), `على بُعد ${num(Math.round(st.pin.km))} كم`]);
+    if (st.desc) out.push(['🖼️', 'أدق وصف', pn(st.desc.pid), `${ar(st.desc.v)} من ١٠٠`]);
+    if (st.draw) out.push(['🎨', 'أحسن رسمة', pn(st.draw.pid), `تشابه ${ar(st.draw.v)}٪`]);
+    const pf = topOf(st.perf); if (pf) out.push(['📶', 'ملك الترتيب', pn(pf), `${ar(st.perf[pf])} ترتيب مثالي`]);
+    return out.slice(0, 6);
+  }
+  // الحفل الختامي: منصة تتويج تُكشف من الثالث إلى الأول، ألعاب نارية، وإحصائيات
+  async function ceremony(st) {
+    const el = $('#ceremony'); if (!el) return;
+    const top = st.filter((x) => x.pts > 0).slice(0, 3);
+    const wait = (ms) => new Promise((r) => setTimeout(r, F.reduced && F.reduced() ? 60 : ms));
+    const slot = (x, i) => x ? `<div class="cer-col p${i + 1}" style="--tc:${unitColor(x.t)}"><div class="cer-who"><span class="cer-medal">${['🥇', '🥈', '🥉'][i]}</span><b>${esc(unitName(x.t))}</b><em>${num(x.pts)}</em></div><div class="cer-block"><span>${ar(i + 1)}</span></div></div>` : `<div class="cer-col p${i + 1} empty"></div>`;
+    const cards = statCards();
+    el.innerHTML = `<h2 class="cer-title">🎉 الحفل الختامي</h2><div class="cer-stage">${[1, 0, 2].map((i) => slot(top[i], i)).join('')}<div class="cer-spot"></div></div>
+      ${cards.length ? `<div class="cer-stats">${cards.map(([e, t, n, v], i) => `<div class="cer-card" style="--d:${i}"><i>${e}</i><small>${t}</small><b>${esc(n)}</b><span>${esc(v)}</span></div>`).join('')}</div>` : ''}`;
+    $('#screen-end .board.end').classList.add('cer-on');
+    FX.play('wbig', 0.7);
+    await wait(900);
+    for (const i of [2, 1, 0]) {
+      const col = $(`.cer-col.p${i + 1}`, el); if (!col || col.classList.contains('empty')) continue;
+      if (i === 0) { FX.play('riser', 0.7); await wait(1300); $('.cer-stage', el).classList.add('lit'); }
+      col.classList.add('up');
+      if (i === 0) {
+        FX.play('stamp', 0.8); window.AtharSound.winner();
+        for (let k = 0; k < 5; k++) setTimeout(() => fireworks(el), k * 520);
+        F.confetti($('#confetti')); setTimeout(() => F.confetti($('#confetti'), { x: 0.25 }), 700); setTimeout(() => F.confetti($('#confetti'), { x: 0.75 }), 1300);
+      } else { FX.pop(560 + i * 80); FX.clap(3); }
+      await wait(i === 0 ? 2600 : 1300);
+    }
+    const sc = $('.cer-stats', el); if (sc) { sc.classList.add('show'); FX.play('flip', 0.6); }
+    await wait(1200);
+    $('#screen-end .board.end').classList.add('cer-done');
+  }
+  // ألعاب نارية بجسيمات CSS مع صوت فرقعة
+  function fireworks(host) {
+    if (!host.isConnected || (F.reduced && F.reduced())) return;
+    const fw = document.createElement('div');
+    fw.className = 'cer-fw';
+    fw.style.left = (12 + Math.random() * 76) + '%'; fw.style.top = (8 + Math.random() * 35) + '%';
+    const cols = ['#FFD34D', '#5CC2F5', '#E8554E', '#1FA971', '#E0559B', '#FFFFFF'];
+    const c0 = cols[Math.floor(Math.random() * cols.length)];
+    for (let k = 0; k < 22; k++) { const a = k / 22 * 360, d = 60 + Math.random() * 60; fw.insertAdjacentHTML('beforeend', `<i style="--a:${a}deg;--d:${d}px;background:${Math.random() < 0.6 ? c0 : cols[k % cols.length]}"></i>`); }
+    host.appendChild(fw); FX.play('fire', 0.55, 0.9 + Math.random() * 0.25);
+    setTimeout(() => fw.remove(), 1700);
+  }
   function endShow() {
     stopTimer();
     const st = standings();
@@ -850,10 +933,9 @@
     boardList($('#endList'), ind ? st.slice(0, 10) : st);
     playersTop($('#endPlayers'));
     F.show('screen-end');
-    window.AtharSound.winner();
-    F.confetti($('#confetti'));
-    setTimeout(() => F.confetti($('#confetti'), { x: 0.25 }), 700);
-    setTimeout(() => F.confetti($('#confetti'), { x: 0.75 }), 1300);
+    $('#screen-end .board.end').classList.remove('cer-on', 'cer-done');
+    if (w && w.pts > 0) ceremony(st);
+    else { $('#ceremony').innerHTML = ''; FX.clap(4); }
     store.del('fazaa-host-run');
   }
 

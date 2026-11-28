@@ -20,7 +20,7 @@
   let S = null, T = {}, P = {}, SCORE = null;
   let offset = 0, timer = 0, watchers = [], offMine = null, offLead = null, offSugg = null, sugg = {}, suggCbs = [], endCbs = [], ended = false;
   let rendered = '';       // مفتاح آخر عرض حتى ما نعيد الرسم بلا داعي
-  let mineAns = null, leadAns = null, myBomb = null;
+  let mineAns = null, leadAns = null, myBomb = null, endKey = '';
   const now = () => Date.now() + offset;
   const room = () => me && me.room;
 
@@ -317,11 +317,28 @@
     const n = d.n || 4;
     if (S.ph === 'reveal') {
       const rev = parse(S.k) || {};
-      const bm = {}; Object.values(rev.bombs || {}).forEach((c) => { bm[c] = 1; });
-      el.innerHTML = `<div class="pg-body reveal">${myPts(m, rev)}${GM.minesBoard({ n, rev: d.rev }, { bombs: bm, owners: rev.owners, T })}</div>`;
       $('#pTimer').innerHTML = '';
+      // كشف الألغام للجميع مرة وحدة (ما يُعاد مع كل تحديث)
+      const mk = 'end|' + S.r + '|' + (S.k || '').length;
+      if (el.dataset.mk === mk) return;
+      el.dataset.mk = mk;
+      const nm = (ak) => (d.unit === 'team' ? (T[ak] ? T[ak].n : '') : (P[ak] ? P[ak].n : ''));
+      const col = (ak) => (d.unit === 'team' ? (T[ak] ? T[ak].c : '#888') : F.pcolor(ak));
+      const order = (d.order || []).slice().sort((a, b) => ((d.out || []).includes(a) - (d.out || []).includes(b)) || (((d.pot || {})[b] || 0) - ((d.pot || {})[a] || 0)));
+      el.innerHTML = `<div class="pg-body reveal"><div class="m-turn end">🔍 نكشف أماكن الألغام…</div>${GM.minesBoard({ n, rev: d.rev })}
+        <ol class="mx-list end">${order.map((ak, i) => { const out = (d.out || []).includes(ak); return `<li class="mx-row ${out ? 'out' : 'won'} ${ak === m.unit ? 'me' : ''}" style="--tc:${col(ak)};--d:${i}"><i class="mx-dot"></i><b>${esc(nm(ak))}</b><span>${out ? '💥 انفجر' : '🛡️ نجا'}</span><em>${out ? '٠' : '+' + ar((d.pot || {})[ak] || 0)}</em></li>`; }).join('')}</ol></div>`;
+      const body = $('.pg-body', el);
+      GM.minesEndAnim($('.mines', el), { bombs: rev.bombs || {}, owners: rev.owners || {}, T }).then(() => {
+        if (!body.isConnected) return;
+        const t = $('.m-turn', body); if (t) t.textContent = '🏁 نهاية الجولة';
+        const l = $('.mx-list', body); if (l) l.classList.add('show');
+        body.insertAdjacentHTML('afterbegin', myPts(m, rev));
+        const got = (rev.pp && rev.pp[me.pid]) || (rev.tp && rev.tp[m.team]);
+        if (got > 0) { FX.clap(4); F.confetti($('#confetti'), { count: 60 }); } else FX.wrong();
+      });
       return;
     }
+    el.dataset.mk = '';
     if (S.sub === 'place') {
       const can = canAnswer(m);
       const mark = mineAns != null ? +mineAns : -1;
@@ -336,18 +353,31 @@
       tickTimer();
       return;
     }
-    // الأدوار
+    // الأدوار: الدور، التشويق قبل الفتح، والنتيجة تظهر للجميع
     const myTurn = S.cur === me.pid && S.ph === 'play';
-    const iAmOut = (d.out || []).includes(d.unit === 'team' ? m.team : me.pid);
+    const mine = d.unit === 'team' ? m.team : me.pid;
+    const iAmOut = (d.out || []).includes(mine);
     const last = S.ph === 'lock' && d.last ? d.last : null;
+    const pick = S.ph === 'lock' && !d.last && d.pick ? d.pick : null;
     const nm = (ak) => (d.unit === 'team' ? (T[ak] ? T[ak].n : '') : (P[ak] ? P[ak].n : ''));
+    const col = (ak) => (d.unit === 'team' ? (T[ak] ? T[ak].c : '#888') : F.pcolor(ak));
+    const tk = [S.ph, S.r, d.turn, pick ? 'p' + pick.cell : '', last ? 'l' + last.cell : '', mineAns != null ? 1 : 0].join('|');
+    if (el.dataset.tk === tk && $('.mines', el)) { tickTimer(); return; }
+    el.dataset.tk = tk;
     el.innerHTML = `<div class="pg-body">
-      ${last ? `<div class="m-flash ${last.boom ? 'boom' : 'ok'}">${last.boom ? `💥 انفجر على ${esc(nm(last.ak))}!` : `✓ ${esc(nm(last.ak))} نجا`}</div>`
-      : myTurn ? '<div class="m-turn me">دورك! اختر خانة 👇</div>' : `<div class="m-turn">الدور على <b>${esc(nm(S.ak))}</b></div>`}
-      ${iAmOut ? '<p class="m-msg out">انفجر عليكم لغم في هذي الجولة 💥</p>' : `<p class="m-msg">رصيدكم بالجولة: <b>${ar((d.pot || {})[d.unit === 'team' ? m.team : me.pid] || 0)}</b></p>`}
-      ${GM.minesBoard({ n, rev: d.rev || {} }, { mark: myBomb != null ? myBomb : -1, tap: myTurn })}</div>`;
+      ${last ? `<div class="m-flash ${last.boom ? 'boom' : 'ok'}">${last.boom ? `💥 انفجر على ${esc(nm(last.ak))}!` : `✓ ${esc(nm(last.ak))} نجا +١٠`}</div>`
+      : pick ? `<div class="m-turn pick" style="--tc:${col(pick.ak)}">⏳ <b>${esc(nm(pick.ak))}</b> يفتح خانة…</div>`
+        : myTurn ? '<div class="m-turn me">دورك! اختر خانة 👇</div>' : `<div class="m-turn" style="--tc:${col(S.ak)}">الدور على <b>${esc(nm(S.ak))}</b></div>`}
+      ${iAmOut ? '<p class="m-msg out">انفجر عليكم لغم في هذي الجولة 💥</p>' : `<p class="m-msg">رصيدكم بالجولة: <b>${ar((d.pot || {})[mine] || 0)}</b></p>`}
+      ${GM.minesBoard({ n, rev: d.rev || {} }, { mark: myBomb != null ? myBomb : -1, tap: myTurn, pick: pick ? pick.cell : -1 })}
+      <div class="mx-mini">${(d.order || []).map((ak) => { const out = (d.out || []).includes(ak); return `<span class="mx-chip ${out ? 'out' : ''} ${ak === S.ak && !last ? 'now' : ''} ${ak === mine ? 'me' : ''}" style="--tc:${col(ak)}">${esc(nm(ak))}<b>${out ? '💥' : ar((d.pot || {})[ak] || 0)}</b></span>`; }).join('')}</div></div>`;
     if (myTurn) { F.vibrate([80, 60, 80]); FX.whistle(); }
-    if (last && last.boom && last.ak === (d.unit === 'team' ? m.team : me.pid)) { FX.boom(); F.vibrate([100, 50, 200]); }
+    if (pick) FX.play('heart', 0.6);
+    if (last) {
+      GM.minesFx($('.mines', el), last.cell, last.boom ? 'boom' : 'safe');
+      if (last.boom) { FX.play('boom', last.ak === mine ? 1 : 0.55); if (last.ak === mine) F.vibrate([100, 50, 200]); }
+      else FX.play('coin1', 0.6);
+    }
     $$('.mcell', el).forEach((b) => b.addEventListener('click', () => {
       if (b.disabled) return;
       $$('.mcell', el).forEach((x) => { x.disabled = true; });
@@ -386,9 +416,19 @@
     const st = standings();
     const won = m.ind ? (st[0] && st[0].t === me.pid && st[0].pts > 0) : (S.win != null && String(S.win) === m.team);
     const pos = st.findIndex((x) => x.t === m.unit);
-    waitView(`<div class="w-ico">${won ? '🏆' : '👏'}</div><h2>${won ? (m.ind ? 'أنت البطل!' : 'فزتوا!') : 'انتهى السِّجال'}</h2>${m.ind ? `<p>مركزك <b class="big-num">${ar(pos + 1)}</b> من ${ar(st.length)}</p>` : ''}
+    const top = st.filter((x) => x.pts > 0).slice(0, 3);
+    const onPod = pos >= 0 && pos < 3 && st[pos].pts > 0;
+    const podium = top.length ? `<div class="cer-mini">${[1, 0, 2].map((i) => (top[i] ? `<div class="cm-col p${i + 1} ${top[i].t === m.unit ? 'mine' : ''}" style="--tc:${top[i].c};--d:${2 - i}"><span>${['🥇', '🥈', '🥉'][i]}</span><b>${esc(top[i].n)}</b><em>${num(top[i].pts)}</em><div class="cm-block">${ar(i + 1)}</div></div>` : '<div class="cm-col empty"></div>')).join('')}</div>` : '';
+    waitView(`<h2>${won ? (m.ind ? '🏆 أنت البطل!' : '🏆 فزتوا!') : onPod ? '🎖️ على منصة التتويج!' : '👏 انتهى السِّجال'}</h2>${podium}${m.ind ? `<p>مركزك <b class="big-num">${ar(pos + 1)}</b> من ${ar(st.length)}</p>` : ''}
       <ol class="mini-rank">${st.slice(0, m.ind ? 10 : 6).map((x) => `<li style="--tc:${x.c}" class="${x.t === m.unit ? 'mine' : ''}"><b>${esc(x.n)}</b><span>${num(x.pts)}</span></li>`).join('')}</ol>`);
-    if (won) { window.AtharSound.winner(); F.confetti($('#confetti')); } else FX.clap(6);
+    // الأصوات والاحتفال مرة وحدة فقط
+    const ek = 'end|' + S.r;
+    if (endKey === ek) return;
+    endKey = ek;
+    if (won) {
+      window.AtharSound.winner(); F.confetti($('#confetti'));
+      for (let k = 0; k < 4; k++) setTimeout(() => { FX.play('fire', 0.5, 0.9 + Math.random() * 0.2); F.confetti($('#confetti'), { count: 50, x: 0.2 + Math.random() * 0.6 }); }, 600 + k * 650);
+    } else if (onPod) { FX.play('stamp', 0.7); FX.clap(6); F.confetti($('#confetti'), { count: 60 }); } else FX.clap(6);
   }
 
   // ---------- البدء ----------

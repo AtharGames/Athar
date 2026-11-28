@@ -186,6 +186,7 @@ window.FZ_GAMES = (() => {
           <p class="dr-note" hidden>${esc((rv.notes || {})[pid] || '')}</p>`;
         grid.prepend(card);
         if (top) {
+          if (rank === 1) FX.play('riser', 0.55);
           for (let k = 0; k < 5 && alive(); k++) { FX.tick(0.2); await wait(170); }
           card.classList.remove('wait');
         }
@@ -194,7 +195,7 @@ window.FZ_GAMES = (() => {
         if (!alive()) return;
         const nt = $('.dr-note', card); if (nt.textContent) nt.hidden = false;
         if (i === n - 1) {
-          card.classList.add('win'); card.insertAdjacentHTML('afterbegin', '<span class="dr-crown">👑</span>');
+          card.classList.add('win'); card.insertAdjacentHTML('afterbegin', '<span class="dr-crown">👑</span>'); FX.play('stamp', 0.7);
           FX.clap(5);
           if (myPid == null || me) window.FZ.confetti(document.getElementById('confetti'), { count: 110 });
         }
@@ -282,6 +283,7 @@ window.FZ_GAMES = (() => {
           <p class="ds-note" hidden>${weak(pid) ? esc((rv.notes || {})[pid] || '') : ''}</p>`;
         list.prepend(li);
         if (top) {
+          if (rank === 1) FX.play('riser', 0.55);
           for (let k = 0; k < 5 && alive(); k++) { FX.tick(0.2); await wait(170); }
           li.classList.remove('wait');
         }
@@ -292,7 +294,7 @@ window.FZ_GAMES = (() => {
         const hb = $('.ds-hits', li); hb.hidden = false;
         const nt = $('.ds-note', li); if (nt.textContent) nt.hidden = false;
         if (i === n - 1) {
-          li.classList.add('win'); li.insertAdjacentHTML('afterbegin', '<span class="dr-crown">👑</span>');
+          li.classList.add('win'); li.insertAdjacentHTML('afterbegin', '<span class="dr-crown">👑</span>'); FX.play('stamp', 0.7);
           FX.clap(5);
           if (myPid == null || me) window.FZ.confetti(document.getElementById('confetti'), { count: 110 });
         }
@@ -348,7 +350,7 @@ window.FZ_GAMES = (() => {
         li.className = `pr-row ${top ? 'top wait' : ''} ${me ? 'me' : ''}`;
         li.innerHTML = `<i class="pr-rk">${ar(rank)}</i>${unitTag(c, r.tid)}<span class="pr-km"><b>؟</b> <small>كم</small></span>${r.ex ? '<em class="exact" hidden>🎯 إصابة!</em>' : ''}<strong hidden>${plus(r.pts)}</strong>`;
         list.prepend(li);
-        if (top) { for (let k = 0; k < 5 && alive(); k++) { FX.tick(0.2); await wait(170); } li.classList.remove('wait'); }
+        if (top) { if (rank === 1) FX.play('riser', 0.55); for (let k = 0; k < 5 && alive(); k++) { FX.tick(0.2); await wait(170); } li.classList.remove('wait'); }
         const [x, y] = xy(r.lat, r.lon);
         const ln = document.createElementNS(NS, 'line');
         ln.setAttribute('class', 'dist pr-line'); ln.setAttribute('x1', x); ln.setAttribute('y1', y); ln.setAttribute('x2', tx); ln.setAttribute('y2', ty);
@@ -361,7 +363,7 @@ window.FZ_GAMES = (() => {
         $$('[hidden]', li).forEach((x) => { x.hidden = false; });
         if (r.ex) FX.clap(3);
         if (i === n - 1) {
-          li.classList.add('win'); li.insertAdjacentHTML('afterbegin', '<span class="pr-crown">👑</span>');
+          li.classList.add('win'); li.insertAdjacentHTML('afterbegin', '<span class="pr-crown">👑</span>'); FX.play('stamp', 0.7);
           // تقريب الخريطة على المكان وأقرب دبوس
           const W = Math.max(M.w * 0.22, Math.abs(x - tx) * 2.6, Math.abs(y - ty) * 2.6 * M.w / M.h);
           const H = W * M.h / M.w;
@@ -411,7 +413,7 @@ window.FZ_GAMES = (() => {
       for (let j = 0; j < right.length && alive(); j++) {
         slots[j].classList.add('shake');
         for (let k = 0; k < 3 && alive(); k++) { FX.tick(0.2); await wait(170); }
-        slots[j].classList.remove('shake'); slots[j].classList.add('flip'); FX.pop(620 + j * 60);
+        slots[j].classList.remove('shake'); slots[j].classList.add('flip'); FX.play('flip', 0.8, 0.95 + j * 0.04);
         await wait(380);
         let hits = 0;
         rows.forEach((r, i) => {
@@ -437,7 +439,7 @@ window.FZ_GAMES = (() => {
       const best = order[0];
       if (best && (sc[best] || 0) > 0) {
         const r = rows.find((x) => x.dataset.p === best);
-        r.classList.add('win'); r.insertAdjacentHTML('afterbegin', '<span class="pr-crown">👑</span>');
+        r.classList.add('win'); r.insertAdjacentHTML('afterbegin', '<span class="pr-crown">👑</span>'); FX.play('stamp', 0.7);
         FX.clap(5);
         if (myPid == null || myPid === best) window.FZ.confetti(document.getElementById('confetti'), { count: 100 });
       }
@@ -485,6 +487,50 @@ window.FZ_GAMES = (() => {
     })();
   }
 
+  // ---------- أكمل المثل أو البيت: كشف بالإقصاء ثم كتابة التكملة ----------
+  const pvLine = (d, fill) => `<span class="q-cat">${esc(d.kd)}</span><blockquote class="verse">${esc(d.t).replace('……', fill != null ? `<mark class="pv-fill">${esc(fill)}</mark>` : '<span class="gap">……</span>').replace(' … ', '<br>')}</blockquote>`;
+  function provReveal(el, c, { done, mine } = {}) {
+    const d = c.d, rv = c.rev || {}, k = rv.k, ans = rv.ans || {};
+    const myU = mine ? mine.unit : null;
+    const counts = {}; Object.values(ans).forEach((x) => { counts[x.v] = (counts[x.v] || 0) + 1; });
+    const keys = c.ind ? Object.keys(ans).sort((a, b) => (ans[b].ok - ans[a].ok)) : Object.keys(c.T);
+    el.innerHTML = `<div class="pv-rev">${pvLine(d, '')}
+      <div class="od-grid pv-opts">${d.o.map((o, i) => `<div class="od-tile" data-i="${i}"><span class="od-t">${esc(o)}</span><b class="od-n"></b></div>`).join('')}</div>
+      <div class="team-res pv-res">${keys.map((tid, i) => { const a = ans[tid]; return `<span class="tres pv-chip ${a ? (a.ok ? 'ok' : 'no') : 'none'} ${tid === myU ? 'me' : ''}" style="--tc:${unitColor(c, tid)};--d:${Math.min(i, 10)}">${esc(c.ind ? pname(c.P, tid) : teamName(c.T, tid))}<b>${a ? (a.ok ? '✓' : '✗') : '—'}</b>${a && a.fast ? '<em>الأسرع ' + plus(20) + '</em>' : ''}</span>`; }).join('')}</div></div>`;
+    const root = $('.pv-rev', el), tiles = $$('.od-tile', root), fill = $('.pv-fill', root), res = $('.pv-res', root);
+    if (myU != null && ans[myU] && tiles[ans[myU].v]) tiles[ans[myU].v].classList.add('mine');
+    const alive = () => root.isConnected;
+    const wait = (ms) => new Promise((r) => setTimeout(r, window.FZ.reduced() ? Math.min(ms, 80) : ms));
+    const cnt = (i) => { const n = counts[i] || 0, b = $('.od-n', tiles[i]); b.textContent = n ? `${ar(n)} 👆` : '٠'; b.classList.add('on'); };
+    (async () => {
+      await wait(700);
+      const wrong = window.FZ.shuffle(tiles.map((_, i) => i).filter((i) => i !== k));
+      for (const i of wrong) {
+        if (!alive()) return;
+        tiles[i].classList.add('peek'); FX.tick(0.2); await wait(240);
+        cnt(i); await wait(320);
+        tiles[i].classList.remove('peek'); tiles[i].classList.add('out'); FX.swoosh(); await wait(380);
+      }
+      if (!alive()) return;
+      tiles[k].classList.add('peek');
+      for (let j = 0; j < 3 && alive(); j++) { FX.tick(0.25); await wait(180); }
+      tiles[k].classList.remove('peek'); tiles[k].classList.add('is-odd'); cnt(k);
+      // كتابة التكملة داخل البيت حرفًا حرفًا
+      const word = Array.from(d.o[k]);
+      FX.play('write', 0.7);
+      fill.classList.add('writing');
+      for (let j = 1; j <= word.length && alive(); j++) { fill.textContent = word.slice(0, j).join(''); await wait(60); }
+      fill.classList.remove('writing'); fill.classList.add('done');
+      await wait(500); if (!alive()) return;
+      res.classList.add('show');
+      const anyOk = Object.values(ans).some((x) => x.ok);
+      if (anyOk) { FX.right(); setTimeout(() => FX.clap(4), 300); } else FX.wrong();
+      if (myU != null && ans[myU] && ans[myU].ok) window.FZ.confetti(document.getElementById('confetti'), { count: 70 });
+      await wait(1600);
+      if (alive() && done) done();
+    })();
+  }
+
   // ---------- أسئلة السرعة: الجولة الذهبية والكشف للجميع ----------
   let goldShown = '';
   function goldSplash(key, big, sub = 'سؤال صعب ونقاطه دبل') {
@@ -494,7 +540,7 @@ window.FZ_GAMES = (() => {
     ov.className = 'gold-splash' + (big ? '' : ' small');
     ov.innerHTML = `<div class="gs-box"><i>🌟</i><b>الجولة الذهبية</b><small>${esc(sub)}</small></div>`;
     document.body.appendChild(ov);
-    FX.whistle && FX.whistle(); setTimeout(() => FX.clap(3), 300);
+    FX.play('wbig', 0.8); FX.whistle && FX.whistle(0.15); setTimeout(() => FX.clap(3), 350);
     setTimeout(() => ov.remove(), 1900);
   }
   function quickReveal(el, c, { done, mine } = {}) {
@@ -722,6 +768,9 @@ window.FZ_GAMES = (() => {
     el.insertAdjacentHTML('beforeend', `<ol class="rank-list">${rows.map((r) => `<li class="${r.rank === 0 ? 'first' : ''}">
       ${unitTag(c, r.tid)}<b class="guess">${fmt(r.v)}</b><small>${errFmt(r)}</small>${r.ex ? '<em class="exact">إصابة!</em>' : ''}<strong>${plus(r.pts)}</strong></li>`).join('')
       || '<li class="empty">ما أرسل أحد</li>'}</ol>`);
+    // صوت: طقطقة لكل صف ثم ختم وتصفيق للأقرب
+    rows.forEach((r, i) => setTimeout(() => FX.tick(0.15), 120 + i * 80));
+    if (rows.length) setTimeout(() => { FX.play('stamp', 0.6); if (rows.some((r) => r.ex)) FX.clap(5); else FX.clap(3); }, 200 + rows.length * 80);
   }
 
   // نقاط اختيار متعدد للفرق: الصح ١٠٠ وأسرع فريق صح +٢٠
@@ -1187,8 +1236,8 @@ window.FZ_GAMES = (() => {
 
     // ---------- ١١) أكمِل المثل أو البيت ----------
     proverb: {
-      name: 'أكمِل المثل', ico: '✍️', mode: 'team', rounds: 4, time: 25,
-      idea: 'أكملوا المثل أو بيت الشعر',
+      name: 'أكمِل المثل', ico: '✍️', mode: 'team', rounds: 4, time: 25, anim: true,
+      idea: 'أكملوا المثل أو بيت الشعر (من الجاهلية إلى العصر الحديث)',
       how: 'يظهر مثل أو بيت شعر (فصيح ونبطي) ناقص آخره. تشاوروا ٢٥ ثانية، والقائد يختار التكملة. الصح ١٠٠، ولو أصاب أكثر من فريق فالأسرع +٢٠.',
       howSolo: 'يظهر مثل أو بيت شعر ناقص آخره، وكل واحد يختار التكملة من جواله. الصح ١٠٠، والأسرع بين المصيبين +٢٠.',
       make(c) {
@@ -1197,11 +1246,11 @@ window.FZ_GAMES = (() => {
         return { d: { kd: it.kd, t: it.t, o: opts }, k: { correct: opts.indexOf(it.a) } };
       },
       score: (c) => teamMC(c),
-      line: (d, fill) => `<span class="q-cat">${esc(d.kd)}</span><blockquote class="verse">${esc(d.t).replace('……', fill ? `<mark>${esc(fill)}</mark>` : '<span class="gap">……</span>').replace(' … ', '<br>')}</blockquote>`,
-      host(el, c) { el.innerHTML = this.line(c.d) + mcHost(c.d.o); },
-      reveal(el, c) { el.innerHTML = this.line(c.d, c.d.o[c.rev.k]); teamMCReveal(el, c, c.d.o); },
-      phone(el, c) { el.innerHTML = this.line(c.d); mcPhone(el, c.d.o, c); },
-      phoneRev(el, c) { el.innerHTML = this.line(c.d, c.d.o[c.rev.k]); }
+      line: (d, fill) => pvLine(d, fill),
+      host(el, c) { el.innerHTML = pvLine(c.d) + mcHost(c.d.o); },
+      reveal(el, c) { provReveal(el, c, { done: c.done }); },
+      phone(el, c) { el.innerHTML = pvLine(c.d); mcPhone(el, c.d.o, c); },
+      phoneRev(el, c) { provReveal(el, c, { done: c.done, mine: c.me }); }
     },
 
     // ---------- ١٢) الألغام ----------
@@ -1314,16 +1363,50 @@ window.FZ_GAMES = (() => {
 
   // ---------- لوحة الألغام (للمقدّم والجوال) ----------
   // st: { n: حجم اللوحة, rev: {خانة: 'ok' أو 'boom:مفتاح'}, ... }  mark: خانة لغمي
-  function minesBoard(st, { mark = -1, tap = false, bombs = null, T = {}, owners = null } = {}) {
+  function minesBoard(st, { mark = -1, tap = false, bombs = null, T = {}, owners = null, pick = -1 } = {}) {
     const n = st.n;
     let h = `<div class="mines" style="--n:${n}">`;
     for (let i = 0; i < n * n; i++) {
       const r = st.rev && st.rev[i];
       const own = owners && owners[i];
-      const cls = r === 'ok' ? 'safe' : r ? 'boom' : bombs && bombs[i] ? 'bomb-show' : '';
+      const cls = (r === 'ok' ? 'safe' : r ? 'boom' : bombs && bombs[i] ? 'bomb-show' : '') + (i === pick ? ' picking' : '');
       h += `<button class="mcell tactile ${cls} ${i === mark ? 'mine-mark' : ''}" data-i="${i}" ${!tap || r || i === mark ? 'disabled' : ''}>${r === 'ok' ? '✓' : r ? '💥' : bombs && bombs[i] ? '💣' : i === mark ? '💣' : ''}${own ? `<span class="owners">${own.map((tid) => `<i style="background:${String(tid).startsWith('#') ? tid : teamColor(T, tid)}"></i>`).join('')}</span>` : ''}</button>`;
     }
     return h + '</div>';
+  }
+
+  // مؤثرات خانة اللغم: انفجار (وميض، موجة، شظايا، دخان، اهتزاز) أو نجاة (حلقة خضراء و+١٠)
+  function minesFx(board, cell, kind, { big = false } = {}) {
+    if (!board) return;
+    const b = board.querySelector(`.mcell[data-i="${cell}"]`); if (!b) return;
+    const box = document.createElement('div');
+    box.className = `mx-fx ${kind} ${big ? 'big' : ''}`;
+    if (kind === 'boom') {
+      let parts = '<i class="fx-flash"></i><i class="fx-ring"></i><i class="fx-ring r2"></i><i class="fx-smoke"></i>';
+      for (let k = 0; k < 14; k++) { const a = (k / 14) * 360 + Math.random() * 18, d = 60 + Math.random() * 70; parts += `<i class="fx-shard" style="--a:${a.toFixed(0)}deg;--d:${d.toFixed(0)}px;--s:${(0.6 + Math.random() * 0.8).toFixed(2)}"></i>`; }
+      box.innerHTML = parts + '<b class="fx-emo">💥</b>';
+      board.classList.remove('shake-hard'); void board.offsetWidth; board.classList.add('shake-hard');
+      if (big && !window.FZ.reduced()) { const fl = document.createElement('div'); fl.className = 'mx-screen-flash'; document.body.appendChild(fl); setTimeout(() => fl.remove(), 700); }
+    } else box.innerHTML = '<i class="fx-ring ok"></i><b class="fx-plus">+١٠</b>';
+    b.appendChild(box);
+    setTimeout(() => box.remove(), 1800);
+  }
+  // نهاية جولة الألغام: كشف الألغام واحدًا واحدًا مع أصحابها
+  async function minesEndAnim(board, { bombs = {}, owners = {}, T = {} } = {}) {
+    if (!board) return;
+    const cells = [...new Set(Object.values(bombs))];
+    const wait = (ms) => new Promise((r) => setTimeout(r, window.FZ.reduced() ? 40 : ms));
+    await wait(500);
+    for (const cell of cells) {
+      if (!board.isConnected) return;
+      const b = board.querySelector(`.mcell[data-i="${cell}"]`); if (!b) continue;
+      if (!b.classList.contains('boom')) { b.classList.add('bomb-show', 'pop-bomb'); b.textContent = '💣'; }
+      const own = owners[cell];
+      if (own) b.insertAdjacentHTML('beforeend', `<span class="owners">${own.map((tid) => `<i style="background:${String(tid).startsWith('#') ? tid : teamColor(T, tid)}"></i>`).join('')}</span>`);
+      FX.play('boom', 0.25, 1.4); FX.tick(0.2);
+      await wait(Math.max(260, 1800 / cells.length));
+    }
+    await wait(400);
   }
 
   const ORDER = ['price', 'reflex', 'hawk', 'quick', 'draw', 'number', 'describe', 'pin', 'order', 'odd', 'proverb', 'mines'];
@@ -1334,5 +1417,5 @@ window.FZ_GAMES = (() => {
   const MODE_LABEL = { team: 'جماعي — القائد يرسل', solo: 'فردي — الكل من جواله', duel: 'مواجهة — رسّام من كل فريق', mines: 'بالدور — لغم لكل فريق' };
   // فقرات لها بنك محتوى يُستعرض ويُصفّى
   const BANKED = ['price', 'hawk', 'number', 'order', 'odd', 'proverb', 'pin'];
-  return { GAMES, ORDER, BANKED, MODE_LABEL, effMode, howOf, modeLabel, minesBoard, pinSvg, tag, teamColor, teamName, pname, mcHost };
+  return { GAMES, ORDER, BANKED, MODE_LABEL, effMode, howOf, modeLabel, minesBoard, minesFx, minesEndAnim, pinSvg, tag, teamColor, teamName, pname, mcHost };
 })();
