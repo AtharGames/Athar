@@ -209,7 +209,7 @@ window.FZ_GAMES = (() => {
   // الصورة: { svg, title, facts:[{label, w}], img? }
   function descPic(d) {
     if (d.p != null && C.desc && C.desc[d.p]) {
-      const it = C.desc[d.p], img = 'img/hawk/' + it.img + '.jpg';
+      const it = C.desc[d.p], img = 'img/desc/' + it.img + '.jpg';
       return { img, title: it.t, photo: true, facts: it.facts.map((f) => ({ label: f.label, w: f.kw, have: true })),
         svg: `<img class="desc-photo" src="${img}" alt="${esc(it.t)}" draggable="false">` };
     }
@@ -240,18 +240,19 @@ window.FZ_GAMES = (() => {
       return t && ws.some((w) => dHit(t, w)) ? `<mark>${esc(p)}</mark>` : esc(p);
     }).join('');
   }
+  const DESC_WEAK = 30;
   function descNote(score, seed) {
     const r = rng((seed >>> 0) || 1);
-    const L = score >= 70 ? ['عين صقر ووصف مصوّر 👏', 'كأنك واقف داخل الصورة!', 'ما فاتك شي، ما شاء الله 🎯']
-      : score >= 45 ? ['وصف حلو، فاتتك تفاصيل بسيطة', 'قريب مرة، شوي تركيز ✨', 'الأساسيات كلها موجودة']
-        : score >= 20 ? ['شفت نص الصورة تقريبًا 😄', 'الوقت ظلمك يمكن', 'بداية، والمرة الجاية أدق']
-          : ['تبي نظارة؟ 👓', 'وصف من الذاكرة يمكن 😅', 'الصورة تسلّم عليك'];
+    const L = score >= 15 ? ['شفت نص الصورة تقريبًا 😄', 'الوقت ظلمك يمكن ⏳', 'بداية، والمرة الجاية أدق', 'وصفك مختصر مفيد… مختصر مرة 😅']
+      : ['تبي نظارة؟ 👓', 'وصف من الذاكرة يمكن 😅', 'الصورة تسلّم عليك 👋', 'كأنك تصف صورة ثانية 🤔', 'الحَكَم يدوّر التفاصيل وما لقاها 🔍'];
     return r.pick(L);
   }
   function descReveal(el, c, { done, texts, load, mine } = {}) {
     const pic = descPic(c.d), rv = c.rev || {}, sc = rv.sc || {};
     const order = Object.keys(sc).sort((a, b) => (sc[a] - sc[b]) || (a < b ? 1 : -1));
     const n = order.length, myPid = mine && mine.pid;
+    // التعليق الطريف للأوصاف الضعيفة فقط
+    const weak = (pid) => (sc[pid] || 0) < DESC_WEAK || !((rv.hits || {})[pid] || []).length;
     const col = (pid) => (c.P[pid] ? (c.ind ? window.FZ.pcolor(pid) : teamColor(c.T, c.P[pid].t)) : '#888');
     el.innerHTML = `<div class="ds-rev"><figure class="frame ds-pic ${pic.photo ? 'photo' : ''}">${pic.svg}${pic.title ? `<figcaption>${esc(pic.title)}</figcaption>` : ''}</figure>
       <ol class="ds-list">${n ? '' : '<li class="empty">ما أرسل أحد</li>'}</ol>
@@ -277,8 +278,8 @@ window.FZ_GAMES = (() => {
         li.innerHTML = `<header><i class="ds-rk">${ar(rank)}</i><span class="tchip" style="--tc:${col(pid)}">${esc(pname(c.P, pid))}</span>${whoTag(c, pid)}
             <span class="ds-meter"><b class="ds-sc">٠</b><small>/١٠٠</small></span><em>${plus((c.pp || rv.pp || {})[pid] || 0)}</em></header>
           <p class="ds-txt">${descMark(txt(pid), pic.facts) || '<span class="dim">…</span>'}</p>
-          <div class="ds-hits" hidden>${hits.map((h) => `<span>✓ ${esc(h)}</span>`).join('')}</div>
-          <p class="ds-note" hidden>${esc((rv.notes || {})[pid] || '')}</p>`;
+          <div class="ds-hits" hidden><b>${hits.length ? `✓ أصاب ${hits.length === 1 ? 'تفصيلة وحدة' : hits.length === 2 ? 'تفصيلتين' : ar(hits.length) + (hits.length < 11 ? ' تفاصيل' : ' تفصيلة')}:` : '✗ ما أصاب ولا تفصيلة'}</b>${hits.map((h) => `<span>${esc(h)}</span>`).join('')}</div>
+          <p class="ds-note" hidden>${weak(pid) ? esc((rv.notes || {})[pid] || '') : ''}</p>`;
         list.prepend(li);
         if (top) {
           for (let k = 0; k < 5 && alive(); k++) { FX.tick(0.2); await wait(170); }
@@ -288,7 +289,7 @@ window.FZ_GAMES = (() => {
         await countTo($('.ds-sc', li), sc[pid] || 0, top ? 900 : 450);
         if (!alive()) return;
         li.style.setProperty('--p', ((sc[pid] || 0) / 100).toFixed(3));
-        const hb = $('.ds-hits', li); if (hb.children.length) hb.hidden = false;
+        const hb = $('.ds-hits', li); hb.hidden = false;
         const nt = $('.ds-note', li); if (nt.textContent) nt.hidden = false;
         if (i === n - 1) {
           li.classList.add('win'); li.insertAdjacentHTML('afterbegin', '<span class="dr-crown">👑</span>');

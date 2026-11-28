@@ -946,3 +946,9 @@ body.play main{padding:10px 12px 22px;}
 .pg-body .ds-rev{grid-template-columns:1fr;}
 .pg-body .ds-pic{position:relative; top:0; width:min(80%,300px); margin-inline:auto;}
 @media (prefers-reduced-motion: reduce){.ds-card,.ds-card.win,.ds-hits,.ds-note{animation:none !important;} .ds-card::after{transition:none;}}
+.ds-hits{align-items:center;}
+.ds-hits b{font-size:.85rem; color:#137A50; margin-inline-end:2px;}
+[data-theme="navy"] .ds-hits b,[data-theme="blue"] .ds-hits b{color:#BFF5DA;}
+.ds-hits b:only-child{color:#C0392B;}
+[data-theme="navy"] .ds-hits b:only-child,[data-theme="blue"] .ds-hits b:only-child{color:#FFB4AB;}
+.ds-note:empty{display:none;}
