@@ -196,7 +196,7 @@
     const cat = `<span class="bk-cat">${esc(C.BANK[gid].cats[it.cat] || '')}</span><span class="bk-lvl l${it.lvl}">${C.LEVELS[it.lvl]}</span>`;
     if (gid === 'price') return `<li><span class="bk-emo bk-art">${(window.FZ_ART && FZ_ART(it.art)) || it.e}</span><div><b>${esc(it.n)}</b><small>${esc(it.st)}</small></div><strong>${num(it.v)} ${it.u && it.u !== 'ريال' ? esc(it.u) : 'ر.س'}${it.est ? ' ≈' : ''}</strong>${cat}</li>`;
     if (gid === 'number') return `<li><div><b>${esc(it.q)}</b></div><strong>${num(it.v)} <small>${esc(it.u)}</small></strong>${cat}</li>`;
-    if (gid === 'order') return `<li><div><b>${esc(it.t)}</b><small>${it.items.map(esc).join(' ← ')}</small></div>${cat}</li>`;
+    if (gid === 'order') return `<li><div><b>${esc(it.t)}</b><small>${it.items.map((x) => { const [t, e] = String(x).split('|'); return esc((e ? e + ' ' : '') + t); }).join(' ← ')}</small></div>${cat}</li>`;
     if (gid === 'odd') return `<li><div><b>${it.w.map((w, i) => (i === it.ans ? `<mark>${esc(w)}</mark>` : esc(w))).join('، ')}</b><small>${esc(it.why)}</small></div>${cat}</li>`;
     if (gid === 'proverb') return `<li><div><small>${esc(it.kd)}</small><b>${esc(it.t).replace('……', `<mark>${esc(it.a)}</mark>`).replace(' … ', ' ✦ ')}</b></div>${cat}</li>`;
     if (gid === 'hawk') return `<li><span class="bk-emo bk-photo"><img src="img/hawk/${it.img}.jpg" alt="" loading="lazy"></span><div><b>${esc(it.t)}</b><small>${ar(it.qs.length)} أسئلة: ${esc(it.qs.map((q) => q[0]).join(' • '))}</small></div>${cat}</li>`;

@@ -390,6 +390,62 @@ window.FZ_GAMES = (() => {
     })();
   }
 
+  // ---------- رتّبها صح: بطاقات بإيموجي ومعلومة، نقاط جزئية، وكشف بالتشويق ----------
+  const ocP = (x) => { const [t, e = '', f = ''] = String(x).split('|'); return { t, e, f }; };
+  const ocIn = (x, fact) => { const o = ocP(x); return `${o.e ? `<em class="oc-e">${o.e}</em>` : ''}<span class="oc-t">${esc(o.t)}${fact && o.f ? `<small class="oc-f">${esc(o.f)}</small>` : ''}</span>`; };
+  const ORDER_PART = 15, ORDER_BONUS = 20;
+  function orderReveal(el, c, { done, mine } = {}) {
+    const rv = c.rev || {}, right = rv.k.right, picks = rv.picks || {}, sc = c.pp || rv.pp || {};
+    const myPid = mine && mine.pid;
+    const ids = Object.keys(picks).sort((a, b) => (a === myPid ? -1 : b === myPid ? 1 : pname(c.P, a).localeCompare(pname(c.P, b), 'ar')));
+    const col = (pid) => (c.P[pid] ? (c.ind ? window.FZ.pcolor(pid) : teamColor(c.T, c.P[pid].t)) : '#888');
+    el.innerHTML = `<div class="or-rev"><div class="q-big small">${esc(c.d.t)}</div>
+      <ol class="or-slots">${right.map((_, j) => `<li class="or-slot"><div class="or-in"><div class="or-back"><b>${ar(j + 1)}</b><span>؟</span></div><div class="or-front ocard"><i>${ar(j + 1)}</i>${ocIn(c.d.items[right[j]], true)}</div></div></li>`).join('')}</ol>
+      <div class="or-board">${ids.length ? ids.map((pid) => `<div class="or-row ${pid === myPid ? 'me' : ''}" data-p="${pid}" style="--tc:${col(pid)}"><span class="tchip" style="--tc:${col(pid)}">${esc(pname(c.P, pid))}</span>${whoTag(c, pid)}
+        <span class="or-cells">${right.map(() => '<i></i>').join('')}</span><b class="or-pts">…</b></div>`).join('') : '<p class="dim">ما أرسل أحد</p>'}</div></div>`;
+    const root = $('.or-rev', el), slots = $$('.or-slot', root), rows = $$('.or-row', root);
+    const alive = () => root.isConnected;
+    const wait = (ms) => new Promise((r) => setTimeout(r, window.FZ.reduced() ? Math.min(ms, 80) : ms));
+    (async () => {
+      await wait(600);
+      for (let j = 0; j < right.length && alive(); j++) {
+        slots[j].classList.add('shake');
+        for (let k = 0; k < 3 && alive(); k++) { FX.tick(0.2); await wait(170); }
+        slots[j].classList.remove('shake'); slots[j].classList.add('flip'); FX.pop(620 + j * 60);
+        await wait(380);
+        let hits = 0;
+        rows.forEach((r, i) => {
+          const v = String(picks[r.dataset.p] || '').split(',').map(Number), ok = v[j] === right[j];
+          if (ok) hits++;
+          setTimeout(() => { const cell = $$('.or-cells i', r)[j]; if (cell) cell.className = ok ? 'ok' : 'no'; }, Math.min(i * 40, 600));
+        });
+        if (hits) FX.tick(0.35);
+        await wait(Math.min(rows.length * 40, 600) + 650);
+      }
+      if (!alive()) return;
+      // النقاط وترتيب اللوحة
+      const order = ids.slice().sort((a, b) => (sc[b] || 0) - (sc[a] || 0));
+      const board = $('.or-board', root);
+      order.forEach((pid, i) => {
+        const r = rows.find((x) => x.dataset.p === pid); if (!r) return;
+        board.appendChild(r);
+        const n = (rv.nc || {})[pid] || 0, b = $('.or-pts', r);
+        b.innerHTML = n === 4 ? `✨ مثالي ${plus(sc[pid] || 0)}` : plus(sc[pid] || 0);
+        r.classList.add(n === 4 ? 'perfect' : n ? 'part' : 'zero');
+        r.style.animationDelay = Math.min(i * 60, 500) + 'ms'; r.classList.add('reord');
+      });
+      const best = order[0];
+      if (best && (sc[best] || 0) > 0) {
+        const r = rows.find((x) => x.dataset.p === best);
+        r.classList.add('win'); r.insertAdjacentHTML('afterbegin', '<span class="pr-crown">👑</span>');
+        FX.clap(5);
+        if (myPid == null || myPid === best) window.FZ.confetti(document.getElementById('confetti'), { count: 100 });
+      }
+      await wait(1400);
+      if (alive() && done) done();
+    })();
+  }
+
   // ---------- أسئلة السرعة: الجولة الذهبية والكشف للجميع ----------
   let goldShown = '';
   function goldSplash(key, big) {
@@ -987,21 +1043,29 @@ window.FZ_GAMES = (() => {
 
     // ---------- ٩) رتّبها صح ----------
     order: {
-      name: 'رتّبها صح', ico: '📶', mode: 'solo', rounds: 4, time: 15,
+      name: 'رتّبها صح', ico: '📶', mode: 'solo', rounds: 4, time: 15, anim: true,
       idea: 'رتّب البطاقات حسب المعيار',
-      how: 'تظهر ٤ بطاقات بترتيب عشوائي ومعيار (من الأقدم للأحدث، من الشمال للجنوب…). اسحبها للترتيب الصحيح من الأعلى للأسفل واضغط تأكيد. الترتيب الصحيح كاملًا = نقاط، والأسرع أكثر.',
+      how: 'تظهر ٤ بطاقات بترتيب عشوائي ومعيار (من الأقدم للأحدث، من الأثقل للأخف…). اسحبها للترتيب الصحيح من الأعلى للأسفل واضغط تأكيد. كل بطاقة في مكانها الصحيح ١٥ نقطة، والترتيب الكامل من ٧٠ إلى ١٢٠ حسب سرعتك.',
       make(c) {
         const it = fromBank(c, 'order');
         let order = window.FZ.shuffle([0, 1, 2, 3]);
         if (order.every((v, i) => v === i)) order = [1, 0, 3, 2];
         return { d: { t: it.t, items: order.map((i) => it.items[i]) }, k: { right: order.map((_, j) => order.indexOf(j)) } };
       },
-      score(c) { const want = c.k.right.join(','); return soloMC(c, (v) => v === want); },
-      host(el, c) { el.innerHTML = `<div class="q-big">${esc(c.d.t)}</div><ol class="cards-row">${c.d.items.map((x) => `<li class="ocard">${esc(x)}</li>`).join('')}</ol>`; },
-      reveal(el, c) {
-        el.innerHTML = `<div class="q-big small">${esc(c.d.t)}</div><ol class="cards-row right">${c.rev.k.right.map((i, j) => `<li class="ocard"><i>${ar(j + 1)}</i>${esc(c.d.items[i])}</li>`).join('')}</ol>`;
-        soloTop(el, c);
+      score(c) {
+        const pp = {}, picks = {}, nc = {}, right = c.k.right;
+        let perfect = 0;
+        Object.keys(c.A || {}).forEach((pid) => {
+          const v = String(c.A[pid].v), a = v.split(',').map(Number);
+          const n = right.filter((x, j) => a[j] === x).length;
+          picks[pid] = v; nc[pid] = n;
+          pp[pid] = n === right.length ? window.FZ.speedPts(c.A[pid].t, c.at, c.dl) + ORDER_BONUS : n * ORDER_PART;
+          if (n === right.length) perfect++;
+        });
+        return { pp, rev: { k: c.k, picks, nc, right: perfect, n: Object.keys(picks).length } };
       },
+      host(el, c) { el.innerHTML = `<div class="q-big">${esc(c.d.t)}</div><ol class="cards-row">${c.d.items.map((x) => `<li class="ocard">${ocIn(x)}</li>`).join('')}</ol>`; },
+      reveal(el, c) { orderReveal(el, c, { done: c.done }); },
       phone(el, c) {
         el.innerHTML = `<div class="q-big">${esc(c.d.t)}</div><p class="hint">الأول فوق ⬆️ — اسحب البطاقة أو استخدم الأسهم</p>`;
         let cur = c.sent != null ? c.sent.split(',').map(Number) : [0, 1, 2, 3];
@@ -1010,7 +1074,7 @@ window.FZ_GAMES = (() => {
         const locked = c.sent != null;
         btn.disabled = locked;
         const draw = () => {
-          ol.innerHTML = cur.map((i, j) => `<li class="ocard tactile" data-j="${j}"><i>${ar(j + 1)}</i><span>${esc(c.d.items[i])}</span>${locked ? '' : `<button class="up" aria-label="لأعلى" ${j === 0 ? 'disabled' : ''}>▲</button><button class="dn" aria-label="لأسفل" ${j === 3 ? 'disabled' : ''}>▼</button>`}</li>`).join('');
+          ol.innerHTML = cur.map((i, j) => `<li class="ocard tactile" data-j="${j}"><i>${ar(j + 1)}</i>${ocIn(c.d.items[i])}${locked ? '' : `<button class="up" aria-label="لأعلى" ${j === 0 ? 'disabled' : ''}>▲</button><button class="dn" aria-label="لأسفل" ${j === 3 ? 'disabled' : ''}>▼</button>`}</li>`).join('');
         };
         draw();
         if (locked) return;
@@ -1042,7 +1106,7 @@ window.FZ_GAMES = (() => {
         ol.addEventListener('pointerup', end); ol.addEventListener('pointercancel', end);
         btn.addEventListener('click', () => { btn.disabled = true; $$('button', ol).forEach((b) => { b.disabled = true; }); c.submit(cur.join(',')); });
       },
-      phoneRev(el, c) { el.innerHTML = `<div class="q-big small">${esc(c.d.t)}</div><ol class="sorter done">${c.rev.k.right.map((i, j) => `<li class="ocard"><i>${ar(j + 1)}</i><span>${esc(c.d.items[i])}</span></li>`).join('')}</ol>`; }
+      phoneRev(el, c) { orderReveal(el, c, { done: c.done, mine: c.me }); }
     },
 
     // ---------- ١٠) الكلمة الدخيلة ----------
