@@ -21,12 +21,12 @@ window.FZ_GAMES = (() => {
   const whoTag = (c, pid) => (c.ind ? '' : (c.P[pid] ? tag(c.T, c.P[pid].t) : ''));
 
   // سحب عنصر من بنك الفقرة حسب التصنيفات والمستويات المختارة (وعناصر المقدّم الخاصة أولًا)
-  function fromBank(c, gid, custom = []) {
+  function fromBank(c, gid, custom = [], extra = null) {
     const B = C.BANK[gid];
     const sel = (c.cfg.cats && c.cfg.cats[gid]) || [];
     const lv = c.cfg.levels && c.cfg.levels.length ? c.cfg.levels : [0, 1, 2];
     const all = custom.concat(B.items);
-    const ok = (it) => it.cat === 'mine' || ((!sel.length || sel.includes(it.cat)) && lv.includes(it.lvl));
+    const ok = (it) => (!extra || extra(it)) && (it.cat === 'mine' || ((!sel.length || sel.includes(it.cat)) && lv.includes(it.lvl)));
     return c.pick(gid, all, ok)[1];
   }
 
@@ -446,14 +446,53 @@ window.FZ_GAMES = (() => {
     })();
   }
 
+  // ---------- الكلمة الدخيلة: صور، جولة صعبة بست كلمات، وكشف بالإقصاء ----------
+  const odP = (x) => { const [t, e = ''] = String(x).split('|'); return { t, e }; };
+  const odIn = (x) => { const o = odP(x); return `${o.e ? `<em class="od-e">${o.e}</em>` : ''}<span class="od-t">${esc(o.t)}</span>`; };
+  const odGrid = (w, extra = '') => `<div class="od-grid n${w.length} ${w.some((x) => odP(x).e) ? 'pics' : ''}">${w.map((x, i) => `<div class="od-tile" data-i="${i}">${odIn(x)}${extra}</div>`).join('')}</div>`;
+  function oddReveal(el, c, { done, mine } = {}) {
+    const d = c.d, rv = c.rev || {}, ans = rv.k.ans, myPid = mine && mine.pid;
+    const counts = {}; Object.values(rv.picks || {}).forEach((v) => { counts[v] = (counts[v] || 0) + 1; });
+    el.innerHTML = `<div class="od-rev">${d.gold ? '<span class="q-gold">🌟 الجولة الذهبية · النقاط دبل</span>' : ''}<div class="q-big small">وش الدخيلة؟</div>
+      ${odGrid(d.w, '<b class="od-n"></b>')}<p class="od-why" hidden><i>🔗</i> ${esc(rv.k.why)}</p><div class="rx-ann" aria-live="polite"></div></div>`;
+    const root = $('.od-rev', el), tiles = $$('.od-tile', root), ann = $('.rx-ann', root);
+    const mineV = myPid != null && rv.picks ? rv.picks[myPid] : undefined;
+    if (mineV !== undefined && tiles[mineV]) tiles[mineV].classList.add('mine');
+    const alive = () => root.isConnected;
+    const wait = (ms) => new Promise((r) => setTimeout(r, window.FZ.reduced() ? Math.min(ms, 80) : ms));
+    const cnt = (i) => { const n = counts[i] || 0; const b = $('.od-n', tiles[i]); b.textContent = n ? `${ar(n)} 👆` : '٠'; b.classList.add('on'); };
+    (async () => {
+      await wait(700);
+      // الكلمات الصحيحة تنطفي وحدة وحدة
+      const others = window.FZ.shuffle(tiles.map((_, i) => i).filter((i) => i !== ans));
+      for (const i of others) {
+        if (!alive()) return;
+        tiles[i].classList.add('peek'); FX.tick(0.2); await wait(260);
+        cnt(i); await wait(360);
+        tiles[i].classList.remove('peek'); tiles[i].classList.add('out'); FX.swoosh && FX.swoosh(); await wait(Math.max(220, 1500 / others.length));
+      }
+      if (!alive()) return;
+      // الباقية هي الدخيلة
+      tiles[ans].classList.add('peek');
+      for (let k = 0; k < 4 && alive(); k++) { FX.tick(0.25); await wait(180); }
+      tiles[ans].classList.remove('peek'); tiles[ans].classList.add('is-odd'); cnt(ans); FX.right(); FX.pop(760);
+      await wait(600); if (!alive()) return;
+      $('.od-why', root).hidden = false;
+      await wait(900); if (!alive()) return;
+      fastAnnounce(ann, c, rv, ans, myPid);
+      await wait(2000);
+      if (alive() && done) done();
+    })();
+  }
+
   // ---------- أسئلة السرعة: الجولة الذهبية والكشف للجميع ----------
   let goldShown = '';
-  function goldSplash(key, big) {
+  function goldSplash(key, big, sub = 'سؤال صعب ونقاطه دبل') {
     if (goldShown === key || window.FZ.reduced()) { goldShown = key; return; }
     goldShown = key;
     const ov = document.createElement('div');
     ov.className = 'gold-splash' + (big ? '' : ' small');
-    ov.innerHTML = '<div class="gs-box"><i>🌟</i><b>الجولة الذهبية</b><small>سؤال صعب ونقاطه دبل</small></div>';
+    ov.innerHTML = `<div class="gs-box"><i>🌟</i><b>الجولة الذهبية</b><small>${esc(sub)}</small></div>`;
     document.body.appendChild(ov);
     FX.whistle && FX.whistle(); setTimeout(() => FX.clap(3), 300);
     setTimeout(() => ov.remove(), 1900);
@@ -1111,24 +1150,39 @@ window.FZ_GAMES = (() => {
 
     // ---------- ١٠) الكلمة الدخيلة ----------
     odd: {
-      name: 'الكلمة الدخيلة', ico: '🚫', mode: 'solo', rounds: 5, time: 10,
-      idea: 'اكتشف الكلمة اللي ما تنتمي للباقي',
-      how: 'تظهر ٤ كلمات يجمعها رابط خفي إلا واحدة. اضغط الدخيلة بأسرع ما يمكن خلال ١٠ ثوانٍ، والخطأ صفر.',
+      name: 'الكلمة الدخيلة', ico: '🚫', mode: 'solo', rounds: 5, time: 10, anim: true,
+      idea: 'اكتشف الكلمة أو الصورة اللي ما تنتمي للباقي',
+      how: 'تظهر ٤ كلمات أو صور يجمعها رابط خفي إلا واحدة. اضغط الدخيلة بأسرع ما يمكن، والخطأ صفر. وآخر جولة ذهبية: ٦ كلمات صعبة ونقاطها دبل.',
       make(c) {
-        const it = fromBank(c, 'odd');
-        const order = window.FZ.shuffle([0, 1, 2, 3]);
-        return { d: { w: order.map((i) => it.w[i]) }, k: { ans: order.indexOf(it.ans), why: it.why } };
+        const gold = !!(c.last && c.rounds > 1);
+        let it;
+        if (gold) { const six = C.BANK.odd.items.filter((x) => x.six); it = c.pick('odd', six, () => true)[1]; }
+        else it = fromBank(c, 'odd', [], (x) => !x.six);
+        const order = window.FZ.shuffle(it.w.map((_, i) => i));
+        return { d: { w: order.map((i) => it.w[i]), gold }, k: { ans: order.indexOf(it.ans), why: it.why } };
       },
-      score: (c) => soloMC(c, (v) => +v === c.k.ans),
-      host(el, c) { el.innerHTML = `<div class="q-big">وش الدخيلة؟</div>${mcHost(c.d.w)}`; },
-      reveal(el, c) {
-        const counts = {};
-        Object.values(c.A || {}).forEach((a) => { counts[a.v] = (counts[a.v] || 0) + 1; });
-        el.innerHTML = `<div class="q-big small">الدخيلة: <b>${esc(c.d.w[c.rev.k.ans])}</b></div><p class="why">${esc(c.rev.k.why)}</p>${mcHost(c.d.w, c.rev.k.ans, counts)}`;
-        soloTop(el, c);
+      score: (c) => reflexScore(c, c.k.ans, c.d.gold ? 2 : 1),
+      host(el, c) {
+        el.innerHTML = `${c.d.gold ? '<span class="q-gold">🌟 الجولة الذهبية · النقاط دبل</span>' : ''}<div class="q-big ${c.d.gold ? 'gold' : ''}">وش الدخيلة؟</div>${odGrid(c.d.w)}`;
+        if (c.d.gold) goldSplash('odd' + c.d.w.join(), true, '٦ كلمات صعبة ونقاطها دبل');
       },
-      phone(el, c) { el.innerHTML = '<div class="q-big">وش الدخيلة؟</div>'; mcPhone(el, c.d.w, c, { big: true }); },
-      phoneRev(el, c) { el.innerHTML = `<div class="truth"><small>الدخيلة</small><b>${esc(c.d.w[c.rev.k.ans])}</b></div><p class="why">${esc(c.rev.k.why)}</p>`; }
+      reveal(el, c) { oddReveal(el, c, { done: c.done }); },
+      phone(el, c) {
+        el.innerHTML = `${c.d.gold ? '<span class="q-gold">🌟 ذهبية · دبل</span>' : ''}<div class="q-big ${c.d.gold ? 'gold' : ''}">وش الدخيلة؟</div>${odGrid(c.d.w)}`;
+        if (c.d.gold) goldSplash('odd' + c.d.w.join(), false, '٦ كلمات صعبة ونقاطها دبل');
+        const tiles = $$('.od-tile', el), lock = !c.can || c.sent != null;
+        tiles.forEach((t) => {
+          t.classList.add('tactile'); t.setAttribute('role', 'button'); t.tabIndex = 0;
+          if (c.sent != null && +c.sent === +t.dataset.i) t.classList.add('picked');
+          if (lock) { t.classList.add('off'); return; }
+          t.addEventListener('click', () => {
+            if (t.closest('.od-grid').classList.contains('done')) return;
+            t.closest('.od-grid').classList.add('done'); t.classList.add('picked'); tiles.forEach((x) => x.classList.add('off'));
+            FX.tick(0.25); c.submit(String(t.dataset.i));
+          });
+        });
+      },
+      phoneRev(el, c) { oddReveal(el, c, { done: c.done, mine: c.me }); }
     },
 
     // ---------- ١١) أكمِل المثل أو البيت ----------
