@@ -246,7 +246,7 @@
       el.innerHTML = '<div class="pg-body"></div><p class="sent-note" id="sentNote" hidden></p>';
       const body = $('.pg-body', el);
       const waitText = g.mode === 'duel' ? `يرسم الآن: ${Object.keys(S.dw || {}).map((p) => (P[p] ? P[p].n : '')).filter(Boolean).join('، ')}` : '';
-      g.phone(body, { d, me: m, can, sent: mineAns, submit, view, r: S.r, P, T, waitText, onEnd: (f) => endCbs.push(f) });
+      g.phone(body, { d, me: m, can, sent: mineAns, submit, view, r: S.r, P, T, waitText, dl: S.dl, left: () => (S.at + S.dl * 1000 - now()) / 1000, onEnd: (f) => endCbs.push(f) });
       if (S.m === 'team' && !m.isLeader) {
         body.insertAdjacentHTML('beforeend', `<p class="consult">🗣️ تشاوروا! ${m.leader && P[m.leader] ? 'القائد «' + esc(P[m.leader].n) + '» يرسل' : ''}</p>`);
         leadNote();

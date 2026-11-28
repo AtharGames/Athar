@@ -303,6 +303,93 @@ window.FZ_GAMES = (() => {
     })();
   }
 
+  // ---------- ثبّت الدبوس: صورة المعلم، التلميح في نص الوقت، والكشف بالتشويق ----------
+  function pinHead(c) {
+    const d = c.d;
+    return `<div class="pin-q ${d.img ? 'has-pic' : ''}">${d.img ? `<figure class="frame pin-pic"><img src="img/pin/${esc(d.img)}.jpg" alt="${esc(d.p)}" draggable="false"></figure>` : ''}
+      <div class="pin-qt"><div class="q-big">وين تقع: <b class="place">${esc(d.p)}</b>؟</div>${d.h ? `<p class="pin-hint" hidden><i>💡</i> ${esc(d.h)}</p>` : ''}</div></div>`;
+  }
+  // التلميح يظهر إذا انتصف الوقت
+  function pinHintTimer(el, c) {
+    const h = $('.pin-hint', el); if (!h) return;
+    const ms = c.left && c.dl ? Math.max(0, (c.left() - c.dl / 2) * 1000) : 0;
+    setTimeout(() => { if (h.isConnected && h.hidden) { h.hidden = false; FX.pop(640); } }, ms);
+  }
+  function pinReveal(el, c, { done, mine, game } = {}) {
+    const M = window.FZ_MAPS[c.d.m], rv = c.rev || {}, truth = rv.k;
+    const xy = (lat, lon) => [(lon - M.lon0) * M.kx, (M.lat1 - lat) * M.ky];
+    const rows = Object.keys(rv.ans || {}).map((tid) => { const a = rv.ans[tid]; const [lat, lon] = String(a.v).split(',').map(Number); return Object.assign({ tid, lat, lon }, a); })
+      .filter((r) => !isNaN(r.lat)).sort((a, b) => b.err - a.err);
+    const n = rows.length, myU = mine && mine.unit;
+    el.innerHTML = `<div class="pr-rev"><div class="map-wrap pr-map">${game.map(c.d.m)}</div>
+      <div class="pr-side"><div class="pr-place">${c.d.img ? `<img src="img/pin/${esc(c.d.img)}.jpg" alt="">` : '<i>📍</i>'}<b>${esc(c.d.p)}</b></div>
+      <ol class="pr-list">${n ? '' : '<li class="empty">ما ثبّت أحد دبوسه</li>'}</ol></div></div>`;
+    const root = $('.pr-rev', el), svg = $('svg.map', root), g = $('.pins', svg), list = $('.pr-list', root);
+    const alive = () => root.isConnected;
+    const wait = (ms) => new Promise((r) => setTimeout(r, window.FZ.reduced() ? Math.min(ms, 80) : ms));
+    const NS = 'http://www.w3.org/2000/svg';
+    let zoom = 1; const marks = [];
+    const place = (node, x, y) => { node.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${zoom.toFixed(3)})`); };
+    const add = (html, x, y) => { const w = document.createElementNS(NS, 'g'); w.innerHTML = html; g.appendChild(w); marks.push([w, x, y]); place(w, x, y); return w; };
+    const countKm = (node, to, ms) => new Promise((res) => {
+      const t0 = performance.now();
+      const step = (now) => { if (!node.isConnected) return res(); const p = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(2, -10 * p); node.textContent = num(Math.round(to * (p >= 1 ? 1 : e))); if (p < 1) requestAnimationFrame(step); else res(); };
+      requestAnimationFrame(step); setTimeout(() => { if (node.isConnected) node.textContent = num(Math.round(to)); res(); }, ms + 120);
+    });
+    (async () => {
+      await wait(500); if (!alive() || !truth) return;
+      const [tx, ty] = xy(truth[0], truth[1]);
+      // النجمة: المكان الصحيح أولًا
+      const star = add('<g class="truth-star pr-pop"><circle r="16"/><path d="M0 -11l3.2 6.6 7.3 1-5.3 5.1 1.3 7.2L0 5.5l-6.5 3.4 1.3-7.2-5.3-5.1 7.3-1z"/></g>', tx, ty);
+      FX.whistle && FX.whistle(); await wait(900);
+      for (let i = 0; i < n && alive(); i++) {
+        const r = rows[i], top = n - i <= 3, rank = n - i, me = myU != null && r.tid === myU, col = unitColor(c, r.tid);
+        const li = document.createElement('li');
+        li.className = `pr-row ${top ? 'top wait' : ''} ${me ? 'me' : ''}`;
+        li.innerHTML = `<i class="pr-rk">${ar(rank)}</i>${unitTag(c, r.tid)}<span class="pr-km"><b>؟</b> <small>كم</small></span>${r.ex ? '<em class="exact" hidden>🎯 إصابة!</em>' : ''}<strong hidden>${plus(r.pts)}</strong>`;
+        list.prepend(li);
+        if (top) { for (let k = 0; k < 5 && alive(); k++) { FX.tick(0.2); await wait(170); } li.classList.remove('wait'); }
+        const [x, y] = xy(r.lat, r.lon);
+        const ln = document.createElementNS(NS, 'line');
+        ln.setAttribute('class', 'dist pr-line'); ln.setAttribute('x1', x); ln.setAttribute('y1', y); ln.setAttribute('x2', tx); ln.setAttribute('y2', ty);
+        ln.setAttribute('stroke', col); ln.setAttribute('vector-effect', 'non-scaling-stroke');
+        g.insertBefore(ln, g.firstChild);
+        add(`<g class="pr-drop">${pinSvg(0, 0, col)}</g>`, x, y);
+        FX.pop(top ? 700 : 520);
+        await countKm($('.pr-km b', li), r.err, top ? 900 : 450);
+        if (!alive()) return;
+        $$('[hidden]', li).forEach((x) => { x.hidden = false; });
+        if (r.ex) FX.clap(3);
+        if (i === n - 1) {
+          li.classList.add('win'); li.insertAdjacentHTML('afterbegin', '<span class="pr-crown">👑</span>');
+          // تقريب الخريطة على المكان وأقرب دبوس
+          const W = Math.max(M.w * 0.22, Math.abs(x - tx) * 2.6, Math.abs(y - ty) * 2.6 * M.w / M.h);
+          const H = W * M.h / M.w;
+          let vx = Math.min(Math.max(0, (x + tx) / 2 - W / 2), M.w - W), vy = Math.min(Math.max(0, (y + ty) / 2 - H / 2), M.h - H);
+          if (W < M.w * 0.98 && !window.FZ.reduced()) {
+            const t0 = performance.now(), D = 1300;
+            await new Promise((res) => {
+              const step = (now) => {
+                if (!svg.isConnected) return res();
+                const p = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - p, 3);
+                const cw = M.w + (W - M.w) * e, ch = M.h + (H - M.h) * e;
+                svg.setAttribute('viewBox', `${(vx * e).toFixed(1)} ${(vy * e).toFixed(1)} ${cw.toFixed(1)} ${ch.toFixed(1)}`);
+                zoom = cw / M.w; marks.forEach(([w, mx, my]) => place(w, mx, my));
+                if (p < 1) requestAnimationFrame(step); else res();
+              };
+              requestAnimationFrame(step); setTimeout(res, D + 200);
+            });
+          }
+          FX.clap(5);
+          if (myU == null || me) window.FZ.confetti(document.getElementById('confetti'), { count: 110 });
+        }
+        await wait(top ? 1000 : Math.max(180, 1400 / Math.max(1, n - 3)));
+      }
+      await wait(800);
+      if (alive() && done) done();
+    })();
+  }
+
   // ---------- أسئلة السرعة: الجولة الذهبية والكشف للجميع ----------
   let goldShown = '';
   function goldSplash(key, big) {
@@ -803,13 +890,13 @@ window.FZ_GAMES = (() => {
 
     // ---------- ٨) ثبّت الدبوس ----------
     pin: {
-      name: 'ثبّت الدبوس', ico: '📍', mode: 'team', rounds: 3, time: 25,
+      name: 'ثبّت الدبوس', ico: '📍', mode: 'team', rounds: 3, time: 25, anim: true,
       idea: 'حدّدوا المكان على الخريطة',
-      how: 'تظهر خريطة واسم مكان. تشاوروا والقائد يضع الدبوس، والأقرب بالكيلومترات يكسب أكثر، والإصابة الدقيقة +٣٠.',
-      howSolo: 'تظهر خريطة واسم مكان، وكل واحد يضع دبوسه من جواله. الأقرب بالكيلومترات يكسب أكثر، والإصابة الدقيقة +٣٠.',
+      how: 'تظهر خريطة واسم مكان (وأحيانًا صورته)، وفي نص الوقت يظهر تلميح. تشاوروا والقائد يضع الدبوس، والأقرب بالكيلومترات يكسب أكثر، والإصابة الدقيقة +٣٠.',
+      howSolo: 'تظهر خريطة واسم مكان (وأحيانًا صورته)، وفي نص الوقت يظهر تلميح. كل واحد يضع دبوسه من جواله، والأقرب بالكيلومترات يكسب أكثر، والإصابة الدقيقة +٣٠.',
       make(c) {
         const it = fromBank(c, 'pin');
-        return { d: { m: it.cat, p: it.p }, k: { lat: it.lat, lon: it.lon } };
+        return { d: { m: it.cat, p: it.p, h: it.h || '', img: it.img || '' }, k: { lat: it.lat, lon: it.lon } };
       },
       score(c) {
         const ex = { sa: 25, arab: 80, world: 150 }[c.d.m] || 80;
@@ -828,14 +915,11 @@ window.FZ_GAMES = (() => {
         if (truth) { const [x, y] = xy(truth[0], truth[1]); s += `<g class="truth-star" transform="translate(${x} ${y})"><circle r="16"/><path d="M0 -11l3.2 6.6 7.3 1-5.3 5.1 1.3 7.2L0 5.5l-6.5 3.4 1.3-7.2-5.3-5.1 7.3-1z"/></g>`; }
         return s + '</g></svg>';
       },
-      host(el, c) { el.innerHTML = `<div class="q-big">وين تقع: <b class="place">${esc(c.d.p)}</b>؟</div><div class="map-wrap">${this.map(c.d.m)}</div>`; },
-      reveal(el, c) {
-        const pins = Object.keys(c.rev.ans || {}).map((tid) => { const [lat, lon] = String(c.rev.ans[tid].v).split(',').map(Number); return { lat, lon, c: unitColor(c, tid) }; });
-        el.innerHTML = `<div class="pin-rev"><div class="map-wrap">${this.map(c.d.m, pins, c.rev.k)}</div><div><div class="q-big small">${esc(c.d.p)}</div></div></div>`;
-        closenessReveal($('.pin-rev > div:last-child', el), c, () => '📍', (r) => `${num(Math.round(r.err))} كم`);
-      },
+      host(el, c) { el.innerHTML = `${pinHead(c)}<div class="map-wrap">${this.map(c.d.m)}</div>`; pinHintTimer(el, c); },
+      reveal(el, c) { pinReveal(el, c, { done: c.done, game: this }); },
       phone(el, c) {
-        el.innerHTML = `<div class="q-big">وين تقع: <b class="place">${esc(c.d.p)}</b>؟</div><div class="map-wrap tap">${this.map(c.d.m, c.sent ? [{ lat: +c.sent.split(',')[0], lon: +c.sent.split(',')[1], c: c.me.color }] : [])}</div>`;
+        el.innerHTML = `${pinHead(c)}<div class="map-wrap tap">${this.map(c.d.m, c.sent ? [{ lat: +c.sent.split(',')[0], lon: +c.sent.split(',')[1], c: c.me.color }] : [])}</div>`;
+        pinHintTimer(el, c);
         if (!c.can || c.sent != null) return;
         el.insertAdjacentHTML('beforeend', `<button class="btn btn-primary tactile pin-send" disabled>ثبّت الدبوس هنا</button><p class="hint">اضغط على الخريطة لتحديد المكان، وتقدر تعدّله قبل التثبيت</p>`);
         const M = window.FZ_MAPS[c.d.m], svg = $('svg.map', el), g = $('.pins', svg), btn = $('.pin-send', el);
@@ -849,12 +933,7 @@ window.FZ_GAMES = (() => {
         });
         btn.addEventListener('click', () => { if (!cur) return; btn.disabled = true; c.submit(`${cur.lat.toFixed(3)},${cur.lon.toFixed(3)}`); });
       },
-      phoneRev(el, c) {
-        const pins = Object.keys(c.rev.ans || {}).map((tid) => { const [lat, lon] = String(c.rev.ans[tid].v).split(',').map(Number); return { lat, lon, c: unitColor(c, tid) }; });
-        el.innerHTML = `<div class="q-big small">${esc(c.d.p)}</div><div class="map-wrap">${this.map(c.d.m, pins, c.rev.k)}</div>`;
-        const a = c.rev.ans && c.rev.ans[c.me.unit];
-        if (a) el.insertAdjacentHTML('beforeend', `<div class="truth"><small>${c.ind ? 'بُعد دبوسك' : 'بُعد دبوسكم'}</small><b>${num(Math.round(a.err))} <i>كم</i></b></div>`);
-      }
+      phoneRev(el, c) { pinReveal(el, c, { done: c.done, mine: c.me, game: this }); }
     },
 
     // ---------- ٩) رتّبها صح ----------

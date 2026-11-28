@@ -548,7 +548,7 @@
     FX.whistle();
     startTimer();
   }
-  const ctxBase = () => ({ d: run.cur.d, k: run.cur.k, P, T, A, ind, at: S.at, dl: S.dl, drawers: Object.keys(S.dw || {}) });
+  const ctxBase = () => ({ d: run.cur.d, k: run.cur.k, P, T, A, ind, at: S.at, dl: S.dl, left: () => (S.at + S.dl * 1000 - now()) / 1000, drawers: Object.keys(S.dw || {}) });
   function renderPlay(view) {
     const g = gameOf();
     g.host($('#stage'), Object.assign(ctxBase(), { view }));
