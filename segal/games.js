@@ -680,9 +680,9 @@ window.FZ_GAMES = (() => {
 
     // ---------- ١) كم السعر؟ ----------
     price: {
-      name: 'كم السعر؟', ico: '💰', mode: 'team', rounds: 3, time: 30, anim: true,
+      name: 'كم السعر؟', ico: '💰', mode: 'team', rounds: 3, time: 30, anim: true, suggest: true,
       idea: 'خمّنوا السعر، وكل ما قربتوا زادت نقاطكم',
-      how: 'تظهر سلعة أو صفقة. تشاوروا في سعرها، والقائد يرسل الرقم. بالضبط ١٥٠، والنطاق الأحمر (قريب جدًا) ٩٠، والأصفر ٥٠، والأزرق (في المدى) ٢٠، واللي برّا النطاقات صفر.',
+      how: 'تظهر سلعة أو صفقة. كل واحد يقترح سعره من جواله، والقائد يشوف الاقتراحات ويعتمد الرقم. بالضبط ١٥٠، والنطاق الأحمر (قريب جدًا) ٩٠، والأصفر ٥٠، والأزرق (في المدى) ٢٠، واللي برّا النطاقات صفر.',
       howSolo: 'تظهر سلعة أو صفقة، وكل واحد يكتب تقديره من جواله. بالضبط ١٥٠، والنطاق الأحمر (قريب جدًا) ٩٠، والأصفر ٥٠، والأزرق (في المدى) ٢٠، واللي برّا النطاقات صفر.',
       make(c) {
         const mine = (c.cfg.prices || []).map((r) => ({ n: r[0], st: r[1], v: +r[2], e: r[3] || '🏷️', cat: 'mine', lvl: 1, art: 'tag', u: 'ريال' }));
@@ -693,7 +693,7 @@ window.FZ_GAMES = (() => {
       score: (c) => priceScore(c),
       host(el, c) { el.innerHTML = priceCard(c.d, true); },
       reveal(el, c) { priceReveal(el, c, { done: c.done }); },
-      phone(el, c) { el.innerHTML = priceCard(c.d); numPhone(el, c, { unit: c.d.u || 'ريال', ph: 'السعر' }); },
+      phone(el, c) { el.innerHTML = priceCard(c.d); numPhone(el, c, { unit: c.d.u || 'ريال', ph: 'السعر', suggest: true }); },
       phoneRev(el, c) { priceReveal(el, c, { done: c.done, mine: c.me && c.me.unit }); }
     },
 
