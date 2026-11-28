@@ -111,6 +111,24 @@
             }
           }
         },
+        "sg": {
+          ".write": "$room.matches(/^[0-9]{5}$/) && !newData.exists()",
+          "$r": {
+            "$pid": {
+              ".write": "$room.matches(/^[0-9]{5}$/) && $pid.matches(/^[a-z0-9]{10}$/) && newData.exists() && root.child('fazaa').child($room).child('p').child($pid).exists() && root.child('fazaa').child($room).child('s').child('r').val() === $r && root.child('fazaa').child($room).child('s').child('ph').val() === 'play' && root.child('fazaa').child($room).child('s').child('m').val() === 'team'",
+              ".validate": "newData.hasChildren(['v', 't']) && newData.child('t').val() === now",
+              "v": {
+                ".validate": "newData.isString() && newData.val().length <= 40"
+              },
+              "t": {
+                ".validate": "newData.isNumber()"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        },
         "a": {
           ".write": "$room.matches(/^[0-9]{5}$/) && !newData.exists()",
           "$r": {

@@ -18,7 +18,7 @@
   } : store;
   let me = meStore.json(ME_KEY, null); // { room, pid, name }
   let S = null, T = {}, P = {}, SCORE = null;
-  let offset = 0, timer = 0, watchers = [], offMine = null, offLead = null, endCbs = [], ended = false;
+  let offset = 0, timer = 0, watchers = [], offMine = null, offLead = null, offSugg = null, sugg = {}, suggCbs = [], endCbs = [], ended = false;
   let rendered = '';       // مفتاح آخر عرض حتى ما نعيد الرسم بلا داعي
   let mineAns = null, leadAns = null, myBomb = null;
   const now = () => Date.now() + offset;
@@ -140,14 +140,23 @@
 
   // جولة جديدة: نتابع إجابتي وإجابة قائدي
   function onRound() {
-    endCbs = []; ended = false; mineAns = null; leadAns = null;
+    endCbs = []; ended = false; mineAns = null; leadAns = null; sugg = {};
     if (offMine) { offMine(); offMine = null; }
+    if (offSugg) { offSugg(); offSugg = null; }
     if (offLead) { offLead(); offLead = null; }
     if (!S || !S.r || (S.ph !== 'play' && S.ph !== 'lock' && S.ph !== 'reveal')) return;
     offMine = Net.watch(`${me.room}/a/${S.r}/${me.pid}`, (v) => { const was = mineAns; mineAns = v ? v.v : null; if (was !== mineAns && S.ph === 'play' && S.g === 'mines') render(true); });
     const m = whoAmI();
     if (S.m === 'team' && m.leader && !m.isLeader) {
       offLead = Net.watch(`${me.room}/a/${S.r}/${m.leader}`, (v) => { leadAns = v ? v.v : null; leadNote(); });
+    }
+    // اقتراحات أعضاء فريقي (القائد يعتمد الإجابة النهائية)
+    if (suggestOn()) {
+      offSugg = Net.watch(`${me.room}/sg/${S.r}`, (v) => {
+        const mt = whoAmI().team, out = {};
+        Object.keys(v || {}).forEach((pid) => { if (P[pid] && P[pid].t === mt) out[pid] = v[pid].v; });
+        sugg = out; suggCbs.forEach((f) => { try { f(sugg); } catch (e) { console.error(e); } });
+      });
     }
     // لغمي (أو لغم فريقي) في الألغام
     if (S.g === 'mines') {
@@ -189,6 +198,7 @@
   }
   function roleLine(g, m) {
     if (m.ind) return g.mode === 'mines' ? '<b class="lead-badge">💣 كل واحد يخبّي لغمه ويلعب بنفسه</b>' : g.mode === 'duel' ? '<b class="lead-badge">✏️ الكل يرسم من جواله</b>' : '<b class="lead-badge">📱 كلكم تجاوبون من جوالاتكم</b>';
+    if (g.mode === 'team' && g.suggest) return m.isLeader ? '<b class="lead-badge">👑 أنت القائد: تشوف اقتراحات فريقك وتعتمد الإجابة</b>' : `<span class="muted">اقترح، والقائد ${m.leader && P[m.leader] ? '«' + esc(P[m.leader].n) + '»' : ''} يعتمد</span>`;
     if (g.mode === 'team') return m.isLeader ? '<b class="lead-badge">👑 أنت القائد: تشاور مع فريقك وأرسل الإجابة</b>' : `<span class="muted">القائد ${m.leader && P[m.leader] ? '«' + esc(P[m.leader].n) + '»' : ''} يرسل، وأنت تشاور معه</span>`;
     if (g.mode === 'duel') return S.dw && S.dw[me.pid] ? '<b class="lead-badge">✏️ أنت رسّام فريقك!</b>' : `<span class="muted">رسّام فريقك: ${esc((Object.keys(S.dw || {}).filter((p) => P[p] && String(P[p].t) === m.team).map((p) => P[p].n)[0]) || '—')}</span>`;
     if (g.mode === 'mines') return parse(S.d) && parse(S.d).unit === 'solo' ? '<b class="lead-badge">💣 كل واحد يلعب بنفسه</b>' : (m.isLeader ? '<b class="lead-badge">👑 أنت تضغط عن فريقك</b>' : '<span class="muted">القائد يخبّي اللغم ويضغط عن الفريق</span>');
@@ -217,6 +227,14 @@
     t(); timer = setInterval(t, 250);
   }
 
+  // اقتراح عضو الفريق: يقدر يغيّره، والقائد يشوفه
+  const suggestOn = () => !!(S && S.m === 'team' && G[S.g] && G[S.g].suggest);
+  function suggest(v) {
+    if (!S || S.ph !== 'play') { F.toast('انتهى الوقت'); return Promise.resolve(false); }
+    return Net.set(`${me.room}/sg/${S.r}/${me.pid}`, { v: String(v), t: Net.TS })
+      .then(() => { FX.pop(640); F.vibrate(25); const n = $('#sentNote'); if (n && leadAns == null) { n.hidden = false; n.textContent = 'وصل اقتراحك للقائد ✓ وتقدر تغيّره'; } return true; })
+      .catch((e) => { console.warn(e); F.toast('ما وصل الاقتراح، حاول مرة ثانية'); return false; });
+  }
   function submit(v) {
     if (!S || (S.ph !== 'play' && S.ph !== 'lock')) { F.toast('انتهى الوقت'); return Promise.resolve(false); }
     const r = S.r;
@@ -243,12 +261,14 @@
     const view = inView();
     const draw = () => {
       const view = inView();
+      suggCbs = [];
       el.innerHTML = '<div class="pg-body"></div><p class="sent-note" id="sentNote" hidden></p>';
       const body = $('.pg-body', el);
       const waitText = g.mode === 'duel' ? `يرسم الآن: ${Object.keys(S.dw || {}).map((p) => (P[p] ? P[p].n : '')).filter(Boolean).join('، ')}` : '';
-      g.phone(body, { d, me: m, can, sent: mineAns, submit, view, r: S.r, P, T, waitText, dl: S.dl, left: () => (S.at + S.dl * 1000 - now()) / 1000, onEnd: (f) => endCbs.push(f) });
+      g.phone(body, { d, me: m, can, sent: mineAns, submit, view, r: S.r, P, T, waitText, suggest: suggestOn() && S.ph === 'play' ? suggest : null, sugg: () => sugg, onSugg: (f) => suggCbs.push(f), dl: S.dl, left: () => (S.at + S.dl * 1000 - now()) / 1000, onEnd: (f) => endCbs.push(f) });
       if (S.m === 'team' && !m.isLeader) {
-        body.insertAdjacentHTML('beforeend', `<p class="consult">🗣️ تشاوروا! ${m.leader && P[m.leader] ? 'القائد «' + esc(P[m.leader].n) + '» يرسل' : ''}</p>`);
+        const ln = m.leader && P[m.leader] ? '«' + esc(P[m.leader].n) + '»' : '';
+        body.insertAdjacentHTML('beforeend', suggestOn() ? `<p class="consult">🗣️ اقترح إجابتك، والقائد ${ln} يشوف اقتراحاتكم ويعتمد الإجابة النهائية</p>` : `<p class="consult">🗣️ تشاوروا! ${ln ? 'القائد ' + ln + ' يرسل' : ''}</p>`);
         leadNote();
       }
       if (mineAns != null) sentNote();

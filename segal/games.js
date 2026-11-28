@@ -559,13 +559,33 @@ window.FZ_GAMES = (() => {
     `<div class="mc-opt ${i === correct ? 'is-right' : correct >= 0 ? 'is-dim' : ''}"><i>${L[i]}</i><span>${esc(o)}</span>${counts ? `<b class="cnt">${ar(counts[i] || 0)}</b>` : ''}</div>`).join('')}</div>`;
 
   // إدخال رقم
-  function numPhone(el, c, { unit = '', ph = 'اكتب الرقم' } = {}) {
-    if (!c.can) return;
+  // ---------- اقتراحات أعضاء الفريق (القائد يعتمد) ----------
+  const sgName = (c, pid) => (c.P[pid] ? c.P[pid].n : '—') + (pid === c.me.pid ? ' (أنت)' : '');
+  // قائمة الاقتراحات: الأعضاء يشوفون اقتراحات بعض، والقائد يضغط أي اقتراح ليعتمده
+  function sgBox(el, c, { fmt, pick }) {
+    el.insertAdjacentHTML('beforeend', `<div class="sg-box"><b>💬 اقتراحات الفريق</b><div class="sg-list"></div></div>`);
+    const list = $('.sg-list', el.lastElementChild);
+    const paint = (sg) => {
+      const ids = Object.keys(sg || {}).filter((pid) => pid !== (c.can ? c.me.pid : ''));
+      list.innerHTML = ids.length ? ids.map((pid) => `<button type="button" class="sg-chip" data-p="${pid}" style="--tc:${window.FZ.pcolor(pid)}" ${pick ? '' : 'disabled'}><i>${esc(sgName(c, pid))}</i><b>${fmt(sg[pid])}</b></button>`).join('')
+        : '<span class="dim">ما وصل اقتراح للحين</span>';
+      if (pick) $$('.sg-chip', list).forEach((b) => b.addEventListener('click', () => { pick(sg[b.dataset.p], b.dataset.p); FX.tick(0.25); }));
+    };
+    paint(c.sugg()); c.onSugg(paint);
+    return paint;
+  }
+  function numPhone(el, c, { unit = '', ph = 'اكتب الرقم', suggest = false } = {}) {
+    const sg = suggest && c.suggest, member = sg && !c.can;
+    if (!c.can && !member) return;
+    const mine = member ? c.sugg()[c.me.pid] : null, locked = c.sent != null;
+    const val = locked ? num(+c.sent) : mine != null ? num(+mine) : '';
+    const label = member ? (mine != null ? 'غيّر اقتراحك' : 'اقترح على القائد') : sg ? 'اعتماد الإجابة' : 'إرسال';
     el.insertAdjacentHTML('beforeend', `<form class="num-in" autocomplete="off">
-      <div class="num-box"><input inputmode="decimal" enterkeyhint="send" placeholder="${ph}" ${c.sent != null ? 'disabled' : ''} value="${c.sent != null ? esc(num(+c.sent)) : ''}"><small>${esc(unit)}</small></div>
-      <button class="btn btn-primary tactile" ${c.sent != null ? 'disabled' : ''}>إرسال</button></form>`);
-    const f = $('.num-in', el), inp = $('input', f);
-    if (c.sent == null) setTimeout(() => inp.focus(), 60);
+      <div class="num-box"><input inputmode="decimal" enterkeyhint="send" placeholder="${member ? 'اقتراحك' : ph}" ${locked ? 'disabled' : ''} value="${esc(val)}"><small>${esc(unit)}</small></div>
+      <button class="btn btn-primary tactile" ${locked ? 'disabled' : ''}>${label}</button></form>`);
+    const f = $('.num-in', el), inp = $('input', f), btn = $('button', f);
+    if (sg) sgBox(el, c, { fmt: (v) => `${num(+v)} <small>${esc(unit)}</small>`, pick: !member && !locked ? (v) => { inp.value = num(+v); inp.classList.remove('bad'); } : null });
+    if (!locked && !member) setTimeout(() => inp.focus(), 60);
     inp.addEventListener('input', () => {
       const v = parseNum(inp.value);
       inp.classList.toggle('bad', inp.value.trim() !== '' && v == null);
@@ -574,7 +594,9 @@ window.FZ_GAMES = (() => {
       e.preventDefault();
       const v = parseNum(inp.value);
       if (v == null || v < 0) { inp.classList.add('bad'); FX.wrong(); return; }
-      inp.disabled = true; $('button', f).disabled = true; inp.blur();
+      inp.blur();
+      if (member) { btn.disabled = true; c.suggest(String(v)).then(() => { btn.disabled = false; btn.textContent = 'غيّر اقتراحك'; }); return; }
+      inp.disabled = true; btn.disabled = true;
       c.submit(String(v));
     });
   }
@@ -813,9 +835,9 @@ window.FZ_GAMES = (() => {
 
     // ---------- ٦) قرّب من الرقم ----------
     number: {
-      name: 'قرّب من الرقم', ico: '🔢', mode: 'team', rounds: 3, time: 25,
+      name: 'قرّب من الرقم', ico: '🔢', mode: 'team', rounds: 3, time: 25, suggest: true,
       idea: 'قدّروا الرقم أو الإحصائية',
-      how: 'سؤال جوابه رقم (عدد، مسافة، سنة…). تشاوروا والقائد يرسل التقدير، والأقرب يكسب أكثر.',
+      how: 'سؤال جوابه رقم (عدد، مسافة، سنة…). كل واحد يقترح رقمه من جواله، والقائد يشوف الاقتراحات ويعتمد التقدير النهائي، والأقرب يكسب أكثر.',
       howSolo: 'سؤال جوابه رقم (عدد، مسافة، سنة…). كل واحد يرسل تقديره، والأقرب يكسب أكثر.',
       make(c) {
         const mine = (c.cfg.numbers || []).map((r) => ({ q: r[0], v: +r[1], u: r[2] || '', cat: 'mine', lvl: 1 }));
@@ -828,7 +850,7 @@ window.FZ_GAMES = (() => {
         el.innerHTML = `<div class="q-big small">${esc(c.d.q)}</div><div class="truth"><small>الإجابة</small><b>${num(c.rev.k)} <i>${esc(c.d.u)}</i></b></div>`;
         closenessReveal(el, c, (v) => num(+v), (r) => `فرق ${num(Math.round(r.err * 100))}٪`);
       },
-      phone(el, c) { el.innerHTML = `<div class="q-big">${esc(c.d.q)}</div>`; numPhone(el, c, { unit: c.d.u, ph: 'تقديركم' }); },
+      phone(el, c) { el.innerHTML = `<div class="q-big">${esc(c.d.q)}</div>`; numPhone(el, c, { unit: c.d.u, ph: 'تقديركم', suggest: true }); },
       phoneRev(el, c) { el.innerHTML = `<div class="q-big small">${esc(c.d.q)}</div><div class="truth"><small>الإجابة</small><b>${num(c.rev.k)} <i>${esc(c.d.u)}</i></b></div>`; }
     },
 
@@ -890,9 +912,9 @@ window.FZ_GAMES = (() => {
 
     // ---------- ٨) ثبّت الدبوس ----------
     pin: {
-      name: 'ثبّت الدبوس', ico: '📍', mode: 'team', rounds: 3, time: 25, anim: true,
+      name: 'ثبّت الدبوس', ico: '📍', mode: 'team', rounds: 3, time: 25, anim: true, suggest: true,
       idea: 'حدّدوا المكان على الخريطة',
-      how: 'تظهر خريطة واسم مكان (وأحيانًا صورته)، وفي نص الوقت يظهر تلميح. تشاوروا والقائد يضع الدبوس، والأقرب بالكيلومترات يكسب أكثر، والإصابة الدقيقة +٣٠.',
+      how: 'تظهر خريطة واسم مكان (وأحيانًا صورته)، وفي نص الوقت يظهر تلميح. كل واحد يقترح مكانه على الخريطة، والقائد يشوف دبابيس فريقه ويعتمد الدبوس النهائي، والأقرب بالكيلومترات يكسب أكثر، والإصابة الدقيقة +٣٠.',
       howSolo: 'تظهر خريطة واسم مكان (وأحيانًا صورته)، وفي نص الوقت يظهر تلميح. كل واحد يضع دبوسه من جواله، والأقرب بالكيلومترات يكسب أكثر، والإصابة الدقيقة +٣٠.',
       make(c) {
         const it = fromBank(c, 'pin');
@@ -918,20 +940,47 @@ window.FZ_GAMES = (() => {
       host(el, c) { el.innerHTML = `${pinHead(c)}<div class="map-wrap">${this.map(c.d.m)}</div>`; pinHintTimer(el, c); },
       reveal(el, c) { pinReveal(el, c, { done: c.done, game: this }); },
       phone(el, c) {
-        el.innerHTML = `${pinHead(c)}<div class="map-wrap tap">${this.map(c.d.m, c.sent ? [{ lat: +c.sent.split(',')[0], lon: +c.sent.split(',')[1], c: c.me.color }] : [])}</div>`;
+        const M = window.FZ_MAPS[c.d.m], NS = 'http://www.w3.org/2000/svg';
+        const sg = !!c.suggest, member = sg && !c.can, locked = c.sent != null;
+        const ll = (v) => { const [lat, lon] = String(v).split(',').map(Number); return isNaN(lat) || isNaN(lon) ? null : { lat, lon }; };
+        const xy = (p) => [(p.lon - M.lon0) * M.kx, (M.lat1 - p.lat) * M.ky];
+        el.innerHTML = `${pinHead(c)}<div class="map-wrap tap">${this.map(c.d.m, locked ? [Object.assign(ll(c.sent), { c: c.me.color })] : [])}</div>`;
         pinHintTimer(el, c);
-        if (!c.can || c.sent != null) return;
-        el.insertAdjacentHTML('beforeend', `<button class="btn btn-primary tactile pin-send" disabled>ثبّت الدبوس هنا</button><p class="hint">اضغط على الخريطة لتحديد المكان، وتقدر تعدّله قبل التثبيت</p>`);
-        const M = window.FZ_MAPS[c.d.m], svg = $('svg.map', el), g = $('.pins', svg), btn = $('.pin-send', el);
-        let cur = null;
-        svg.addEventListener('pointerdown', (e) => {
-          const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
-          const p = pt.matrixTransform(svg.getScreenCTM().inverse());
-          cur = { lat: M.lat1 - p.y / M.ky, lon: M.lon0 + p.x / M.kx };
-          g.innerHTML = pinSvg(p.x, p.y, c.me.color, true);
-          btn.disabled = false; FX.tick(0.2);
-        });
-        btn.addEventListener('click', () => { if (!cur) return; btn.disabled = true; c.submit(`${cur.lat.toFixed(3)},${cur.lon.toFixed(3)}`); });
+        const svg = $('svg.map', el), g = $('.pins', svg);
+        let cur = member ? ll(c.sugg()[c.me.pid] || '') : null, btn = null;
+        const drawMine = () => { if (!cur) return; const [x, y] = xy(cur); g.innerHTML = pinSvg(x, y, member ? window.FZ.pcolor(c.me.pid) : c.me.color, true); };
+        if (cur) drawMine();
+        if ((c.can || member) && !locked) {
+          el.insertAdjacentHTML('beforeend', `<button class="btn btn-primary tactile pin-send" ${cur ? '' : 'disabled'}>${member ? (cur ? 'غيّر اقتراحك' : 'اقترح هذا المكان') : sg ? 'اعتمد هذا الدبوس' : 'ثبّت الدبوس هنا'}</button>
+            <p class="hint">${member ? 'اضغط على الخريطة واقترح مكانك، والقائد يشوف دبوسك ويعتمد' : sg ? 'دبابيس فريقك ظاهرة على الخريطة؛ اضغط أي مكان أو اقتراح ثم اعتمد' : 'اضغط على الخريطة لتحديد المكان، وتقدر تعدّله قبل التثبيت'}</p>`);
+          btn = $('.pin-send', el);
+          svg.addEventListener('pointerdown', (e) => {
+            const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+            const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+            cur = { lat: M.lat1 - p.y / M.ky, lon: M.lon0 + p.x / M.kx };
+            drawMine(); btn.disabled = false; FX.tick(0.2);
+          });
+          btn.addEventListener('click', () => {
+            if (!cur) return;
+            const v = `${cur.lat.toFixed(3)},${cur.lon.toFixed(3)}`;
+            btn.disabled = true;
+            if (member) { c.suggest(v).then(() => { btn.disabled = false; btn.textContent = 'غيّر اقتراحك'; }); return; }
+            c.submit(v);
+          });
+        }
+        if (!sg) return;
+        // دبابيس اقتراحات الفريق على الخريطة
+        const layer = document.createElementNS(NS, 'g'); layer.setAttribute('class', 'sg-pins'); svg.insertBefore(layer, g);
+        const r = M.w * 0.016, fs = M.w * 0.034;
+        const paintMap = (all) => {
+          layer.innerHTML = Object.keys(all || {}).filter((pid) => pid !== c.me.pid).map((pid) => {
+            const p = ll(all[pid]); if (!p) return '';
+            const [x, y] = xy(p);
+            return `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})"><g class="sg-pin"><circle r="${r}" fill="${window.FZ.pcolor(pid)}" stroke-width="${(r * 0.35).toFixed(1)}"/><text y="${(-r * 1.7).toFixed(1)}" font-size="${fs.toFixed(1)}" text-anchor="middle">${esc(c.P[pid] ? c.P[pid].n : '')}</text></g></g>`;
+          }).join('');
+        };
+        paintMap(c.sugg()); c.onSugg(paintMap);
+        sgBox(el, c, { fmt: () => '📍', pick: !member && !locked ? (v) => { const p = ll(v); if (!p) return; cur = p; drawMine(); if (btn) btn.disabled = false; } : null });
       },
       phoneRev(el, c) { pinReveal(el, c, { done: c.done, mine: c.me, game: this }); }
     },

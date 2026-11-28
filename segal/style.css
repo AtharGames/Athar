@@ -996,3 +996,19 @@ body.play main{padding:10px 12px 22px;}
 @media (max-width:760px){.pr-rev{grid-template-columns:1fr;}}
 .pg-body .pr-rev{grid-template-columns:1fr;}
 @media (prefers-reduced-motion: reduce){.pr-row,.pr-row.wait,.pr-row.win,.pr-crown,.pr-drop,.pr-pop,.pr-line,.pin-hint{animation:none !important;}}
+
+/* ---------- اقتراحات الفريق (القائد يعتمد) ---------- */
+.sg-box{width:100%; max-width:420px; margin:10px auto 0; padding:10px 12px; border-radius:16px; background:var(--surface); border:2px dashed var(--line);}
+.sg-box > b{display:block; font-size:.88rem; margin-bottom:8px; color:var(--text-2);}
+.sg-list{display:flex; flex-wrap:wrap; gap:8px;}
+.sg-list .dim{font-size:.85rem; opacity:.7;}
+.sg-chip{display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border-radius:99px; border:2px solid var(--tc); background:color-mix(in srgb, var(--tc) 14%, transparent); color:var(--text); font:inherit; font-weight:700; cursor:pointer; box-shadow:0 3px 0 color-mix(in srgb, var(--tc) 60%, #000); animation:moPop .35s cubic-bezier(.34,1.45,.64,1) both; transition:transform .12s ease, box-shadow .12s ease;}
+.sg-chip i{font-style:normal; font-size:.82rem; opacity:.85;}
+.sg-chip b{font-variant-numeric:tabular-nums;}
+.sg-chip b small{font-weight:500; opacity:.7; font-size:.75rem;}
+.sg-chip:not(:disabled):active{transform:translateY(3px); box-shadow:0 0 0 transparent;}
+.sg-chip:disabled{cursor:default; opacity:.95;}
+.sg-pin circle{stroke:#fff;}
+.sg-pin text{font-weight:800; fill:#fff; paint-order:stroke; stroke:#0A2463; stroke-width:4px; stroke-linejoin:round;}
+.sg-pin{animation:prPop .4s cubic-bezier(.34,1.45,.64,1) both;}
+@media (prefers-reduced-motion: reduce){.sg-chip,.sg-pin{animation:none !important;}}
